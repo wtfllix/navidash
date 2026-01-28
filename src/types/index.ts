@@ -17,7 +17,7 @@ export interface Bookmark {
  */
 export interface Widget {
   id: string; // 唯一标识符
-  type: 'weather' | 'clock' | 'rss' | 'monitor' | 'quick-link'; // 组件类型
+  type: 'weather' | 'clock' | 'rss' | 'monitor' | 'quick-link' | 'calendar' | 'memo' | 'todo'; // 组件类型
   size: { w: number; h: number }; // 组件尺寸（Grid Layout 单位）
   position: { x: number; y: number }; // 组件位置（Grid Layout 坐标）
   config: Record<string, any>; // 组件专属配置（如城市、API Key、字体等）

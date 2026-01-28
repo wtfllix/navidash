@@ -26,6 +26,27 @@ const initialWidgets: Widget[] = [
     position: { x: 2, y: 0 },
     config: { city: 'Shanghai' },
   },
+  {
+    id: '3',
+    type: 'calendar',
+    size: { w: 2, h: 2 },
+    position: { x: 4, y: 0 },
+    config: {},
+  },
+  {
+    id: '4',
+    type: 'memo',
+    size: { w: 2, h: 2 },
+    position: { x: 0, y: 2 },
+    config: { text: '欢迎使用 NaviDash Demo！这里是备忘录示例。' },
+  },
+  {
+    id: '5',
+    type: 'todo',
+    size: { w: 2, h: 2 },
+    position: { x: 2, y: 2 },
+    config: { items: [{ id: 't1', text: '探索侧边栏与书签', done: false }, { id: 't2', text: '添加一个新组件', done: false }] },
+  },
 ];
 
 /**

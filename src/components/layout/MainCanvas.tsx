@@ -7,6 +7,9 @@ import { useUIStore } from '@/store/useUIStore';
 import ClockWidget from '../widgets/ClockWidget';
 import WeatherWidget from '../widgets/WeatherWidget';
 import QuickLinkWidget from '../widgets/QuickLinkWidget';
+import CalendarWidget from '../widgets/CalendarWidget';
+import MemoWidget from '../widgets/MemoWidget';
+import TodoWidget from '../widgets/TodoWidget';
 import WidgetPicker from '../widgets/WidgetPicker';
 import WidgetSettingsModal from '../widgets/WidgetSettingsModal';
 import { Trash2, GripHorizontal, Settings } from 'lucide-react';
@@ -70,6 +73,12 @@ const WidgetItemContent = ({ widget, onEdit }: { widget: Widget; onEdit: (widget
         return <WeatherWidget widget={widget} />;
       case 'quick-link':
         return <QuickLinkWidget widget={widget} />;
+      case 'calendar':
+        return <CalendarWidget widget={widget} />;
+      case 'memo':
+        return <MemoWidget widget={widget} />;
+      case 'todo':
+        return <TodoWidget widget={widget} />;
       default:
         return (
           <div className="flex flex-col items-center justify-center h-full">

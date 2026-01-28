@@ -1,7 +1,7 @@
 import React from 'react';
 import Modal from '@/components/ui/Modal';
 import { useWidgetStore } from '@/store/useWidgetStore';
-import { Clock, CloudSun, Link as LinkIcon, Activity } from 'lucide-react';
+import { Clock, CloudSun, Link as LinkIcon, Calendar, StickyNote, CheckSquare } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
 interface WidgetPickerProps {
@@ -45,6 +45,27 @@ export default function WidgetPicker({ isOpen, onClose }: WidgetPickerProps) {
       description: 'Shortcut to a website',
       icon: <LinkIcon size={24} className="text-green-500" />,
       defaultSize: { w: 1, h: 1 },
+    },
+    {
+      type: 'calendar',
+      title: 'Calendar',
+      description: 'Monthly calendar view',
+      icon: <Calendar size={24} className="text-indigo-500" />,
+      defaultSize: { w: 2, h: 2 },
+    },
+    {
+      type: 'memo',
+      title: 'Memo',
+      description: 'Simple sticky note',
+      icon: <StickyNote size={24} className="text-yellow-500" />,
+      defaultSize: { w: 2, h: 2 },
+    },
+    {
+      type: 'todo',
+      title: 'Todo',
+      description: 'Lightweight todo list',
+      icon: <CheckSquare size={24} className="text-emerald-500" />,
+      defaultSize: { w: 2, h: 2 },
     },
   ];
 
