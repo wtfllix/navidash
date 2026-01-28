@@ -20,7 +20,7 @@ Navidash 是一个极简、可定制的个人导航仪表盘，专为自托管�
 
 1.  **克隆仓库：**
     ```bash
-    git clone https://github.com/yourusername/navidash.git
+    git clone https://github.com/wftllix/navidash.git
     cd navidash
     ```
 
