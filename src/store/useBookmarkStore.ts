@@ -71,6 +71,9 @@ const initialBookmarks: Bookmark[] = [
   },
 ];
 
+import { useToastStore } from '@/store/useToastStore';
+import { useLanguageStore } from '@/store/useLanguageStore';
+
 /**
  * saveToServer
  * 将书签数据持久化到服务器（JSON文件）
@@ -78,15 +81,21 @@ const initialBookmarks: Bookmark[] = [
  */
 const saveToServer = async (bookmarks: Bookmark[]) => {
   try {
-    await fetch('/api/bookmarks', {
+    const res = await fetch('/api/bookmarks', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(bookmarks),
     });
+    if (!res.ok) {
+        throw new Error(`Server responded with ${res.status}`);
+    }
   } catch (error) {
     console.error('Failed to save bookmarks:', error);
-  }
-};
+    // Notify user about the failure
+     const t = useLanguageStore.getState().t;
+     useToastStore.getState().addToast(t('save_error'), 'error');
+   }
+ };
 
 /**
  * useBookmarkStore
