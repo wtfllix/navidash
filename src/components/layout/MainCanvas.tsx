@@ -95,23 +95,23 @@ const WidgetItemContent = ({ widget, onEdit }: { widget: Widget; onEdit: (widget
       {isEditing && (
         <>
           <div className="absolute top-2 right-2 flex space-x-1 z-20 animate-in fade-in zoom-in duration-200">
-            <button 
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={(e) => { e.stopPropagation(); onEdit(widget); }}
-              className="p-1.5 bg-white shadow-sm border border-gray-100 rounded-full hover:bg-blue-50 text-gray-500 hover:text-blue-600 transition-colors"
-              title="Edit Widget"
-            >
-              <Settings size={14} />
-            </button>
-            <button 
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={(e) => { e.stopPropagation(); removeWidget(widget.id); }}
-              className="p-1.5 bg-white shadow-sm border border-gray-100 rounded-full hover:bg-red-50 text-gray-500 hover:text-red-600 transition-colors"
-              title="Remove Widget"
-            >
-              <Trash2 size={14} />
-            </button>
-          </div>
+              <button 
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => { e.stopPropagation(); onEdit(widget); }}
+                className="p-1.5 bg-white shadow-sm border border-gray-100 rounded-full hover:bg-blue-50 text-gray-500 hover:text-blue-600 transition-colors"
+                title="Edit Widget"
+              >
+                <Settings size={14} />
+              </button>
+              <button 
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => { e.stopPropagation(); removeWidget(widget.id); }}
+                className="p-1.5 bg-white shadow-sm border border-gray-100 rounded-full hover:bg-red-50 text-gray-500 hover:text-red-600 transition-colors"
+                title="Remove Widget"
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
           <div className="absolute top-2 left-2 z-10 text-gray-400 cursor-grab active:cursor-grabbing draggable-handle bg-white/50 p-1 rounded-md backdrop-blur-sm">
              <GripHorizontal size={16} />
           </div>

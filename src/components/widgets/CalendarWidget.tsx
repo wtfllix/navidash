@@ -7,6 +7,7 @@ export default function CalendarWidget({ widget }: { widget: Widget }) {
   const today = new Date();
   const year = today.getFullYear();
   const month = today.getMonth(); // 0-indexed
+  const todayDate = today.getDate();
 
   const days = useMemo(() => {
     const firstDay = new Date(year, month, 1);
@@ -15,12 +16,12 @@ export default function CalendarWidget({ widget }: { widget: Widget }) {
     const cells: Array<{ date: number | null; isToday?: boolean }> = [];
     for (let i = 0; i < startDay; i++) cells.push({ date: null });
     for (let d = 1; d <= lastDate; d++) {
-      const isToday = d === today.getDate();
+      const isToday = d === todayDate;
       cells.push({ date: d, isToday });
     }
     while (cells.length % 7 !== 0) cells.push({ date: null });
     return cells;
-  }, [year, month]);
+  }, [year, month, todayDate]);
 
   const monthLabel = `${year}-${String(month + 1).padStart(2, '0')}`;
   const weekLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];

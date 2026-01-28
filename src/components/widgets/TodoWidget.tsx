@@ -13,7 +13,7 @@ export default function TodoWidget({ widget }: { widget: Widget }) {
 
   useEffect(() => {
     setItems(widget.config?.items ?? []);
-  }, [widget.id]);
+  }, [widget.id, widget.config?.items]);
 
   const persist = (list: TodoItem[]) => {
     setItems(list);

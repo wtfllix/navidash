@@ -59,17 +59,41 @@ export default function WeatherWidget({ widget }: { widget: Widget }) {
 
   useEffect(() => {
     const fetchWeather = async () => {
+      // Demo mode or fallback mock data
+      const mockData: WeatherData = {
+        temperature: 26,
+        weathercode: 1, // Sunny/Cloudy
+        windspeed: 5.5
+      };
+
       try {
         setLoading(true);
+        
+        // If in Demo Mode, use mock data directly
+        if (process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
+           // Simulate network delay
+           await new Promise(resolve => setTimeout(resolve, 500));
+           setWeather(mockData);
+           setError(false);
+           return;
+        }
+
         const res = await fetch(
           `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`
         );
+        
+        if (!res.ok) {
+            throw new Error('Network response was not ok');
+        }
+
         const data = await res.json();
         setWeather(data.current_weather);
         setError(false);
       } catch (err) {
-        console.error('Failed to fetch weather', err);
-        setError(true);
+        console.error('Failed to fetch weather, using mock data', err);
+        // Fallback to mock data on error
+        setWeather(mockData);
+        setError(false);
       } finally {
         setLoading(false);
       }

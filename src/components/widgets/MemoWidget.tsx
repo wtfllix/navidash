@@ -10,7 +10,7 @@ export default function MemoWidget({ widget }: { widget: Widget }) {
 
   useEffect(() => {
     setText(widget.config?.text ?? '');
-  }, [widget.id]); // refresh when switching widgets
+  }, [widget.id, widget.config?.text]); // refresh when switching widgets or external update
 
   const save = (val: string) => {
     updateWidget(widget.id, { config: { ...widget.config, text: val } });
