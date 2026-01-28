@@ -12,8 +12,7 @@
 ---
 
 ## Demo 地址
-[Navidash](https://navidash-git-demo-wtfllixs-projects.vercel.app/){:target="_blank"}
-
+[Navidash](https://navidash-git-demo-wtfllixs-projects.vercel.app/)
 ## ✨ 功能特性
 
 - 🎨 **现代化 UI 设计**
