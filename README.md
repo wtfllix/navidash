@@ -12,7 +12,7 @@
 ---
 
 ## Demo 地址
-[Navidash](https://navidash-git-demo-wtfllixs-projects.vercel.app/)
+[Navidash](https://navidash-git-demo-wtfllixs-projects.vercel.app/){:target="_blank"}
 
 ## ✨ 功能特性
 
