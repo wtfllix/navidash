@@ -403,7 +403,7 @@ export default function Sidebar() {
       >
         {/* Header: Logo & Toggle Button */}
         <div className="h-14 flex items-center justify-between px-4 border-b border-gray-100">
-          {isOpen && <span className="font-bold text-lg tracking-tight">NaviDash</span>}
+          {isOpen && <span className="font-bold text-lg tracking-tight">Navidash</span>}
           <div className="flex items-center gap-1">
             <button
               onClick={(e) => {

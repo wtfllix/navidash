@@ -1,6 +1,6 @@
-# 🛠️ NaviDash 项目开发指令文档
+# 🛠️ Navidash 项目开发指令文档
 ## 1. 项目概览
-NaviDash 是一个为 Docker 部署设计的个人导航仪表盘。
+Navidash 是一个为 Docker 部署设计的个人导航仪表盘。
 
 核心愿景： 极简、高效、可高度自定义。
 
@@ -65,7 +65,7 @@ Plaintext
 /src/lib/          # 工具类 (db.ts, utils.ts)
 /data/             # Docker 挂载点
 ## 🤖 给 IDE AI 的初始 Prompt (可以直接复制)
-“你现在是我的全栈开发助手。我们要开发一个名为 NaviDash 的导航页项目。
+“你现在是我的全栈开发助手。我们要开发一个名为 Navidash 的导航页项目。
 
 当前任务：
 
