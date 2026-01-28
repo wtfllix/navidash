@@ -11,3 +11,4 @@ services:
       - ./data:/app/data
     environment:
       - NODE_ENV=production
+      - DEMO_MODE=true
