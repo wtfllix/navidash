@@ -71,7 +71,6 @@ const translations = {
     'widget_weather': 'Weather',
     'widget_quick_link': 'Quick Link',
     'coming_soon': 'Coming Soon',
-    'save_error': 'Failed to save data to server',
   },
   zh: {
     // General
@@ -136,7 +135,6 @@ const translations = {
     'widget_weather': '天气',
     'widget_quick_link': '快捷链接',
     'coming_soon': '敬请期待',
-    'save_error': '保存数据到服务器失败，请检查日志',
   }
 };
 

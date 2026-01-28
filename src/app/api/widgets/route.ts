@@ -9,6 +9,9 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    if (process.env.DEMO_MODE === 'true') {
+      return NextResponse.json({ error: 'Demo mode: write operations disabled' }, { status: 403 });
+    }
     const widgets: Widget[] = await request.json();
     await saveWidgets(widgets);
     return NextResponse.json({ success: true });

@@ -12,6 +12,9 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    if (process.env.DEMO_MODE === 'true') {
+      return NextResponse.json({ error: 'Demo mode: write operations disabled' }, { status: 403 });
+    }
     const bookmarks: Bookmark[] = await request.json();
     await saveBookmarks(bookmarks);
     return NextResponse.json({ success: true });

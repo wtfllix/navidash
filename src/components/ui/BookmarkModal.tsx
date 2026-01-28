@@ -137,27 +137,13 @@ export default function BookmarkModal({ isOpen, onClose, initialData, parentId, 
         setTitle(initialData.title);
         setUrl(initialData.url || '');
         setIsFolder(!!initialData.children);
-        
-        const currentIcon = initialData.icon || (initialData.children ? 'folder' : 'link');
-        setIcon(currentIcon);
-        
-        // Find and set active category based on current icon
-        const findCategory = (iconName: string): keyof typeof ICON_CATEGORIES => {
-            for (const [cat, data] of Object.entries(ICON_CATEGORIES)) {
-                if (data.icons.some(i => i.name === iconName)) {
-                    return cat as keyof typeof ICON_CATEGORIES;
-                }
-            }
-            return 'general';
-        };
-        setActiveCategory(findCategory(currentIcon));
+        setIcon(initialData.icon || (initialData.children ? 'folder' : 'link'));
       } else {
         setTitle('');
         setUrl('');
         setIsFolder(!!parentId); // Default to link if adding child, but can be folder
         if (!parentId) setIsFolder(true); // Default to folder if adding to root
         setIcon(parentId ? 'link' : 'folder');
-        setActiveCategory('general');
       }
     }
   }, [isOpen, mode, initialData, parentId]);
