@@ -1,0 +1,119 @@
+{
+  "categories": [
+    {
+      "name": "TrueNAS (192.168.31.15)",
+      "color": "gradient-blue",
+      "links": [
+        {
+          "name": "📁Filebrowser",
+          "url": "http://192.168.31.15:30051",
+          "description": "文件管理与浏览"
+        },
+        {
+          "name": "🖼️immich",
+          "url": "http://192.168.31.15:30041",
+          "description": "照片库与相册"
+        },
+        {
+          "name": "Minio",
+          "url": "http://192.168.31.15:9000",
+          "description": "对象存储服务"
+        },
+        {
+          "name": "TrueNAS",
+          "url": "http://192.168.31.15",
+          "description": "存储管理系统"
+        }
+      ]
+    },
+    {
+      "name": "PVE (192.168.31.87)",
+      "color": "gradient-purple",
+      "links": [
+        {
+          "name": "PVE",
+          "url": "https://192.168.31.87:8006",
+          "description": "虚拟机管理平台"
+        },
+        {
+          "name": "iStoreOS",
+          "url": "http://192.168.31.88",
+          "description": "网络存储操作系统"
+        }
+      ]
+    },
+    {
+      "name": "工具服务",
+      "color": "gradient-pink",
+      "links": [
+        {
+          "name": "入职检查",
+          "url": "https://nav.lonsdaleite.cc/fieldcheck.html",
+          "description": "服务检查与测试"
+        },
+        {
+          "name": "Joplin",
+          "url": "https://joplin.lonsdaleite.cc",
+          "description": "笔记与任务管理"
+        },
+        {
+          "name": "压缩",
+          "url": "https://compress.lonsdaleite.cc",
+          "description": "文件压缩工具"
+        }
+      ]
+    },
+    {
+      "name": "娱乐媒体",
+      "color": "gradient-orange",
+      "links": [
+        {
+          "name": "Bilibili",
+          "url": "https://bilibili.com",
+          "description": "中文视频平台"
+        },
+        {
+          "name": "虎牙",
+          "url": "https://huya.com",
+          "description": "直播与游戏"
+        },
+        {
+          "name": "抖音",
+          "url": "https://douyin.com",
+          "description": "短视频平台"
+        },
+        {
+          "name": "Emby",
+          "url": "http://192.168.31.19:8096/",
+          "description": "家庭媒体库"
+        }
+      ]
+    },
+    {
+      "name": "社交网络",
+      "color": "gradient-teal",
+      "links": [
+        {
+          "name": "Weibo",
+          "url": "https://weibo.com",
+          "description": "中文社交平台"
+        },
+        {
+          "name": "Facebook",
+          "url": "https://facebook.com",
+          "description": "全球社交网络"
+        },
+        {
+          "name": "Instagram",
+          "url": "https://instagram.com",
+          "description": "图片分享社区"
+        },
+        {
+          "name": "Reddit",
+          "url": "https://reddit.com",
+          "description": "讨论与资讯社区"
+        }
+      ]
+    }
+  ]
+}

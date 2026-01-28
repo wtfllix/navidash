@@ -1,0 +1,233 @@
+"use client";
+
+import React, { useEffect, useState, useMemo, useCallback, useRef } from "react";
+import { Widget } from '@/types';
+import { useWidgetStore } from '@/store/useWidgetStore';
+import { useUIStore } from '@/store/useUIStore';
+import ClockWidget from '../widgets/ClockWidget';
+import WeatherWidget from '../widgets/WeatherWidget';
+import QuickLinkWidget from '../widgets/QuickLinkWidget';
+import WidgetPicker from '../widgets/WidgetPicker';
+import WidgetSettingsModal from '../widgets/WidgetSettingsModal';
+import { Trash2, GripHorizontal, Settings } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+import GridLayout from 'react-grid-layout';
+import 'react-grid-layout/css/styles.css';
+import 'react-resizable/css/styles.css';
+
+/**
+ * useContainerWidth Hook
+ * 监听容器宽度变化，用于响应式网格布局
+ * 使用 ResizeObserver 实现高性能监听
+ */
+const useContainerWidth = () => {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [width, setWidth] = useState(0);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      setWidth(entry.contentRect.width);
+    });
+
+    observer.observe(containerRef.current);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
+  return { width, containerRef };
+};
+
+type RGLLayoutItem = {
+  i: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  isDraggable?: boolean;
+  isResizable?: boolean;
+};
+type RGLLayout = RGLLayoutItem[];
+
+/**
+ * WidgetItemContent Component
+ * 小组件容器封装，处理编辑模式下的拖拽手柄和操作按钮
+ */
+const WidgetItemContent = ({ widget, onEdit }: { widget: Widget; onEdit: (widget: Widget) => void }) => {
+  const { removeWidget } = useWidgetStore();
+  const { isEditing } = useUIStore();
+
+  const renderContent = () => {
+    switch (widget.type) {
+      case 'clock':
+        return <ClockWidget widget={widget} />;
+      case 'weather':
+        return <WeatherWidget widget={widget} />;
+      case 'quick-link':
+        return <QuickLinkWidget widget={widget} />;
+      default:
+        return (
+          <div className="flex flex-col items-center justify-center h-full">
+            <span className="text-xs font-bold uppercase text-gray-400 mb-2">{widget.type}</span>
+            <div className="text-gray-600 font-medium">Coming Soon</div>
+          </div>
+        );
+    }
+  };
+
+  return (
+    <div className="w-full h-full relative group">
+      {/* 编辑模式下的覆盖层：显示删除/设置按钮和拖拽手柄 */}
+      {isEditing && (
+        <>
+          <div className="absolute top-2 right-2 flex space-x-1 z-20 animate-in fade-in zoom-in duration-200">
+            <button 
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => { e.stopPropagation(); onEdit(widget); }}
+              className="p-1.5 bg-white shadow-sm border border-gray-100 rounded-full hover:bg-blue-50 text-gray-500 hover:text-blue-600 transition-colors"
+              title="Edit Widget"
+            >
+              <Settings size={14} />
+            </button>
+            <button 
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => { e.stopPropagation(); removeWidget(widget.id); }}
+              className="p-1.5 bg-white shadow-sm border border-gray-100 rounded-full hover:bg-red-50 text-gray-500 hover:text-red-600 transition-colors"
+              title="Remove Widget"
+            >
+              <Trash2 size={14} />
+            </button>
+          </div>
+          <div className="absolute top-2 left-2 z-10 text-gray-400 cursor-grab active:cursor-grabbing draggable-handle bg-white/50 p-1 rounded-md backdrop-blur-sm">
+             <GripHorizontal size={16} />
+          </div>
+        </>
+      )}
+      
+      <div className={cn(
+        "w-full h-full overflow-hidden rounded-xl border transition-all duration-200",
+        isEditing 
+          ? "border-blue-400 border-dashed ring-4 ring-blue-50 bg-gray-50/50 scale-[0.98]" 
+          : "border-gray-200 shadow-sm bg-white hover:shadow-md"
+      )}>
+        <div className={cn("w-full h-full", isEditing && "pointer-events-none opacity-80 blur-[0.5px]")}>
+          {renderContent()}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/**
+ * MainCanvas Component
+ * 主内容区域，基于 react-grid-layout 实现可拖拽、可缩放的网格布局
+ */
+export default function MainCanvas() {
+  const { widgets, setWidgets } = useWidgetStore();
+  const { isEditing, isWidgetPickerOpen, closeWidgetPicker } = useUIStore();
+  const [editingWidget, setEditingWidget] = useState<Widget | null>(null);
+  const [mounted, setMounted] = useState(false);
+  
+  // 获取容器宽度以动态调整网格列数
+  const { width, containerRef } = useContainerWidth();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // 根据容器宽度计算当前列数 (响应式断点)
+  const currentCols = useMemo(() => {
+    if (!width) return 6;
+    if (width >= 1200) return 6;
+    if (width >= 996) return 4;
+    if (width >= 768) return 3;
+    if (width >= 480) return 2;
+    return 1;
+  }, [width]);
+
+  // 生成 react-grid-layout 所需的布局配置
+  const layout = useMemo<RGLLayout>(() => {
+    return widgets.map<RGLLayoutItem>((widget) => ({
+      i: widget.id,
+      x: widget.position?.x ?? 0,
+      y: widget.position?.y ?? Infinity,
+      w: widget.size.w,
+      h: widget.size.h,
+      isDraggable: isEditing,
+      isResizable: isEditing,
+    }));
+  }, [widgets, isEditing]);
+
+  // 布局变更回调：更新小组件的位置和尺寸
+  const onLayoutChange = useCallback((layout: RGLLayout) => {
+    if (!isEditing) return;
+    const hasChanged = layout.some(l => {
+      const w = widgets.find(w => w.id === l.i);
+      if (!w) return false;
+      return w.position.x !== l.x || w.position.y !== l.y || w.size.w !== l.w || w.size.h !== l.h;
+    });
+
+    if (hasChanged) {
+      const newWidgets = widgets.map(w => {
+        const l = layout.find(item => item.i === w.id);
+        if (l) {
+          return {
+            ...w,
+            position: { x: l.x, y: l.y },
+            size: { w: l.w, h: l.h }
+          };
+        }
+        return w;
+      });
+      setWidgets(newWidgets);
+    }
+  }, [widgets, setWidgets, isEditing]);
+
+  return (
+    <main className="flex-1 p-6 overflow-y-auto bg-gray-50/50">
+      <div ref={containerRef} className="max-w-7xl mx-auto min-h-[500px]">
+         {mounted && width > 0 && (
+           <GridLayout
+              {...{
+                className: "layout",
+                layout,
+                cols: currentCols,
+                rowHeight: 150, // 行高固定为 150px
+                width,
+                margin: [16, 16], // 网格间距
+                isDraggable: isEditing,
+                isResizable: isEditing,
+                draggableHandle: ".draggable-handle", // 指定拖拽手柄类名
+                onLayoutChange,
+                compactType: null, // 禁止自动向上吸附，允许任意位置摆放
+                preventCollision: false, // 允许碰撞（重叠时挤开）
+              } as any}
+           >
+             {widgets.map((widget) => (
+               <div key={widget.id}>
+                 <WidgetItemContent widget={widget} onEdit={setEditingWidget} />
+               </div>
+             ))}
+           </GridLayout>
+         )}
+
+         {/* Add Widget Button moved to Header */}
+      </div>
+      
+      <WidgetPicker 
+        isOpen={isWidgetPickerOpen} 
+        onClose={closeWidgetPicker} 
+      />
+      <WidgetSettingsModal 
+        isOpen={!!editingWidget} 
+        widget={editingWidget} 
+        onClose={() => setEditingWidget(null)} 
+      />
+    </main>
+  );
+}
