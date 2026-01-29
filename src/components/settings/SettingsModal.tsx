@@ -1,12 +1,13 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useTransition } from 'react';
 import { cn } from '@/lib/utils';
 import Modal from '@/components/ui/Modal';
 import { useBookmarkStore } from '@/store/useBookmarkStore';
 import { useWidgetStore } from '@/store/useWidgetStore';
 import { useToastStore } from '@/store/useToastStore';
-import { useLanguageStore } from '@/store/useLanguageStore';
 import { Download, Upload, RefreshCw, AlertTriangle, FileJson, Globe } from 'lucide-react';
 import { Bookmark, Widget } from '@/types';
+import { useTranslations, useLocale } from 'next-intl';
+import { usePathname, useRouter } from '@/navigation';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -17,10 +18,24 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const { bookmarks } = useBookmarkStore();
   const { widgets, setWidgets } = useWidgetStore();
   const { addToast } = useToastStore();
-  const { language, setLanguage, t } = useLanguageStore();
   
+  // Internationalization
+  const t = useTranslations('SettingsModal');
+  const tGeneral = useTranslations('General');
+  const locale = useLocale();
+  const router = useRouter();
+  const pathname = usePathname();
+  const [isPending, startTransition] = useTransition();
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isResetting, setIsResetting] = useState(false);
+
+  const handleLanguageChange = (newLocale: string) => {
+    startTransition(() => {
+      // @ts-ignore
+      router.replace(pathname, { locale: newLocale });
+    });
+  };
 
   // Helper to trigger download
   const handleExport = () => {
@@ -88,7 +103,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={t('settings_title')}>
+    <Modal isOpen={isOpen} onClose={onClose} title={t('title')}>
       <div className="space-y-6">
         
         {/* Language Section */}
@@ -102,23 +117,27 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           </p>
           <div className="flex space-x-2">
             <button
-              onClick={() => setLanguage('en')}
+              disabled={isPending}
+              onClick={() => handleLanguageChange('en')}
               className={cn(
                 "flex-1 py-2 px-4 rounded-lg border text-sm font-medium transition-colors",
-                language === 'en' 
+                locale === 'en' 
                   ? "bg-blue-50 border-blue-500 text-blue-700" 
-                  : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+                  : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50",
+                isPending && "opacity-50 cursor-not-allowed"
               )}
             >
               English
             </button>
             <button
-              onClick={() => setLanguage('zh')}
+              disabled={isPending}
+              onClick={() => handleLanguageChange('zh')}
               className={cn(
                 "flex-1 py-2 px-4 rounded-lg border text-sm font-medium transition-colors",
-                language === 'zh' 
+                locale === 'zh' 
                   ? "bg-blue-50 border-blue-500 text-blue-700" 
-                  : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+                  : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50",
+                isPending && "opacity-50 cursor-not-allowed"
               )}
             >
               中文
@@ -198,7 +217,6 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             </p>
           )}
         </div>
-
       </div>
     </Modal>
   );

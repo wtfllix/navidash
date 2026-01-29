@@ -1,18 +1,37 @@
 import { NextResponse } from 'next/server';
 import { getWidgets, saveWidgets } from '@/lib/server/storage';
-import { Widget } from '@/types';
+import { WidgetsArraySchema } from '@/lib/schemas';
+import { z, ZodError } from 'zod';
 
+/**
+ * GET /api/widgets
+ * 获取所有小组件配置数据
+ * @returns {Promise<NextResponse>} 小组件列表 JSON
+ */
 export async function GET() {
   const widgets = await getWidgets();
   return NextResponse.json(widgets);
 }
 
+/**
+ * POST /api/widgets
+ * 保存小组件配置到服务器
+ * 包含 Zod 数据验证
+ * @param {Request} request 包含小组件数组的请求体
+ * @returns {Promise<NextResponse>} 成功或错误响应
+ */
 export async function POST(request: Request) {
   try {
-    const widgets: Widget[] = await request.json();
+    const body = await request.json();
+    const widgets = WidgetsArraySchema.parse(body); // Validation
     await saveWidgets(widgets);
     return NextResponse.json({ success: true });
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to save widgets' }, { status: 500 });
+    if (error instanceof ZodError) {
+      console.error('Validation error:', JSON.stringify(error.errors, null, 2));
+      return NextResponse.json({ error: error.errors }, { status: 400 });
+    }
+    console.error('Server error:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

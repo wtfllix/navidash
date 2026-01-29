@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Bookmark } from '@/types';
+import { initialBookmarks } from '@/config/initialData';
 
 /**
  * BookmarkState Interface
@@ -15,64 +16,10 @@ interface BookmarkState {
   fetchBookmarks: () => Promise<void>; // 从服务器获取书签数据
 }
 
-// 初始默认书签数据
-const initialBookmarks: Bookmark[] = [
-  {
-    id: '1',
-    title: 'TrueNAS (192.168.31.15)',
-    icon: 'server',
-    children: [
-      { id: '1-1', title: '📁Filebrowser', url: 'http://192.168.31.15:30051' },
-      { id: '1-2', title: '🖼️immich', url: 'http://192.168.31.15:30041' },
-      { id: '1-3', title: 'Minio', url: 'http://192.168.31.15:9000' },
-      { id: '1-4', title: 'TrueNAS', url: 'http://192.168.31.15' },
-    ],
-  },
-  {
-    id: '2',
-    title: 'PVE (192.168.31.87)',
-    icon: 'cpu',
-    children: [
-      { id: '2-1', title: 'PVE', url: 'https://192.168.31.87:8006' },
-      { id: '2-2', title: 'iStoreOS', url: 'http://192.168.31.88' },
-    ],
-  },
-  {
-    id: '3',
-    title: '工具服务',
-    icon: 'tool',
-    children: [
-      { id: '3-1', title: '入职检查', url: 'https://nav.lonsdaleite.cc/fieldcheck.html' },
-      { id: '3-2', title: 'Joplin', url: 'https://joplin.lonsdaleite.cc' },
-      { id: '3-3', title: '压缩', url: 'https://compress.lonsdaleite.cc' },
-    ],
-  },
-  {
-    id: '4',
-    title: '娱乐媒体',
-    icon: 'play',
-    children: [
-      { id: '4-1', title: 'Bilibili', url: 'https://bilibili.com' },
-      { id: '4-2', title: '虎牙', url: 'https://huya.com' },
-      { id: '4-3', title: '抖音', url: 'https://douyin.com' },
-      { id: '4-4', title: 'Emby', url: 'http://192.168.31.19:8096/' },
-    ],
-  },
-  {
-    id: '5',
-    title: '社交网络',
-    icon: 'globe',
-    children: [
-      { id: '5-1', title: 'Weibo', url: 'https://weibo.com' },
-      { id: '5-2', title: 'Facebook', url: 'https://facebook.com' },
-      { id: '5-3', title: 'Instagram', url: 'https://instagram.com' },
-      { id: '5-4', title: 'Reddit', url: 'https://reddit.com' },
-    ],
-  },
-];
+// 初始默认书签数据 (Moved to src/config/initialData.ts)
+
 
 import { useToastStore } from '@/store/useToastStore';
-import { useLanguageStore } from '@/store/useLanguageStore';
 
 /**
  * saveToServer
@@ -92,8 +39,7 @@ const saveToServer = async (bookmarks: Bookmark[]) => {
   } catch (error) {
     console.error('Failed to save bookmarks:', error);
     // Notify user about the failure
-     const t = useLanguageStore.getState().t;
-     useToastStore.getState().addToast(t('save_error'), 'error');
+     useToastStore.getState().addToast('save_error', 'error');
    }
  };
 
@@ -128,14 +74,21 @@ export const useBookmarkStore = create<BookmarkState>()(
             newBookmarks = [...state.bookmarks, bookmark];
           } else {
             // 递归查找父节点并添加子项
+            /**
+             * 递归函数：在书签树中查找目标父节点并添加新书签
+             * @param {Bookmark[]} items - 当前层级的书签列表
+             * @returns {Bookmark[]} 更新后的书签列表
+             */
             const addRecursive = (items: Bookmark[]): Bookmark[] => {
               return items.map((item) => {
+                // 找到目标父节点
                 if (item.id === parentId) {
                   return {
                     ...item,
                     children: [...(item.children || []), bookmark],
                   };
                 }
+                // 如果当前节点有子节点，继续递归查找
                 if (item.children) {
                   return {
                     ...item,

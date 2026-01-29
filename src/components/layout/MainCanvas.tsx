@@ -11,6 +11,7 @@ import WidgetPicker from '../widgets/WidgetPicker';
 import WidgetSettingsModal from '../widgets/WidgetSettingsModal';
 import { Trash2, GripHorizontal, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTranslations } from 'next-intl';
 
 import GridLayout from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
@@ -58,9 +59,10 @@ type RGLLayout = RGLLayoutItem[];
  * WidgetItemContent Component
  * 小组件容器封装，处理编辑模式下的拖拽手柄和操作按钮
  */
-const WidgetItemContent = ({ widget, onEdit }: { widget: Widget; onEdit: (widget: Widget) => void }) => {
+const WidgetItemContent = React.memo(({ widget, onEdit }: { widget: Widget; onEdit: (widget: Widget) => void }) => {
   const { removeWidget } = useWidgetStore();
   const { isEditing } = useUIStore();
+  const t = useTranslations('Widgets');
 
   const renderContent = () => {
     switch (widget.type) {
@@ -74,7 +76,7 @@ const WidgetItemContent = ({ widget, onEdit }: { widget: Widget; onEdit: (widget
         return (
           <div className="flex flex-col items-center justify-center h-full">
             <span className="text-xs font-bold uppercase text-gray-400 mb-2">{widget.type}</span>
-            <div className="text-gray-600 font-medium">Coming Soon</div>
+            <div className="text-gray-600 font-medium">{t('coming_soon')}</div>
           </div>
         );
     }
@@ -90,7 +92,8 @@ const WidgetItemContent = ({ widget, onEdit }: { widget: Widget; onEdit: (widget
               onPointerDown={(e) => e.stopPropagation()}
               onClick={(e) => { e.stopPropagation(); onEdit(widget); }}
               className="p-1.5 bg-white shadow-sm border border-gray-100 rounded-full hover:bg-blue-50 text-gray-500 hover:text-blue-600 transition-colors"
-              title="Edit Widget"
+              title={t('edit_widget')}
+              aria-label={t('edit_widget')}
             >
               <Settings size={14} />
             </button>
@@ -98,12 +101,13 @@ const WidgetItemContent = ({ widget, onEdit }: { widget: Widget; onEdit: (widget
               onPointerDown={(e) => e.stopPropagation()}
               onClick={(e) => { e.stopPropagation(); removeWidget(widget.id); }}
               className="p-1.5 bg-white shadow-sm border border-gray-100 rounded-full hover:bg-red-50 text-gray-500 hover:text-red-600 transition-colors"
-              title="Remove Widget"
+              title={t('remove_widget')}
+              aria-label={t('remove_widget')}
             >
               <Trash2 size={14} />
             </button>
           </div>
-          <div className="absolute top-2 left-2 z-10 text-gray-400 cursor-grab active:cursor-grabbing draggable-handle bg-white/50 p-1 rounded-md backdrop-blur-sm">
+          <div className="absolute top-2 left-2 z-10 text-gray-400 cursor-grab active:cursor-grabbing draggable-handle bg-white/50 p-1 rounded-md backdrop-blur-sm" aria-hidden="true">
              <GripHorizontal size={16} />
           </div>
         </>
@@ -121,7 +125,8 @@ const WidgetItemContent = ({ widget, onEdit }: { widget: Widget; onEdit: (widget
       </div>
     </div>
   );
-};
+});
+WidgetItemContent.displayName = 'WidgetItemContent';
 
 /**
  * MainCanvas Component

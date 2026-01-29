@@ -3,8 +3,8 @@ import Modal from '@/components/ui/Modal';
 import { Bookmark } from '@/types';
 import { useBookmarkStore } from '@/store/useBookmarkStore';
 import { useToastStore } from '@/store/useToastStore';
-import { useLanguageStore } from '@/store/useLanguageStore';
 import { v4 as uuidv4 } from 'uuid';
+import { useTranslations } from 'next-intl';
 import { 
   Folder, Link as LinkIcon, Globe, Server, Cpu, Wrench, PlayCircle, 
   Cloud, Database, Code, Terminal, Home, Star, Zap, Book, Image, Music, Video,
@@ -124,7 +124,9 @@ const ICON_CATEGORIES = {
 export default function BookmarkModal({ isOpen, onClose, initialData, parentId, mode }: BookmarkModalProps) {
   const { addBookmark, updateBookmark } = useBookmarkStore();
   const { addToast } = useToastStore();
-  const { t } = useLanguageStore();
+  const t = useTranslations('BookmarkModal');
+  const tGeneral = useTranslations('General');
+  
   const [title, setTitle] = useState('');
   const [url, setUrl] = useState('');
   const [isFolder, setIsFolder] = useState(false);
@@ -287,13 +289,13 @@ export default function BookmarkModal({ isOpen, onClose, initialData, parentId, 
             onClick={onClose}
             className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
           >
-            {t('cancel')}
+            {tGeneral('cancel')}
           </button>
           <button
             type="submit"
             className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
-            {mode === 'add' ? t('create') : t('save')}
+            {mode === 'add' ? tGeneral('create') : tGeneral('save')}
           </button>
         </div>
       </form>

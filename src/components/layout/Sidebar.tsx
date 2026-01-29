@@ -17,8 +17,8 @@ import { Bookmark } from '@/types';
 import BookmarkModal from '@/components/ui/BookmarkModal';
 import SettingsModal from '@/components/settings/SettingsModal';
 import { useToastStore } from '@/store/useToastStore';
-import { useLanguageStore } from '@/store/useLanguageStore';
 import { useUIStore } from '@/store/useUIStore';
+import { useTranslations } from 'next-intl';
 
 const iconMap: Record<string, React.ElementType> = {
   folder: Folder,
@@ -137,6 +137,7 @@ interface BookmarkItemProps {
 const BookmarkItem = ({ item, isCollapsed, forceOpen, onEdit, onDelete, onAddChild }: BookmarkItemProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const { selectedCategoryId, setSelectedCategoryId, open } = useSidebarStore();
+  const t = useTranslations('General');
   const hasChildren = item.children && item.children.length > 0; // Just check if it has children array, technically empty array is still a folder if defined
   const isFolder = !!item.children;
   const isSelected = selectedCategoryId === item.id;
@@ -237,7 +238,8 @@ const BookmarkItem = ({ item, isCollapsed, forceOpen, onEdit, onDelete, onAddChi
                 <button 
                     onClick={(e) => { e.stopPropagation(); onAddChild(item.id); }}
                     className="p-1 hover:bg-blue-100 text-gray-400 hover:text-blue-600 rounded"
-                    title="Add Link"
+                    title={t('create')}
+                    aria-label={t('create')}
                 >
                     <Plus size={12} />
                 </button>
@@ -245,14 +247,16 @@ const BookmarkItem = ({ item, isCollapsed, forceOpen, onEdit, onDelete, onAddChi
             <button 
                 onClick={(e) => { e.stopPropagation(); onEdit(item); }}
                 className="p-1 hover:bg-gray-200 text-gray-400 hover:text-gray-700 rounded"
-                title="Edit"
+                title={t('edit')}
+                aria-label={t('edit')}
             >
                 <Edit2 size={12} />
             </button>
             <button 
                 onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
                 className="p-1 hover:bg-red-100 text-gray-400 hover:text-red-600 rounded"
-                title="Delete"
+                title={t('delete')}
+                aria-label={t('delete')}
             >
                 <Trash2 size={12} />
             </button>
@@ -314,7 +318,8 @@ export default function Sidebar() {
   } = useSidebarStore();
 
   const { addToast } = useToastStore();
-  const { t } = useLanguageStore();
+  const t = useTranslations('Sidebar');
+  const tGeneral = useTranslations('General');
   const { isSettingsOpen, openSettings, closeSettings } = useUIStore();
   const [mounted, setMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -411,6 +416,8 @@ export default function Sidebar() {
                 toggle();
               }}
               className="p-1 hover:bg-gray-100 rounded-md transition-colors"
+              aria-label={t('toggle_sidebar')}
+              aria-expanded={isOpen}
             >
               <Menu size={20} />
             </button>
@@ -423,10 +430,11 @@ export default function Sidebar() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={14} />
                 <input 
                     type="text" 
-                    placeholder="Search..." 
+                    placeholder={t('search')} 
                   className="w-full pl-9 pr-2 py-1.5 bg-gray-50 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
+                    aria-label={t('search')}
                 />
             </div>
         </div>
@@ -446,7 +454,7 @@ export default function Sidebar() {
             />
             ))
         ) : (
-            isOpen && <div className="text-center text-xs text-gray-400 py-4">No results found</div>
+            isOpen && <div className="text-center text-xs text-gray-400 py-4">{t('no_results')}</div>
         )}
       </div>
 
@@ -461,7 +469,8 @@ export default function Sidebar() {
             openSettings();
           }}
           className="p-2 text-gray-400 hover:text-gray-600 hover:bg-white rounded-lg transition-all shadow-sm hover:shadow"
-          title={t('settings')}
+          title={tGeneral('settings')}
+          aria-label={tGeneral('settings')}
         >
           <Settings size={20} />
         </button>
@@ -471,7 +480,8 @@ export default function Sidebar() {
             toggleLayoutMode();
           }}
           className="p-2 text-gray-400 hover:text-gray-600 hover:bg-white rounded-lg transition-all shadow-sm hover:shadow"
-          title={layoutMode === 'overlay' ? t('switch_to_fixed') || "Switch to Fixed Layout" : t('switch_to_auto') || "Switch to Auto Layout"}
+          title={layoutMode === 'overlay' ? t('switch_to_fixed') : t('switch_to_auto')}
+          aria-label={layoutMode === 'overlay' ? t('switch_to_fixed') : t('switch_to_auto')}
         >
           {layoutMode === 'overlay' ? <Layers size={20} /> : <PanelLeft size={20} />}
         </button>
@@ -488,6 +498,7 @@ export default function Sidebar() {
                 !isOpen && "bg-transparent hover:bg-gray-100 border-transparent text-gray-500"
             )}
             title={t('add_category')}
+            aria-label={t('add_category')}
         >
             <Plus size={20} />
             {isOpen && <span className="ml-2 text-sm font-medium">{t('add_category')}</span>}

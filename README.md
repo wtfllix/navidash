@@ -41,6 +41,22 @@
 <img width="1920" height="869" alt="image" src="https://github.com/user-attachments/assets/7a760b5a-3514-41f8-9b70-15536af98934" />
 
 
+## 🎮 演示模式 (Demo Mode)
+
+本分支支持“演示模式”，允许用户自由体验 UI 交互（增删改书签/组件），但数据**不会持久化**，刷新页面即重置。
+
+要启用演示模式，请设置环境变量：
+
+```bash
+NEXT_PUBLIC_DEMO_MODE=true
+```
+
+**部署说明**：
+- 在 Vercel/Netlify 等平台部署时，请在后台 Environment Variables 中添加此变量。
+- 本地开发时，可在根目录创建 `.env.local` 文件并写入 `NEXT_PUBLIC_DEMO_MODE=true`。
+
+---
+
 ## 🚀 快速开始
 
 ### 🐳 使用 Docker 部署（推荐）
@@ -49,7 +65,7 @@
 
 1.  **克隆仓库**
     ```bash
-    git clone https://github.com/wftllix/navidash.git
+    git clone https://github.com/yourusername/navidash.git
     cd navidash
     ```
 

@@ -3,9 +3,11 @@ import React from 'react';
 import { useToastStore } from '@/store/useToastStore';
 import { X, CheckCircle, AlertCircle, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTranslations } from 'next-intl';
 
 export default function ToastContainer() {
   const { toasts, removeToast } = useToastStore();
+  const t = useTranslations('Toast');
 
   if (toasts.length === 0) return null;
 
@@ -24,7 +26,7 @@ export default function ToastContainer() {
           {toast.type === 'success' && <CheckCircle size={16} />}
           {toast.type === 'error' && <AlertCircle size={16} />}
           {toast.type === 'info' && <Info size={16} />}
-          <span>{toast.message}</span>
+          <span>{t.has(toast.message) ? t(toast.message) : toast.message}</span>
           <button
             onClick={() => removeToast(toast.id)}
             className="ml-2 hover:opacity-70"

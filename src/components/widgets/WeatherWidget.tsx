@@ -14,6 +14,7 @@ import {
   Loader2,
   MapPin
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 interface WeatherData {
   temperature: number;
@@ -33,23 +34,23 @@ const getWeatherIcon = (code: number, size: number = 48) => {
   return <CloudSun className="text-gray-500" size={size} />;
 };
 
-const getWeatherDesc = (code: number) => {
-  const codes: Record<number, string> = {
-    0: '晴朗',
-    1: '多云', 2: '多云', 3: '阴',
-    45: '雾', 48: '雾',
-    51: '小雨', 53: '中雨', 55: '大雨',
-    61: '小雨', 63: '中雨', 65: '大雨',
-    71: '小雪', 73: '中雪', 75: '大雪',
-    95: '雷雨', 96: '雷雨', 99: '雷雨'
-  };
-  return codes[code] || '未知';
-};
-
-export default function WeatherWidget({ widget }: { widget: Widget }) {
+const WeatherWidget = React.memo(({ widget }: { widget: Widget }) => {
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const t = useTranslations('Widgets');
+
+  const getWeatherDesc = (code: number) => {
+    if (code === 0) return t('weather_clear');
+    if (code >= 1 && code <= 3) return t('weather_cloudy');
+    if (code >= 45 && code <= 48) return t('weather_fog');
+    if (code >= 51 && code <= 57) return t('weather_drizzle');
+    if (code >= 61 && code <= 67) return t('weather_rain');
+    if (code >= 71 && code <= 77) return t('weather_snow');
+    if (code >= 80 && code <= 82) return t('weather_rain');
+    if (code >= 95 && code <= 99) return t('weather_thunderstorm');
+    return t('weather_unknown');
+  };
 
   // Default to Beijing if not configured
   // In a real app, we would use navigator.geolocation or IP-based location
@@ -98,25 +99,37 @@ export default function WeatherWidget({ widget }: { widget: Widget }) {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center h-full w-full bg-white rounded-xl shadow-sm border border-gray-100 p-3 relative overflow-hidden group">
-      <div className="z-10 flex flex-col items-center justify-between h-full py-1">
-        <div className="transform group-hover:scale-110 transition-transform duration-300">
-          {getWeatherIcon(weather.weathercode, 32)}
+    <div 
+      className="flex flex-col items-center justify-center h-full w-full bg-white rounded-2xl shadow-sm border border-gray-100 p-4 relative overflow-hidden group"
+      role="region"
+      aria-label={`${t('weather')} - ${city}`}
+    >
+      <div className="flex items-center justify-between w-full mb-2">
+        <div className="flex items-center text-gray-500 text-xs font-medium">
+          <MapPin size={12} className="mr-1" />
+          {city}
         </div>
-        
-        <div className="text-2xl font-bold text-gray-800 tracking-tight leading-none">
-          {weather.temperature}°
+        <div className="text-xs text-gray-400">
+          {getWeatherDesc(weather.weathercode)}
         </div>
-        
-        <div className="text-xs font-medium text-gray-500 flex items-center space-x-1">
-          <span>{getWeatherDesc(weather.weathercode)}</span>
-        </div>
-
-        <div className="flex items-center text-[10px] text-gray-400 mt-auto">
-           <MapPin size={10} className="mr-0.5" />
-           <span className="truncate max-w-[80px]">{city}</span>
+      </div>
+      
+      <div className="flex items-center justify-center flex-1 my-2">
+        {getWeatherIcon(weather.weathercode)}
+        <div className="ml-4">
+          <div className="text-3xl font-bold text-gray-800 tracking-tighter">
+            {Math.round(weather.temperature)}°
+          </div>
+          <div className="flex items-center text-gray-400 text-xs mt-1">
+             <Wind size={12} className="mr-1" />
+             {weather.windspeed} {t('unit_speed')}
+          </div>
         </div>
       </div>
     </div>
   );
-}
+});
+
+WeatherWidget.displayName = 'WeatherWidget';
+
+export default WeatherWidget;

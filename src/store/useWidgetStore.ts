@@ -55,7 +55,7 @@ export const useWidgetStore = create<WidgetState>()(
       // 从服务器获取小组件数据
       fetchWidgets: async () => {
         try {
-          const res = await fetch('/api/widgets');
+          const res = await fetch(`/api/widgets?t=${Date.now()}`);
           if (res.ok) {
             const data = await res.json();
             if (data && Array.isArray(data) && data.length > 0) {

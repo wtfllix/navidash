@@ -29,7 +29,6 @@ src/
 | `useSidebarStore.ts` | **侧边栏状态** | 控制侧边栏展开/收起、切换布局模式 (Push/Overlay) |
 | `useWidgetStore.ts` | **小组件管理** | 管理桌面小组件的列表、位置、尺寸及配置信息 |
 | `useUIStore.ts` | **全局 UI 交互** | 控制编辑模式、设置弹窗、小组件选择器的显示状态 |
-| `useLanguageStore.ts` | **国际化 (i18n)** | 管理应用语言切换 (中文/English) |
 | `useToastStore.ts` | **消息通知** | 管理全局 Toast 消息队列 |
 
 ### 2. 核心布局组件 (`src/components/layout/`)
