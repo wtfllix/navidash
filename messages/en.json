@@ -31,7 +31,7 @@
     "save_error": "Failed to save data to server",
     "save_success": "Saved successfully"
   },
-  "Widgets": {
+  "BookmarkModal": {
     "add_bookmark": "Add Bookmark",
     "edit_item": "Edit Item",
     "title": "Title",
