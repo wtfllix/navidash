@@ -138,6 +138,7 @@ const BookmarkItem = ({ item, isCollapsed, forceOpen, onEdit, onDelete, onAddChi
   const [isOpen, setIsOpen] = useState(false);
   const { selectedCategoryId, setSelectedCategoryId, open } = useSidebarStore();
   const t = useTranslations('General');
+  const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
   const hasChildren = item.children && item.children.length > 0; // Just check if it has children array, technically empty array is still a folder if defined
   const isFolder = !!item.children;
   const isSelected = selectedCategoryId === item.id;
@@ -234,7 +235,7 @@ const BookmarkItem = ({ item, isCollapsed, forceOpen, onEdit, onDelete, onAddChi
         </div>
 
         <div className="opacity-0 group-hover:opacity-100 flex items-center space-x-1 transition-opacity">
-            {isFolder && (
+            {!isDemoMode && isFolder && (
                 <button 
                     onClick={(e) => { e.stopPropagation(); onAddChild(item.id); }}
                     className="p-1 hover:bg-blue-100 text-gray-400 hover:text-blue-600 rounded"
@@ -244,22 +245,26 @@ const BookmarkItem = ({ item, isCollapsed, forceOpen, onEdit, onDelete, onAddChi
                     <Plus size={12} />
                 </button>
             )}
-            <button 
-                onClick={(e) => { e.stopPropagation(); onEdit(item); }}
-                className="p-1 hover:bg-gray-200 text-gray-400 hover:text-gray-700 rounded"
-                title={t('edit')}
-                aria-label={t('edit')}
-            >
-                <Edit2 size={12} />
-            </button>
-            <button 
-                onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
-                className="p-1 hover:bg-red-100 text-gray-400 hover:text-red-600 rounded"
-                title={t('delete')}
-                aria-label={t('delete')}
-            >
-                <Trash2 size={12} />
-            </button>
+            {!isDemoMode && (
+                <>
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); onEdit(item); }}
+                        className="p-1 hover:bg-gray-200 text-gray-400 hover:text-gray-700 rounded"
+                        title={t('edit')}
+                        aria-label={t('edit')}
+                    >
+                        <Edit2 size={12} />
+                    </button>
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
+                        className="p-1 hover:bg-red-100 text-gray-400 hover:text-red-600 rounded"
+                        title={t('delete')}
+                        aria-label={t('delete')}
+                    >
+                        <Trash2 size={12} />
+                    </button>
+                </>
+            )}
         </div>
       </div>
       {isFolder && (
@@ -320,6 +325,7 @@ export default function Sidebar() {
   const { addToast } = useToastStore();
   const t = useTranslations('Sidebar');
   const tGeneral = useTranslations('General');
+  const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
   const { isSettingsOpen, openSettings, closeSettings } = useUIStore();
   const [mounted, setMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -408,7 +414,16 @@ export default function Sidebar() {
       >
         {/* Header: Logo & Toggle Button */}
         <div className="h-14 flex items-center justify-between px-4 border-b border-gray-100">
-          {isOpen && <span className="font-bold text-lg tracking-tight">Navidash</span>}
+          {isOpen && (
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-lg tracking-tight">Navidash</span>
+              {isDemoMode && (
+                <span className="px-1.5 py-0.5 bg-yellow-100 text-yellow-700 text-[10px] font-bold uppercase rounded border border-yellow-200">
+                  Demo
+                </span>
+              )}
+            </div>
+          )}
           <div className="flex items-center gap-1">
             <button
               onClick={(e) => {

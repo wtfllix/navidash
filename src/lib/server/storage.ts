@@ -2,10 +2,14 @@ import fs from 'fs/promises';
 import path from 'path';
 import { Bookmark, Widget } from '@/types';
 import { logger } from '@/lib/logger';
+import { initialBookmarks } from '@/config/initialData';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 const BOOKMARKS_FILE = path.join(DATA_DIR, 'bookmarks.json');
 const WIDGETS_FILE = path.join(DATA_DIR, 'widgets.json');
+
+// 检查是否为演示模式
+const IS_DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
 
 /**
  * 确保数据目录存在
@@ -13,6 +17,7 @@ const WIDGETS_FILE = path.join(DATA_DIR, 'widgets.json');
  * @returns {Promise<void>}
  */
 async function ensureDataDir() {
+  if (IS_DEMO_MODE) return; // 演示模式下不创建目录
   try {
     await fs.access(DATA_DIR);
   } catch {
@@ -27,14 +32,20 @@ async function ensureDataDir() {
  * @returns {Promise<Bookmark[] | null>} 书签列表或 null
  */
 export async function getBookmarks(): Promise<Bookmark[] | null> {
+  if (IS_DEMO_MODE) {
+    logger.info('Demo mode: returning initial bookmarks');
+    return initialBookmarks;
+  }
+  
   try {
     await ensureDataDir();
     const data = await fs.readFile(BOOKMARKS_FILE, 'utf-8');
     return JSON.parse(data);
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-      logger.info('Bookmarks file not found, returning null');
-      return null;
+      logger.info('Bookmarks file not found, returning initial bookmarks');
+      // 如果文件不存在，也返回初始数据，而不是 null
+      return initialBookmarks;
     }
     logger.error('Failed to read bookmarks', error);
     return null;
@@ -49,6 +60,11 @@ export async function getBookmarks(): Promise<Bookmark[] | null> {
  * @throws {Error} 如果写入失败则抛出错误
  */
 export async function saveBookmarks(bookmarks: Bookmark[]): Promise<void> {
+  if (IS_DEMO_MODE) {
+    logger.info('Demo mode: save skipped');
+    return;
+  }
+
   try {
     await ensureDataDir();
     await fs.writeFile(BOOKMARKS_FILE, JSON.stringify(bookmarks, null, 2), 'utf-8');
@@ -65,6 +81,11 @@ export async function saveBookmarks(bookmarks: Bookmark[]): Promise<void> {
  * @returns {Promise<Widget[] | null>} 小组件列表或 null
  */
 export async function getWidgets(): Promise<Widget[] | null> {
+  if (IS_DEMO_MODE) {
+    logger.info('Demo mode: returning empty widgets');
+    return [];
+  }
+
   try {
     await ensureDataDir();
     const data = await fs.readFile(WIDGETS_FILE, 'utf-8');
@@ -87,6 +108,11 @@ export async function getWidgets(): Promise<Widget[] | null> {
  * @throws {Error} 如果写入失败则抛出错误
  */
 export async function saveWidgets(widgets: Widget[]): Promise<void> {
+  if (IS_DEMO_MODE) {
+    logger.info('Demo mode: save skipped');
+    return;
+  }
+
   try {
     await ensureDataDir();
     await fs.writeFile(WIDGETS_FILE, JSON.stringify(widgets, null, 2), 'utf-8');
