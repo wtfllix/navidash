@@ -11,8 +11,6 @@
 
 ---
 
-## Demo 地址
-[Navidash](https://navidash-git-demo-wtfllixs-projects.vercel.app/)
 ## ✨ 功能特性
 
 - 🎨 **现代化 UI 设计**
@@ -38,8 +36,7 @@
 
 ## 📸 界面预览
 
-<img width="1920" height="869" alt="image" src="https://github.com/user-attachments/assets/7a760b5a-3514-41f8-9b70-15536af98934" />
-
+*(此处建议上传项目截图后替换链接，例如：`![Dashboard Preview](docs/preview.png)`)*
 
 ## 🎮 演示模式 (Demo Mode)
 
