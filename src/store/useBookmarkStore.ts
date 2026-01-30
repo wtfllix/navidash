@@ -24,24 +24,35 @@ import { useToastStore } from '@/store/useToastStore';
 /**
  * saveToServer
  * 将书签数据持久化到服务器（JSON文件）
+ * 使用简单的防抖机制，避免频繁请求
  * @param bookmarks 最新的书签列表
  */
-const saveToServer = async (bookmarks: Bookmark[]) => {
-  try {
-    const res = await fetch('/api/bookmarks', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(bookmarks),
-    });
-    if (!res.ok) {
+let saveTimeout: NodeJS.Timeout | null = null;
+
+const saveToServer = (bookmarks: Bookmark[]) => {
+  if (saveTimeout) {
+    clearTimeout(saveTimeout);
+  }
+
+  saveTimeout = setTimeout(async () => {
+    try {
+      const res = await fetch('/api/bookmarks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bookmarks),
+      });
+      if (!res.ok) {
         throw new Error(`Server responded with ${res.status}`);
+      }
+    } catch (error) {
+      console.error('Failed to save bookmarks:', error);
+      // Notify user about the failure
+      useToastStore.getState().addToast('save_error', 'error');
+    } finally {
+      saveTimeout = null;
     }
-  } catch (error) {
-    console.error('Failed to save bookmarks:', error);
-    // Notify user about the failure
-     useToastStore.getState().addToast('save_error', 'error');
-   }
- };
+  }, 1000); // 1秒防抖
+};
 
 /**
  * useBookmarkStore

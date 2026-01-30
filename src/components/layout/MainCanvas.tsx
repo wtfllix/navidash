@@ -208,10 +208,10 @@ export default function MainCanvas() {
                 isDraggable: isEditing,
                 isResizable: isEditing,
                 draggableHandle: ".draggable-handle", // 指定拖拽手柄类名
-                onLayoutChange,
-                compactType: null, // 禁止自动向上吸附，允许任意位置摆放
-                preventCollision: false, // 允许碰撞（重叠时挤开）
-              } as any}
+                onLayoutChange: onLayoutChange,
+                compactType: null,
+                preventCollision: false,
+              }}
            >
              {widgets.map((widget) => (
                <div key={widget.id}>
