@@ -52,6 +52,7 @@ const WidgetItemContent = React.memo(({ widget, onEdit }: { widget: Widget; onEd
   const { removeWidget } = useWidgetStore();
   const { isEditing } = useUIStore();
   const t = useTranslations('Widgets');
+  const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
 
   const renderContent = () => {
     switch (widget.type) {
