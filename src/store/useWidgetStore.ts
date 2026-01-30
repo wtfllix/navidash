@@ -31,17 +31,28 @@ const initialWidgets: Widget[] = [
 /**
  * saveToServer
  * 将小组件配置持久化到服务器
+ * 使用简单的防抖机制，避免频繁请求
  */
-const saveToServer = async (widgets: Widget[]) => {
-  try {
-    await fetch('/api/widgets', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(widgets),
-    });
-  } catch (error) {
-    console.error('Failed to save widgets:', error);
+let saveTimeout: NodeJS.Timeout | null = null;
+
+const saveToServer = (widgets: Widget[]) => {
+  if (saveTimeout) {
+    clearTimeout(saveTimeout);
   }
+
+  saveTimeout = setTimeout(async () => {
+    try {
+      await fetch('/api/widgets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(widgets),
+      });
+    } catch (error) {
+      console.error('Failed to save widgets:', error);
+    } finally {
+      saveTimeout = null;
+    }
+  }, 1000); // 1秒防抖
 };
 
 /**

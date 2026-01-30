@@ -13,7 +13,7 @@ import { Trash2, GripHorizontal, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
 
-import GridLayout from 'react-grid-layout';
+import GridLayout, { noCompactor, Layout, LayoutItem } from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 
@@ -43,17 +43,6 @@ const useContainerWidth = () => {
 
   return { width, containerRef };
 };
-
-type RGLLayoutItem = {
-  i: string;
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-  isDraggable?: boolean;
-  isResizable?: boolean;
-};
-type RGLLayout = RGLLayoutItem[];
 
 /**
  * WidgetItemContent Component
@@ -156,8 +145,8 @@ export default function MainCanvas() {
   }, [width]);
 
   // 生成 react-grid-layout 所需的布局配置
-  const layout = useMemo<RGLLayout>(() => {
-    return widgets.map<RGLLayoutItem>((widget) => ({
+  const layout = useMemo<Layout>(() => {
+    return widgets.map<LayoutItem>((widget) => ({
       i: widget.id,
       x: widget.position?.x ?? 0,
       y: widget.position?.y ?? Infinity,
@@ -169,7 +158,7 @@ export default function MainCanvas() {
   }, [widgets, isEditing]);
 
   // 布局变更回调：更新小组件的位置和尺寸
-  const onLayoutChange = useCallback((layout: RGLLayout) => {
+  const onLayoutChange = useCallback((layout: Layout) => {
     if (!isEditing) return;
     const hasChanged = layout.some(l => {
       const w = widgets.find(w => w.id === l.i);
@@ -198,21 +187,24 @@ export default function MainCanvas() {
       <div ref={containerRef} className="max-w-7xl mx-auto min-h-[500px]">
          {mounted && width > 0 && (
            <GridLayout
-              {...{
-                className: "layout",
-                layout,
-                cols: currentCols,
-                rowHeight: 150, // 行高固定为 150px
-                width,
-                margin: [16, 16], // 网格间距
-                isDraggable: isEditing,
-                isResizable: isEditing,
-                draggableHandle: ".draggable-handle", // 指定拖拽手柄类名
-                onLayoutChange: onLayoutChange,
-                compactType: null,
-                preventCollision: false,
-              }}
-           >
+            className="layout"
+            layout={layout}
+            width={width}
+            gridConfig={{
+              cols: currentCols,
+              rowHeight: 150,
+              margin: [16, 16],
+            }}
+            dragConfig={{
+              enabled: isEditing,
+              handle: ".draggable-handle",
+            }}
+            resizeConfig={{
+              enabled: isEditing,
+            }}
+            compactor={noCompactor}
+            onLayoutChange={onLayoutChange}
+          >
              {widgets.map((widget) => (
                <div key={widget.id}>
                  <WidgetItemContent widget={widget} onEdit={setEditingWidget} />
