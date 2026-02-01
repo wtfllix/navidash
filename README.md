@@ -3,6 +3,8 @@
 > 一个极简、高效、高度可定制的个人导航仪表盘。
 > A clean, efficient, and highly customizable personal dashboard.
 
+**中文** | [English](./README_EN.md)
+
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Version](https://img.shields.io/badge/version-0.2.0-green)
 ![Next.js](https://img.shields.io/badge/Next.js-14-black)
