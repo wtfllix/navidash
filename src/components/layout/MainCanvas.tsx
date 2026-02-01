@@ -4,9 +4,15 @@ import React, { useEffect, useState, useMemo, useCallback, useRef } from "react"
 import { Widget } from '@/types';
 import { useWidgetStore } from '@/store/useWidgetStore';
 import { useUIStore } from '@/store/useUIStore';
+import { useSettingsStore } from '@/store/useSettingsStore';
 import ClockWidget from '../widgets/ClockWidget';
 import WeatherWidget from '../widgets/WeatherWidget';
+import DateWidget from '../widgets/DateWidget';
 import QuickLinkWidget from '../widgets/QuickLinkWidget';
+import TodoWidget from '../widgets/TodoWidget';
+import MemoWidget from '../widgets/MemoWidget';
+import CalendarWidget from '../widgets/CalendarWidget';
+import PhotoWidget from '../widgets/PhotoWidget';
 import WidgetPicker from '../widgets/WidgetPicker';
 import WidgetSettingsModal from '../widgets/WidgetSettingsModal';
 import { Trash2, GripHorizontal, Settings } from 'lucide-react';
@@ -60,8 +66,18 @@ const WidgetItemContent = React.memo(({ widget, onEdit }: { widget: Widget; onEd
         return <ClockWidget widget={widget} />;
       case 'weather':
         return <WeatherWidget widget={widget} />;
+      case 'date':
+        return <DateWidget widget={widget} />;
       case 'quick-link':
         return <QuickLinkWidget widget={widget} />;
+      case 'todo':
+        return <TodoWidget widget={widget} />;
+      case 'memo':
+        return <MemoWidget widget={widget} />;
+      case 'calendar':
+        return <CalendarWidget widget={widget} />;
+      case 'photo-frame':
+        return <PhotoWidget widget={widget} />;
       default:
         return (
           <div className="flex flex-col items-center justify-center h-full">
@@ -71,6 +87,8 @@ const WidgetItemContent = React.memo(({ widget, onEdit }: { widget: Widget; onEd
         );
     }
   };
+
+  const isTransparent = !isEditing && widget.type === 'clock' && widget.config?.clockStyle === 'analog';
 
   return (
     <div className="w-full h-full relative group">
@@ -104,10 +122,12 @@ const WidgetItemContent = React.memo(({ widget, onEdit }: { widget: Widget; onEd
       )}
       
       <div className={cn(
-        "w-full h-full overflow-hidden rounded-xl border transition-all duration-200",
+        "w-full h-full transition-all duration-200",
         isEditing 
-          ? "border-blue-400 border-dashed ring-4 ring-blue-50 bg-gray-50/50 scale-[0.98]" 
-          : "border-gray-200 shadow-sm bg-white hover:shadow-md"
+          ? "overflow-hidden rounded-xl border border-blue-400 border-dashed ring-4 ring-blue-50 bg-gray-50/50 scale-[0.98]" 
+          : isTransparent
+            ? ""
+            : "overflow-hidden rounded-xl border border-gray-200 shadow-sm bg-white hover:shadow-md"
       )}>
         <div className={cn("w-full h-full", isEditing && "pointer-events-none opacity-80 blur-[0.5px]")}>
           {renderContent()}
@@ -123,6 +143,13 @@ WidgetItemContent.displayName = 'WidgetItemContent';
  * 主内容区域，基于 react-grid-layout 实现可拖拽、可缩放的网格布局
  */
 export default function MainCanvas() {
+  const { 
+    backgroundImage, 
+    backgroundBlur, 
+    backgroundOpacity,
+    backgroundSize,
+    backgroundRepeat
+  } = useSettingsStore();
   const { widgets, setWidgets } = useWidgetStore();
   const { isEditing, isWidgetPickerOpen, closeWidgetPicker } = useUIStore();
   const [editingWidget, setEditingWidget] = useState<Widget | null>(null);
@@ -184,8 +211,28 @@ export default function MainCanvas() {
   }, [widgets, setWidgets, isEditing]);
 
   return (
-    <main className="flex-1 p-6 overflow-y-auto bg-gray-50/50">
-      <div ref={containerRef} className="max-w-7xl mx-auto min-h-[500px]">
+    <main className="flex-1 relative flex flex-col overflow-hidden">
+      <>
+        <div 
+          className="absolute inset-0 z-0 pointer-events-none"
+          style={{
+            backgroundImage: (backgroundImage && (backgroundImage.startsWith('http') || backgroundImage.startsWith('/') || backgroundImage.startsWith('data:')))
+              ? `url(${backgroundImage})` 
+              : (backgroundImage || 'radial-gradient(#d1d5db 2px, transparent 2px)'),
+            backgroundSize: backgroundImage ? (backgroundSize || 'cover') : '24px 24px',
+            backgroundRepeat: backgroundImage ? (backgroundRepeat || 'no-repeat') : 'repeat',
+            backgroundPosition: 'center',
+            filter: `blur(${backgroundBlur}px)`,
+          }}
+        />
+        <div 
+          className="absolute inset-0 z-0 pointer-events-none bg-black"
+          style={{ opacity: backgroundOpacity }}
+        />
+      </>
+
+      <div className="flex-1 overflow-y-auto p-6 relative z-10">
+        <div ref={containerRef} className="max-w-7xl mx-auto min-h-[500px]">
          {mounted && width > 0 && (
            <GridLayout
             className="layout"
@@ -214,6 +261,7 @@ export default function MainCanvas() {
          )}
 
          {/* Add Widget Button moved to Header */}
+        </div>
       </div>
       
       <WidgetPicker 

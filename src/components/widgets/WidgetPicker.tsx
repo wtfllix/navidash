@@ -1,7 +1,7 @@
 import React from 'react';
 import Modal from '@/components/ui/Modal';
 import { useWidgetStore } from '@/store/useWidgetStore';
-import { Clock, CloudSun, Link as LinkIcon, Activity } from 'lucide-react';
+import { Clock, CloudSun, Link as LinkIcon, Calendar, CheckSquare, Image as ImageIcon, CalendarDays, StickyNote } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { useTranslations } from 'next-intl';
 
@@ -55,6 +55,13 @@ export default function WidgetPicker({ isOpen, onClose }: WidgetPickerProps) {
       title: t('weather'),
       description: t('weather_desc'),
       icon: <CloudSun size={24} className="text-orange-500" />,
+      defaultSize: { w: 2, h: 1 },
+    },
+    {
+      type: 'date',
+      title: t('date'),
+      description: t('date_desc'),
+      icon: <CalendarDays size={24} className="text-red-500" />,
       defaultSize: { w: 1, h: 1 },
     },
     {
@@ -63,6 +70,34 @@ export default function WidgetPicker({ isOpen, onClose }: WidgetPickerProps) {
       description: t('quick_link_desc'),
       icon: <LinkIcon size={24} className="text-green-500" />,
       defaultSize: { w: 1, h: 1 },
+    },
+    {
+      type: 'calendar',
+      title: t('calendar'),
+      description: t('calendar_desc'),
+      icon: <Calendar size={24} className="text-purple-500" />,
+      defaultSize: { w: 1, h: 2 },
+    },
+    {
+      type: 'todo',
+      title: t('todo'),
+      description: t('todo_desc'),
+      icon: <CheckSquare size={24} className="text-indigo-500" />,
+      defaultSize: { w: 1, h: 2 },
+    },
+    {
+      type: 'memo',
+      title: t('memo'),
+      description: t('memo_desc'),
+      icon: <StickyNote size={24} className="text-yellow-500" />,
+      defaultSize: { w: 1, h: 1 },
+    },
+    {
+      type: 'photo-frame',
+      title: t('photo_frame'),
+      description: t('photo_frame_desc'),
+      icon: <ImageIcon size={24} className="text-pink-500" />,
+      defaultSize: { w: 2, h: 2 },
     },
   ];
 

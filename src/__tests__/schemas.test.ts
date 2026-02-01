@@ -48,4 +48,16 @@ describe('Zod Schemas', () => {
     const result = WidgetSchema.safeParse(widget);
     expect(result.success).toBe(true);
   });
+
+  it('should validate a date widget', () => {
+    const widget = {
+      id: 'w2',
+      type: 'date',
+      size: { w: 1, h: 1 },
+      position: { x: 0, y: 0 },
+      config: {}
+    };
+    const result = WidgetSchema.safeParse(widget);
+    expect(result.success).toBe(true);
+  });
 });

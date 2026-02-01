@@ -20,3 +20,20 @@
   border-radius: 0.75rem !important; /* rounded-xl */
   z-index: 1 !important;
 }
+
+@layer utilities {
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #cbd5e1; /* slate-300 */
+    border-radius: 4px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8; /* slate-400 */
+  }
+}

@@ -4,7 +4,8 @@ import Modal from '@/components/ui/Modal';
 import { useBookmarkStore } from '@/store/useBookmarkStore';
 import { useWidgetStore } from '@/store/useWidgetStore';
 import { useToastStore } from '@/store/useToastStore';
-import { Download, Upload, RefreshCw, AlertTriangle, FileJson, Globe } from 'lucide-react';
+import { useSettingsStore } from '@/store/useSettingsStore';
+import { Download, Upload, RefreshCw, AlertTriangle, FileJson, Globe, Palette, Image as ImageIcon } from 'lucide-react';
 import { Bookmark, Widget } from '@/types';
 import { useTranslations, useLocale } from 'next-intl';
 import { usePathname, useRouter } from '@/navigation';
@@ -15,6 +16,12 @@ interface SettingsModalProps {
 }
 
 export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
+  const { 
+    backgroundImage, setBackgroundImage, 
+    backgroundBlur, setBackgroundBlur,
+    backgroundOpacity, setBackgroundOpacity,
+    setBackgroundSize, setBackgroundRepeat
+  } = useSettingsStore();
   const { bookmarks } = useBookmarkStore();
   const { widgets, setWidgets } = useWidgetStore();
   const { addToast } = useToastStore();
@@ -105,6 +112,72 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={t('title')}>
       <div className="space-y-6">
+        
+        {/* Background Settings */}
+          <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+            <h3 className="text-sm font-semibold text-gray-900 mb-2 flex items-center">
+              <Palette size={16} className="mr-2" />
+              {t('appearance') || '外观设置'}
+            </h3>
+            <p className="text-sm text-gray-500 mb-4">
+              {t('appearance_desc') || '自定义主区域的背景风格。'}
+            </p>
+            
+            <div className="space-y-4">
+               <div className="space-y-2">
+                 <label className="text-xs font-medium text-gray-700 block">
+                   {t('image_url') || '图片链接'}
+                 </label>
+                 <input
+                   type="text"
+                   value={backgroundImage}
+                   onChange={(e) => {
+                       setBackgroundImage(e.target.value);
+                       setBackgroundSize('cover');
+                       setBackgroundRepeat('no-repeat');
+                   }}
+                   className="w-full text-sm border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                   placeholder="https://example.com/image.jpg"
+                 />
+               </div>
+ 
+               <div className="space-y-2">
+                 <div className="flex justify-between">
+                   <label className="text-xs font-medium text-gray-700">
+                     {t('blur') || '模糊程度'}
+                   </label>
+                   <span className="text-xs text-gray-500">{backgroundBlur}px</span>
+                 </div>
+                 <input
+                   type="range"
+                   min="0"
+                   max="20"
+                   step="1"
+                   value={backgroundBlur}
+                   onChange={(e) => setBackgroundBlur(Number(e.target.value))}
+                   className="w-full accent-blue-500"
+                 />
+               </div>
+ 
+               <div className="space-y-2">
+                 <div className="flex justify-between">
+                   <label className="text-xs font-medium text-gray-700">
+                     {t('opacity') || '遮罩浓度'}
+                   </label>
+                   <span className="text-xs text-gray-500">{Math.round(backgroundOpacity * 100)}%</span>
+                 </div>
+                 <input
+                   type="range"
+                   min="0"
+                   max="0.8"
+                   step="0.05"
+                   value={backgroundOpacity}
+                   onChange={(e) => setBackgroundOpacity(Number(e.target.value))}
+                   className="w-full accent-blue-500"
+                 />
+               </div>
+            </div>
+          </div>
         
         {/* Language Section */}
         <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
