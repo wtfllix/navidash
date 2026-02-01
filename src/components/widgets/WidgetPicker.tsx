@@ -16,7 +16,7 @@ interface WidgetPickerProps {
  * 允许用户从预定义列表中选择并添加新的小组件到仪表盘
  */
 export default function WidgetPicker({ isOpen, onClose }: WidgetPickerProps) {
-  const { addWidget } = useWidgetStore();
+  const { widgets, addWidget } = useWidgetStore();
   const t = useTranslations('Widgets');
 
   /**
@@ -24,11 +24,17 @@ export default function WidgetPicker({ isOpen, onClose }: WidgetPickerProps) {
    * 创建一个新的 Widget 实例，分配唯一 ID，并设置初始尺寸
    */
   const handleAddWidget = (type: string, defaultSize: { w: number, h: number }) => {
+    // 计算下一个空闲行的 Y 坐标，避免覆盖现有组件
+    const maxY = widgets.reduce((max, w) => {
+      const bottom = (w.position?.y || 0) + w.size.h;
+      return bottom > max ? bottom : max;
+    }, 0);
+
     const newWidget = {
       id: uuidv4(),
       type: type as any,
       size: defaultSize,
-      position: { x: 0, y: 0 }, // 默认位置，会被 React-Grid-Layout 自动调整
+      position: { x: 0, y: maxY }, // 放在最底部
       config: {}, // 初始配置为空
     };
     addWidget(newWidget);

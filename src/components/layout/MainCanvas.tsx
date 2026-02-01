@@ -13,7 +13,7 @@ import { Trash2, GripHorizontal, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
 
-import GridLayout, { noCompactor, Layout, LayoutItem } from 'react-grid-layout';
+import GridLayout, { Layout, LayoutItem } from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 
@@ -203,7 +203,6 @@ export default function MainCanvas() {
             resizeConfig={{
               enabled: isEditing,
             }}
-            compactor={noCompactor}
             onLayoutChange={onLayoutChange}
           >
              {widgets.map((widget) => (
