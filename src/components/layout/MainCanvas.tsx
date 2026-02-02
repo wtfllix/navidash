@@ -241,6 +241,7 @@ export default function MainCanvas() {
             className="layout"
             layout={layout}
             width={width}
+            // @ts-ignore: Type definition missing cols prop
             cols={currentCols}
             rowHeight={120}
             margin={[8, 8]}
