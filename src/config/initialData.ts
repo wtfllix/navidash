@@ -2,57 +2,88 @@ import { Bookmark } from '@/types';
 
 const defaultBookmarks: Bookmark[] = [
   {
-    id: '1',
-    title: 'TrueNAS (192.168.31.15)',
-    icon: 'server',
-    children: [
-      { id: '1-1', title: 'Filebrowser', url: 'http://192.168.31.15:30051', icon: 'disk' },
-      { id: '1-2', title: 'immich', url: 'http://192.168.31.15:30041', icon: 'image' },
-      { id: '1-3', title: 'Minio', url: 'http://192.168.31.15:9000', icon: 'database' },
-      { id: '1-4', title: 'TrueNAS', url: 'http://192.168.31.15', icon: 'server' },
-    ],
+    "id": "search-ai",
+    "title": "Search & AI",
+    "icon": "search",
+    "children": [
+      { "id": "google", "title": "Google", "url": "https://google.com", "icon": "chrome" },
+      { "id": "bing", "title": "Bing", "url": "https://bing.com", "icon": "globe" },
+      { "id": "chatgpt", "title": "ChatGPT", "url": "https://chat.openai.com", "icon": "bot" },
+      { "id": "claude", "title": "Claude", "url": "https://claude.ai", "icon": "brain" },
+      { "id": "perplexity", "title": "Perplexity", "url": "https://perplexity.ai", "icon": "sparkles" }
+    ]
   },
   {
-    id: '2',
-    title: 'PVE (192.168.31.87)',
-    icon: 'cpu',
-    children: [
-      { id: '2-1', title: 'PVE', url: 'https://192.168.31.87:8006', icon: 'monitor' },
-      { id: '2-2', title: 'iStoreOS', url: 'http://192.168.31.88', icon: 'wifi' },
-    ],
+    "id": "dev",
+    "title": "Development",
+    "icon": "code",
+    "children": [
+      { "id": "github", "title": "GitHub", "url": "https://github.com", "icon": "github" },
+      { "id": "gitlab", "title": "GitLab", "url": "https://gitlab.com", "icon": "gitlab" },
+      { "id": "stackoverflow", "title": "Stack Overflow", "url": "https://stackoverflow.com", "icon": "layers" },
+      { "id": "mdn", "title": "MDN Web Docs", "url": "https://developer.mozilla.org", "icon": "book" },
+      { "id": "vercel", "title": "Vercel", "url": "https://vercel.com", "icon": "server" },
+      { "id": "react", "title": "React", "url": "https://react.dev", "icon": "code" },
+      { "id": "nextjs", "title": "Next.js", "url": "https://nextjs.org", "icon": "cpu" }
+    ]
   },
   {
-    id: '3',
-    title: '工具服务',
-    icon: 'tool',
-    children: [
-      { id: '3-1', title: '入职检查', url: 'https://nav.lonsdaleite.cc/fieldcheck.html', icon: 'check' },
-      { id: '3-2', title: 'Joplin', url: 'https://joplin.lonsdaleite.cc', icon: 'book' },
-      { id: '3-3', title: '压缩', url: 'https://compress.lonsdaleite.cc', icon: 'package' },
-    ],
+    "id": "design",
+    "title": "Design & Tools",
+    "icon": "tool",
+    "children": [
+      { "id": "figma", "title": "Figma", "url": "https://figma.com", "icon": "figma" },
+      { "id": "dribbble", "title": "Dribbble", "url": "https://dribbble.com", "icon": "dribbble" },
+      { "id": "pinterest", "title": "Pinterest", "url": "https://pinterest.com", "icon": "image" },
+      { "id": "notion", "title": "Notion", "url": "https://notion.so", "icon": "file" },
+      { "id": "trello", "title": "Trello", "url": "https://trello.com", "icon": "trello" }
+    ]
   },
   {
-    id: '4',
-    title: '娱乐媒体',
-    icon: 'play',
-    children: [
-      { id: '4-1', title: 'Bilibili', url: 'https://bilibili.com', icon: 'tv' },
-      { id: '4-2', title: '虎牙', url: 'https://huya.com', icon: 'twitch' },
-      { id: '4-3', title: '抖音', url: 'https://douyin.com', icon: 'music' },
-      { id: '4-4', title: 'Emby', url: 'http://192.168.31.19:8096/', icon: 'video' },
-    ],
+    "id": "social",
+    "title": "Social Media",
+    "icon": "message",
+    "children": [
+      { "id": "twitter", "title": "Twitter / X", "url": "https://twitter.com", "icon": "twitter" },
+      { "id": "instagram", "title": "Instagram", "url": "https://instagram.com", "icon": "instagram" },
+      { "id": "facebook", "title": "Facebook", "url": "https://facebook.com", "icon": "facebook" },
+      { "id": "linkedin", "title": "LinkedIn", "url": "https://linkedin.com", "icon": "linkedin" },
+      { "id": "reddit", "title": "Reddit", "url": "https://reddit.com", "icon": "globe" },
+      { "id": "discord", "title": "Discord", "url": "https://discord.com", "icon": "gamepad" }
+    ]
   },
   {
-    id: '5',
-    title: '社交网络',
-    icon: 'globe',
-    children: [
-      { id: '5-1', title: 'Weibo', url: 'https://weibo.com', icon: 'twitter' },
-      { id: '5-2', title: 'Facebook', url: 'https://facebook.com', icon: 'facebook' },
-      { id: '5-3', title: 'Instagram', url: 'https://instagram.com', icon: 'instagram' },
-      { id: '5-4', title: 'Reddit', url: 'https://reddit.com', icon: 'message' },
-    ],
+    "id": "entertainment",
+    "title": "Entertainment",
+    "icon": "play",
+    "children": [
+      { "id": "youtube", "title": "YouTube", "url": "https://youtube.com", "icon": "youtube" },
+      { "id": "twitch", "title": "Twitch", "url": "https://twitch.tv", "icon": "twitch" },
+      { "id": "netflix", "title": "Netflix", "url": "https://netflix.com", "icon": "tv" },
+      { "id": "spotify", "title": "Spotify", "url": "https://spotify.com", "icon": "music" },
+      { "id": "bilibili", "title": "Bilibili", "url": "https://bilibili.com", "icon": "tv" }
+    ]
   },
+  {
+    "id": "shopping",
+    "title": "Shopping",
+    "icon": "cart",
+    "children": [
+      { "id": "amazon", "title": "Amazon", "url": "https://amazon.com", "icon": "box" },
+      { "id": "ebay", "title": "eBay", "url": "https://ebay.com", "icon": "tag" },
+      { "id": "taobao", "title": "Taobao", "url": "https://taobao.com", "icon": "cart" }
+    ]
+  },
+  {
+    "id": "news",
+    "title": "News & Tech",
+    "icon": "newspaper",
+    "children": [
+      { "id": "hackernews", "title": "Hacker News", "url": "https://news.ycombinator.com", "icon": "terminal" },
+      { "id": "producthunt", "title": "Product Hunt", "url": "https://producthunt.com", "icon": "box" },
+      { "id": "techcrunch", "title": "TechCrunch", "url": "https://techcrunch.com", "icon": "monitor" }
+    ]
+  }
 ];
 
 export const initialBookmarks: Bookmark[] = process.env.NEXT_PUBLIC_DEFAULT_BOOKMARKS

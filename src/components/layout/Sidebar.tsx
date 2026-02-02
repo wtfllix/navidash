@@ -3,93 +3,18 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { 
-  ChevronRight, ChevronDown, Folder, Globe, Menu, Server, Cpu, Wrench, PlayCircle, 
-  Link as LinkIcon, Search, Plus, Edit2, Trash2, Cloud, Database, Code, Terminal, 
-  Home, Star, Zap, Book, Image, Music, Video, Layers, PanelLeft,
-  Settings, User, Calendar, Mail, MessageSquare, ShoppingCart, Heart, Camera, Map, FileText, Monitor, Smartphone, Wifi, Lock,
-  Github, Gitlab, Twitter, Instagram, Facebook, Linkedin, Youtube, Twitch, Chrome, Slack, Figma, Dribbble, Codepen, Trello,
-  Gamepad, Headphones, Tv, Bitcoin, CreditCard, Wallet, ListTodo, Clock, CheckCircle, Package, Box, Container, HardDrive,
-  Bot, Brain, Sparkles, Wand2
+  ChevronRight, ChevronDown, Menu, PanelLeft, Plus, Edit2, Trash2, Search, Settings, Layers
 } from 'lucide-react';
 import { useSidebarStore } from '@/store/useSidebarStore';
 import { useBookmarkStore } from '@/store/useBookmarkStore';
+import { useStatsStore } from '@/store/useStatsStore';
 import { Bookmark } from '@/types';
 import BookmarkModal from '@/components/ui/BookmarkModal';
 import SettingsModal from '@/components/settings/SettingsModal';
 import { useToastStore } from '@/store/useToastStore';
 import { useUIStore } from '@/store/useUIStore';
 import { useTranslations } from 'next-intl';
-
-const iconMap: Record<string, React.ElementType> = {
-  folder: Folder,
-  link: LinkIcon,
-  globe: Globe,
-  server: Server,
-  cpu: Cpu,
-  tool: Wrench,
-  play: PlayCircle,
-  cloud: Cloud,
-  database: Database,
-  code: Code,
-  terminal: Terminal,
-  home: Home,
-  star: Star,
-  zap: Zap,
-  book: Book,
-  image: Image,
-  music: Music,
-  video: Video,
-  settings: Settings,
-  user: User,
-  calendar: Calendar,
-  mail: Mail,
-  message: MessageSquare,
-  cart: ShoppingCart,
-  heart: Heart,
-  camera: Camera,
-  map: Map,
-  file: FileText,
-  monitor: Monitor,
-  mobile: Smartphone,
-  wifi: Wifi,
-  lock: Lock,
-  github: Github,
-  gitlab: Gitlab,
-  twitter: Twitter,
-  instagram: Instagram,
-  facebook: Facebook,
-  linkedin: Linkedin,
-  youtube: Youtube,
-  twitch: Twitch,
-  chrome: Chrome,
-  slack: Slack,
-  figma: Figma,
-  dribbble: Dribbble,
-  codepen: Codepen,
-  trello: Trello,
-  gamepad: Gamepad,
-  headphones: Headphones,
-  tv: Tv,
-  bitcoin: Bitcoin,
-  creditcard: CreditCard,
-  wallet: Wallet,
-  todo: ListTodo,
-  clock: Clock,
-  check: CheckCircle,
-  package: Package,
-  box: Box,
-  container: Container,
-  disk: HardDrive,
-  bot: Bot,
-  brain: Brain,
-  sparkles: Sparkles,
-  magic: Wand2
-};
-
-const getIcon = (name: string | undefined, isFolder: boolean, size: number) => {
-    const Icon = iconMap[name || (isFolder ? 'folder' : 'link')] || (isFolder ? Folder : LinkIcon);
-    return <Icon size={size} />;
-};
+import { getIcon } from '@/lib/iconUtils';
 
 const filterBookmarks = (bookmarks: Bookmark[], query: string): Bookmark[] => {
   if (!query) return bookmarks;
@@ -219,7 +144,10 @@ const BookmarkItem = ({ item, isCollapsed, forceOpen, onEdit, onDelete, onAddChi
                 target="_blank"
                 rel="noreferrer"
                 className="block text-sm truncate select-none tracking-wide hover:underline"
-                onClick={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  useStatsStore.getState().incrementVisit(item.id);
+                }}
               >
                 {item.title}
               </a>

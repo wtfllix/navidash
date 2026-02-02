@@ -13,6 +13,7 @@ import TodoWidget from '../widgets/TodoWidget';
 import MemoWidget from '../widgets/MemoWidget';
 import CalendarWidget from '../widgets/CalendarWidget';
 import PhotoWidget from '../widgets/PhotoWidget';
+import MostVisitedWidget from '../widgets/MostVisitedWidget';
 import WidgetPicker from '../widgets/WidgetPicker';
 import WidgetSettingsModal from '../widgets/WidgetSettingsModal';
 import { Trash2, GripHorizontal, Settings } from 'lucide-react';
@@ -78,6 +79,8 @@ const WidgetItemContent = React.memo(({ widget, onEdit }: { widget: Widget; onEd
         return <CalendarWidget widget={widget} />;
       case 'photo-frame':
         return <PhotoWidget widget={widget} />;
+      case 'most-visited':
+        return <MostVisitedWidget widget={widget} />;
       default:
         return (
           <div className="flex flex-col items-center justify-center h-full">
@@ -88,7 +91,7 @@ const WidgetItemContent = React.memo(({ widget, onEdit }: { widget: Widget; onEd
     }
   };
 
-  const isTransparent = !isEditing && widget.type === 'clock' && widget.config?.clockStyle === 'analog';
+  const isTransparent = !isEditing && widget.type === 'clock' && ['analog', 'apple', 'flip'].includes(widget.config?.clockStyle || 'digital');
 
   return (
     <div className="w-full h-full relative group">
@@ -164,12 +167,12 @@ export default function MainCanvas() {
 
   // 根据容器宽度计算当前列数 (响应式断点)
   const currentCols = useMemo(() => {
-    if (!width) return 6;
-    if (width >= 1200) return 6;
-    if (width >= 996) return 4;
-    if (width >= 768) return 3;
-    if (width >= 480) return 2;
-    return 1;
+    if (!width) return 8;
+    if (width >= 1600) return 10;
+    if (width >= 1200) return 8;
+    if (width >= 900) return 6;
+    if (width >= 600) return 4;
+    return 2;
   }, [width]);
 
   // 生成 react-grid-layout 所需的布局配置
@@ -238,18 +241,12 @@ export default function MainCanvas() {
             className="layout"
             layout={layout}
             width={width}
-            gridConfig={{
-              cols: currentCols,
-              rowHeight: 150,
-              margin: [16, 16],
-            }}
-            dragConfig={{
-              enabled: isEditing,
-              handle: ".draggable-handle",
-            }}
-            resizeConfig={{
-              enabled: isEditing,
-            }}
+            cols={currentCols}
+            rowHeight={120}
+            margin={[8, 8]}
+            isDraggable={isEditing}
+            isResizable={isEditing}
+            draggableHandle=".draggable-handle"
             onLayoutChange={onLayoutChange}
           >
              {widgets.map((widget) => (

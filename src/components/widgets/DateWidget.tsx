@@ -38,7 +38,9 @@ const DateWidget = React.memo(({ widget }: { widget: Widget }) => {
 
   const day = date.getDate();
   const month = useMemo(() => date.toLocaleDateString(locale, { month: 'short' }).toUpperCase(), [date, locale]);
+  const monthLong = useMemo(() => date.toLocaleDateString(locale, { month: 'long' }), [date, locale]);
   const weekday = useMemo(() => date.toLocaleDateString(locale, { weekday: 'long' }), [date, locale]);
+  const weekdayShort = useMemo(() => date.toLocaleDateString(locale, { weekday: 'short' }).toUpperCase(), [date, locale]);
   const year = date.getFullYear();
 
   // Determine theme color: Configured > Random by Day > Default
@@ -56,41 +58,161 @@ const DateWidget = React.memo(({ widget }: { widget: Widget }) => {
     return RANDOM_PALETTE[dayOfYear % RANDOM_PALETTE.length];
   }, [widget.config?.color, date]);
 
-  return (
-    <div className="flex flex-col h-full w-full bg-white relative overflow-hidden group select-none shadow-sm rounded-xl">
-       {/* Header Section: Colored background with Month - Reduced height to 20% */}
+  // Size helpers
+  const { w, h } = widget.size || { w: 1, h: 1 };
+  const isSmall = w === 1 && h === 1;
+  const isWide = w >= 2;
+  const isLarge = w >= 2 && h >= 2;
+
+  // Style Variants
+  const renderClassic = () => (
+    <div className="flex flex-col h-full w-full bg-white relative overflow-hidden group select-none shadow-sm rounded-xl font-serif">
+       {/* Header Section */}
        <div 
-         className="h-[20%] w-full flex items-center justify-center relative overflow-hidden"
+         className={`${isSmall ? 'h-[25%]' : 'h-[20%]'} w-full flex items-center justify-center relative overflow-hidden`}
          style={{ backgroundColor: themeColor }}
        >
-         {/* Subtle overlay for texture */}
          <div className="absolute inset-0 bg-black/5"></div>
-         
-         <span className="text-white font-bold tracking-widest text-sm z-10 drop-shadow-sm uppercase">
+         <span className={`text-white font-bold tracking-widest ${isSmall ? 'text-xs' : 'text-sm'} z-10 drop-shadow-sm uppercase`}>
            {month}
          </span>
        </div>
 
-       {/* Body Section: White background with Date and Weekday */}
+       {/* Body Section */}
        <div className="flex-1 flex flex-col items-center justify-center bg-white relative">
          <span 
-           className="text-6xl font-black leading-none tracking-tighter mb-1"
-           style={{ color: '#1f2937' }} // Always dark text for contrast
+           className={`${isSmall ? 'text-6xl' : 'text-8xl'} font-black leading-none tracking-tighter mb-1`}
+           style={{ color: '#1f2937' }}
          >
            {day}
          </span>
          
-         <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
+         <span className={`${isSmall ? 'text-xs' : 'text-sm'} font-semibold text-gray-400 uppercase tracking-wide`}>
            {weekday}
          </span>
 
-         {/* Year appears on hover in the corner */}
-         <span className="absolute bottom-1.5 right-2 text-[10px] text-gray-300 font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+         <span className="absolute bottom-1.5 right-2 text-[10px] text-gray-300 font-medium opacity-0 group-hover:opacity-100 transition-opacity font-sans">
            {year}
          </span>
        </div>
     </div>
   );
+
+  const renderMinimal = () => (
+    <div className="flex flex-col h-full w-full bg-white relative overflow-hidden select-none shadow-sm rounded-xl p-3 font-outfit">
+       <div className="flex-1 flex flex-row items-center justify-between">
+          <span 
+            className={`${isSmall ? 'text-6xl' : 'text-8xl'} font-bold leading-none tracking-tighter`}
+            style={{ color: '#1f2937' }}
+          >
+            {day}
+          </span>
+          <div className="flex flex-col items-end justify-center space-y-1 h-full pt-1">
+            <span 
+              className={`${isSmall ? 'text-xs' : 'text-sm'} font-bold text-gray-900 uppercase tracking-wider`} 
+              style={{ writingMode: 'vertical-rl' }}
+            >
+              {monthLong}
+            </span>
+             <span 
+               className={`${isSmall ? 'text-[10px]' : 'text-xs'} font-medium text-gray-400 uppercase tracking-wide`} 
+               style={{ writingMode: 'vertical-rl' }}
+             >
+              {weekdayShort}
+            </span>
+          </div>
+       </div>
+       <span className="absolute top-2 right-3 text-[10px] text-gray-300 font-bold">
+         {year}
+       </span>
+    </div>
+  );
+
+  const renderGlass = () => (
+    <div 
+      className="flex flex-col h-full w-full relative overflow-hidden select-none shadow-sm rounded-xl font-outfit"
+      style={{ 
+        background: `linear-gradient(135deg, ${themeColor}80 0%, ${themeColor} 100%)`
+      }}
+    >
+      {/* Glass Overlay */}
+      <div className="absolute inset-0 backdrop-blur-sm bg-white/10"></div>
+      
+      {/* Decorative Circles */}
+      <div className="absolute -top-10 -left-10 w-32 h-32 bg-white/20 rounded-full blur-xl"></div>
+      <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-black/10 rounded-full blur-xl"></div>
+
+      <div className="relative z-10 flex flex-col h-full p-3 text-white">
+        <div className="flex justify-between items-start">
+           <span className={`${isSmall ? 'text-sm' : 'text-lg'} font-bold uppercase tracking-widest opacity-90 font-serif`}>{month}</span>
+           <span className="text-xs font-medium opacity-60">{year}</span>
+        </div>
+        
+        <div className="flex-1 flex items-center justify-center">
+           <span className={`${isSmall ? 'text-6xl' : 'text-8xl'} font-bold tracking-tighter drop-shadow-lg font-serif`}>
+             {day}
+           </span>
+        </div>
+        
+        <div className="text-center">
+           <span className={`${isSmall ? 'text-[10px]' : 'text-sm'} font-medium uppercase tracking-wide opacity-80 bg-black/10 px-2 py-0.5 rounded-full backdrop-blur-md`}>
+             {weekday}
+           </span>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderBauhaus = () => (
+    <div className="flex h-full w-full bg-white relative overflow-hidden select-none shadow-sm rounded-xl font-bebas">
+       {/* Left Section: Color Block */}
+       <div 
+         className="w-1/3 h-full flex items-center justify-center relative"
+         style={{ backgroundColor: themeColor }}
+       >
+         <span 
+           className={`${isSmall ? 'text-xl' : 'text-3xl'} font-bold text-white tracking-widest`}
+           style={{ writingMode: 'vertical-rl' }}
+         >
+           {month}
+         </span>
+         {/* Decorative Circle */}
+         <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-4 h-4 bg-white/20 rounded-full"></div>
+       </div>
+
+       {/* Right Section: Dark or White */}
+       <div className="w-2/3 h-full bg-[#1a1a1a] flex flex-col items-center justify-center relative">
+         <span className={`${isSmall ? 'text-6xl' : 'text-8xl'} font-bold text-white leading-none tracking-wider`}>
+           {day}
+         </span>
+         <span 
+            className={`absolute bottom-2 right-2 ${isSmall ? 'text-[10px]' : 'text-xs'} font-bold uppercase tracking-wider font-sans`}
+            style={{ color: themeColor }}
+         >
+           {weekdayShort}
+         </span>
+         
+         {/* Decorative Triangle */}
+         <div 
+           className="absolute top-0 right-0 w-0 h-0 border-l-transparent"
+           style={{ 
+             borderTopColor: themeColor,
+             borderLeftWidth: isSmall ? '30px' : '40px',
+             borderTopWidth: isSmall ? '30px' : '40px'
+           }}
+         ></div>
+       </div>
+    </div>
+  );
+
+  const style = widget.config?.style || 'classic';
+
+  switch (style) {
+    case 'minimal': return renderMinimal();
+    case 'glass': return renderGlass();
+    case 'bauhaus': return renderBauhaus();
+    default: return renderClassic();
+  }
 });
 
 DateWidget.displayName = 'DateWidget';

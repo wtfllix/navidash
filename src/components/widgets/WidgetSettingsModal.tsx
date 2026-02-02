@@ -127,50 +127,85 @@ export default function WidgetSettingsModal({ widget, isOpen, onClose }: WidgetS
         return (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">{tWidgets('clock_style')}</label>
-            <div className="flex space-x-2">
-              <button
-                onClick={() => setConfig({ ...config, clockStyle: 'digital' })}
-                className={`flex-1 py-2 px-3 rounded-lg border text-sm font-medium transition-colors ${
-                  (config.clockStyle || 'digital') === 'digital'
-                    ? 'bg-blue-50 border-blue-500 text-blue-700'
-                    : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
-                }`}
-              >
-                {tWidgets('style_digital')}
-              </button>
-              <button
-                onClick={() => setConfig({ ...config, clockStyle: 'analog' })}
-                className={`flex-1 py-2 px-3 rounded-lg border text-sm font-medium transition-colors ${
-                  config.clockStyle === 'analog'
-                    ? 'bg-blue-50 border-blue-500 text-blue-700'
-                    : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
-                }`}
-              >
-                {tWidgets('style_analog')}
-              </button>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { id: 'digital', label: tWidgets('style_digital') },
+                { id: 'analog', label: tWidgets('style_analog') },
+                { id: 'flip', label: tWidgets('style_flip') },
+                { id: 'apple', label: tWidgets('style_apple') },
+              ].map((style) => (
+                <button
+                  key={style.id}
+                  onClick={() => {
+                    const newConfig = { ...config, clockStyle: style.id };
+                     setConfig(newConfig);
+                     if (style.id === 'flip') {
+                       setSize({ w: 2, h: 1 });
+                     }
+                   }}
+                  className={`px-3 py-2 rounded-md border text-sm transition-colors ${
+                    (config.clockStyle === style.id || (!config.clockStyle && style.id === 'digital'))
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  {style.label}
+                </button>
+              ))}
             </div>
           </div>
         );
       case 'date':
         return (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">{tWidgets('theme_color')}</label>
-            <div className="flex flex-wrap gap-3">
-              {COLOR_OPTIONS.map((option) => (
-                <button
-                  key={option.color}
-                  onClick={() => setConfig({ ...config, color: option.color })}
-                  className={`w-8 h-8 rounded-full border-2 transition-all ${
-                    (config.color || '#ef4444') === option.color
-                      ? 'border-gray-600 scale-110 shadow-sm'
-                      : 'border-transparent hover:scale-105'
-                  }`}
-                  style={{ backgroundColor: option.color }}
-                  title={option.label}
-                  aria-label={option.label}
-                />
-              ))}
-            </div>
+          <div className="space-y-4">
+             <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {tWidgets('date_style')}
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { id: 'classic', label: tWidgets('style_classic') },
+                    { id: 'minimal', label: tWidgets('style_minimal') },
+                    { id: 'glass', label: tWidgets('style_glass') },
+                    { id: 'bauhaus', label: tWidgets('style_bauhaus') },
+                  ].map((style) => (
+                    <button
+                      key={style.id}
+                      onClick={() => setConfig({ ...config, style: style.id })}
+                      className={`px-3 py-2 rounded-md border text-sm transition-colors ${
+                        (config.style === style.id || (!config.style && style.id === 'classic'))
+                          ? 'bg-blue-600 text-white border-blue-600'
+                          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      {style.label}
+                    </button>
+                  ))}
+                </div>
+             </div>
+             
+             <div>
+               <label className="block text-sm font-medium text-gray-700 mb-1">
+                 {tWidgets('theme_color')}
+               </label>
+               <div className="flex flex-wrap gap-2">
+                 {COLOR_OPTIONS.map((option) => (
+                    <button
+                      key={option.color}
+                      onClick={() => setConfig({ ...config, color: config.color === option.color ? undefined : option.color })}
+                      className={`w-8 h-8 rounded-full border-2 transition-transform hover:scale-110 ${
+                        config.color === option.color ? 'border-gray-900 scale-110' : 'border-transparent'
+                      }`}
+                      style={{ backgroundColor: option.color }}
+                      aria-label={`Select color ${option.label}`}
+                      title={option.label}
+                    />
+                 ))}
+               </div>
+               <p className="text-xs text-gray-500 mt-1">
+                 Leave unselected for daily random colors.
+               </p>
+             </div>
           </div>
         );
       case 'weather':
@@ -202,30 +237,15 @@ export default function WidgetSettingsModal({ widget, isOpen, onClose }: WidgetS
               </p>
             </div>
             <div className="mt-3">
-              <label className="block text-sm font-medium text-gray-700 mb-1">{tWidgets('subscription_type')}</label>
-              <select
-                value={config.weatherSub || 'free'}
-                onChange={(e) => setConfig({ ...config, weatherSub: e.target.value })}
+              <label className="block text-sm font-medium text-gray-700 mb-1">{tWidgets('sub_custom')}</label>
+              <input
+                type="text"
+                value={config.weatherCustomHost || ''}
+                onChange={(e) => setConfig({ ...config, weatherCustomHost: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-              >
-                <option value="free">{tWidgets('sub_free')}</option>
-                <option value="standard">{tWidgets('sub_standard')}</option>
-                <option value="custom">{tWidgets('sub_custom')}</option>
-              </select>
+                placeholder={tWidgets('custom_host_placeholder')}
+              />
             </div>
-            
-            {config.weatherSub === 'custom' && (
-              <div className="mt-3">
-                <label className="block text-sm font-medium text-gray-700 mb-1">{tWidgets('sub_custom')}</label>
-                <input
-                  type="text"
-                  value={config.weatherCustomHost || ''}
-                  onChange={(e) => setConfig({ ...config, weatherCustomHost: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-                  placeholder={tWidgets('custom_host_placeholder')}
-                />
-              </div>
-            )}
 
             <div className="mt-3">
               <label className="block text-sm font-medium text-gray-700 mb-1">{tWidgets('auth_type')}</label>
@@ -370,7 +390,10 @@ export default function WidgetSettingsModal({ widget, isOpen, onClose }: WidgetS
                 >
                   <option value={1}>{tWidgets('size_small')}</option>
                   <option value={2}>{tWidgets('size_medium')}</option>
-                  <option value={4}>{tWidgets('size_full')}</option>
+                  <option value={3}>{tWidgets('size_large_3')}</option>
+                  <option value={4}>{tWidgets('size_large_4')}</option>
+                  <option value={6}>{tWidgets('size_xl_6')}</option>
+                  <option value={8}>{tWidgets('size_full_8')}</option>
                 </select>
              </div>
              <div className="flex-1">
@@ -382,6 +405,8 @@ export default function WidgetSettingsModal({ widget, isOpen, onClose }: WidgetS
                 >
                   <option value={1}>{tWidgets('size_standard')}</option>
                   <option value={2}>{tWidgets('size_tall')}</option>
+                  <option value={3}>{tWidgets('size_extra_tall')}</option>
+                  <option value={4}>{tWidgets('size_max_tall')}</option>
                 </select>
              </div>
           </div>

@@ -5,7 +5,7 @@
 [中文](./README.md) | **English**
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Version](https://img.shields.io/badge/version-0.2.0-green)
+![Version](https://img.shields.io/badge/version-0.2.1-green)
 ![Next.js](https://img.shields.io/badge/Next.js-14-black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
 ![Docker](https://img.shields.io/badge/Docker-Ready-2496ed)
@@ -13,6 +13,13 @@
 **NaviDash** is designed for users who seek ultimate efficiency and aesthetics. Abandoning clutter, it uses a classic "Pegboard" style foundation combined with a free-dragging grid layout to create a browser start page that is both beautiful and practical.
 
 ---
+
+## ✨ v0.2.1 Changelog
+
+- 📏 **Layout System Upgrade**: Optimized grid responsive breakpoints (10/8/6/4/2 columns) and reduced margins for better space utilization.
+- ☀️ **Weather Widget Optimization**: Redesigned layouts for 1x2 and 1x3 sizes, resolving text truncation issues and improving information hierarchy.
+- 🧩 **Widget Picker Enhancement**: Added widget categorization (System/Productivity/Custom) and improved selection UI.
+- 🌍 **i18n Improvements**: Completed missing translations for widget categories.
 
 ## ✨ v0.2.0 New Features
 

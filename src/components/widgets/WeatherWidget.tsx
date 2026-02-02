@@ -74,44 +74,82 @@ const WeatherBackground = ({ iconCode }: { iconCode: string }) => {
   const code = parseInt(iconCode, 10);
   
   // Helper to generate particles
-  const renderParticles = (count: number, type: 'rain' | 'snow' | 'star' | 'cloud') => {
-    return [...Array(count)].map((_, i) => (
-      <div
-        key={i}
-        className={`absolute rounded-full ${
-          type === 'rain' ? 'bg-blue-200/40 w-0.5' : 
-          type === 'snow' ? 'bg-white/60' : 
-          type === 'star' ? 'bg-white/90' :
-          'bg-white/10' // cloud
-        }`}
-        style={{
-          left: `${Math.random() * 100}%`,
-          top: type === 'cloud' ? `${Math.random() * 60}%` : undefined,
-          width: type === 'cloud' ? `${50 + Math.random() * 100}px` : undefined,
-          height: type === 'rain' ? `${10 + Math.random() * 10}px` : 
-                  type === 'cloud' ? `${50 + Math.random() * 100}px` : 
-                  type === 'snow' || type === 'star' ? `${2 + Math.random() * 3}px` : undefined,
-          animation: type === 'rain' 
-            ? `rain ${1.5 + Math.random() * 0.8}s linear infinite` 
-            : type === 'snow'
-            ? `snow ${3 + Math.random() * 5}s linear infinite`
-            : type === 'star'
-            ? `twinkle ${1 + Math.random() * 3}s ease-in-out infinite`
-            : `float ${10 + Math.random() * 20}s ease-in-out infinite alternate`,
-          animationDelay: `-${Math.random() * 5}s`,
-          opacity: Math.random(),
-        }}
-      />
-    ));
+  const renderParticles = (count: number, type: 'rain' | 'snow' | 'star' | 'cloud' | 'fog' | 'meteor') => {
+    return [...Array(count)].map((_, i) => {
+      if (type === 'cloud') {
+        const size = 60 + Math.random() * 100;
+        return (
+          <Cloud 
+            key={i}
+            className="absolute text-white/20"
+            size={size}
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 60}%`,
+              animation: `drift ${20 + Math.random() * 20}s ease-in-out infinite alternate`,
+              animationDelay: `-${Math.random() * 20}s`,
+            }}
+          />
+        );
+      }
+
+      if (type === 'meteor') {
+        return (
+          <div
+            key={i}
+            className="absolute h-0.5 bg-gradient-to-l from-white to-transparent rounded-full"
+            style={{
+              width: `${50 + Math.random() * 50}px`,
+              right: `${-10 + Math.random() * 50}%`,
+              top: `${Math.random() * 50}%`,
+              transform: 'rotate(-45deg)',
+              animation: `meteor ${2 + Math.random() * 4}s linear infinite`,
+              animationDelay: `${Math.random() * 10}s`,
+              opacity: 0,
+            }}
+          />
+        );
+      }
+      
+      return (
+        <div
+          key={i}
+          className={`absolute rounded-full ${
+            type === 'rain' ? 'bg-blue-200/60 w-0.5' : 
+            type === 'snow' ? 'bg-white/80' : 
+            type === 'star' ? 'bg-white/90' :
+            'bg-white/10' 
+          }`}
+          style={{
+            left: `${Math.random() * 100}%`,
+            top: type === 'fog' ? `${Math.random() * 100}%` : undefined,
+            width: type === 'fog' ? `${100 + Math.random() * 200}px` : undefined,
+            height: type === 'rain' ? `${15 + Math.random() * 15}px` : 
+                    type === 'fog' ? `${10 + Math.random() * 20}px` : 
+                    type === 'snow' || type === 'star' ? `${2 + Math.random() * 3}px` : undefined,
+            animation: type === 'rain' 
+              ? `rain ${0.8 + Math.random() * 0.5}s linear infinite` 
+              : type === 'snow'
+              ? `snow ${3 + Math.random() * 5}s linear infinite`
+              : type === 'star'
+              ? `twinkle ${1 + Math.random() * 3}s ease-in-out infinite`
+              : `float ${10 + Math.random() * 20}s ease-in-out infinite alternate`,
+            animationDelay: `-${Math.random() * 5}s`,
+            opacity: type === 'fog' ? 0.3 : Math.random(),
+            transform: type === 'rain' ? 'rotate(15deg)' : undefined,
+          }}
+        />
+      );
+    });
   };
 
   // Define animations styles inline
   const styles = `
     @keyframes rain {
-      0% { transform: translateY(-20px); opacity: 0; }
+      0% { transform: translateY(-20px) rotate(15deg); opacity: 0; }
       10% { opacity: 1; }
       90% { opacity: 1; }
-      100% { transform: translateY(400px); opacity: 0; }
+      100% { transform: translateY(400px) rotate(15deg); opacity: 0; }
     }
     @keyframes snow {
       0% { transform: translateY(-20px) translateX(-10px); opacity: 0; }
@@ -122,37 +160,88 @@ const WeatherBackground = ({ iconCode }: { iconCode: string }) => {
       0%, 100% { opacity: 0.3; transform: scale(0.8); }
       50% { opacity: 1; transform: scale(1.2); }
     }
+    @keyframes drift {
+      0% { transform: translateX(-30px); }
+      100% { transform: translateX(30px); }
+    }
     @keyframes float {
       0% { transform: translateX(-20px); }
       100% { transform: translateX(20px); }
     }
-    @keyframes sun-pulse {
-      0%, 100% { transform: scale(1); opacity: 0.3; }
-      50% { transform: scale(1.2); opacity: 0.5; }
+    @keyframes spin-slow {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    @keyframes lightning {
+      0%, 90%, 100% { background-color: transparent; }
+      92%, 94% { background-color: rgba(255, 255, 255, 0.3); }
+      93%, 95% { background-color: transparent; }
+    }
+    @keyframes meteor {
+      0% { transform: translateX(0) translateY(0) rotate(-45deg); opacity: 1; }
+      20% { opacity: 0; }
+      100% { transform: translateX(-200px) translateY(200px) rotate(-45deg); opacity: 0; }
+    }
+    @keyframes moon-float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
     }
   `;
 
   // Determine weather type
   const isRain = code >= 300 && code <= 399;
   const isSnow = code >= 400 && code <= 499;
-  const isCloudy = (code >= 101 && code <= 104) || (code >= 500 && code <= 515); 
-  const isNight = code === 150; 
+  const isThunder = (code >= 302 && code <= 304) || code === 399;
+  const isFog = code >= 500 && code <= 515;
+  const isNight = code >= 150 && code <= 153;
+  const isCloudy = (code >= 101 && code <= 104) || (code >= 151 && code <= 153) || isFog; 
   const isSunny = code === 100;
 
   return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+    <div className={`absolute inset-0 overflow-hidden pointer-events-none ${isThunder ? 'animate-[lightning_5s_infinite]' : ''}`}>
       <style>{styles}</style>
       
-      {isRain && renderParticles(30, 'rain')}
-      {isSnow && renderParticles(20, 'snow')}
-      {isNight && renderParticles(25, 'star')}
-      {isCloudy && renderParticles(5, 'cloud')}
+      {isRain && renderParticles(40, 'rain')}
+      {isSnow && renderParticles(30, 'snow')}
+      {isNight && renderParticles(30, 'star')}
+      {isNight && renderParticles(2, 'meteor')}
+      {(isCloudy || isFog) && renderParticles(isFog ? 10 : 6, isFog ? 'fog' : 'cloud')}
       
       {isSunny && (
-        <div 
-          className="absolute -top-20 -right-20 w-96 h-96 bg-yellow-400/20 rounded-full blur-3xl"
-          style={{ animation: 'sun-pulse 6s ease-in-out infinite' }}
-        />
+        <>
+          <div 
+            className="absolute -top-10 -right-10 text-yellow-500/20"
+            style={{ animation: 'spin-slow 20s linear infinite' }}
+          >
+            <Sun size={200} />
+          </div>
+          <div 
+            className="absolute -top-20 -right-20 w-80 h-80 bg-yellow-400/30 rounded-full blur-3xl"
+            style={{ animation: 'twinkle 4s ease-in-out infinite' }}
+          />
+        </>
+      )}
+
+      {isNight && (
+        <>
+          <div 
+            className="absolute top-4 right-4 text-yellow-100/30"
+            style={{ animation: 'moon-float 6s ease-in-out infinite' }}
+          >
+            <Moon size={60} />
+          </div>
+          <div 
+            className="absolute top-2 right-2 w-24 h-24 bg-yellow-100/10 rounded-full blur-2xl"
+            style={{ animation: 'twinkle 5s ease-in-out infinite' }}
+          />
+        </>
+      )}
+      
+      {isThunder && (
+         <div 
+           className="absolute inset-0 bg-white/0"
+           style={{ animation: 'lightning 8s infinite' }}
+         />
       )}
     </div>
   );
@@ -202,7 +291,7 @@ const WeatherWidget = React.memo(({ widget }: { widget: Widget }) => {
         const location = `${Math.round(lon * 100) / 100},${Math.round(lat * 100) / 100}`;
         
         let baseUrl;
-        if (weatherSub === 'custom' && weatherCustomHost) {
+        if (weatherCustomHost && weatherCustomHost.trim()) {
           // Ensure protocol is present
           let host = weatherCustomHost.trim();
           if (!/^https?:\/\//i.test(host)) {
@@ -210,7 +299,7 @@ const WeatherWidget = React.memo(({ widget }: { widget: Widget }) => {
           }
           baseUrl = host.replace(/\/+$/, ''); // Remove trailing slash
         } else {
-          baseUrl = weatherSub === 'standard' ? 'https://api.qweather.com' : 'https://devapi.qweather.com';
+          baseUrl = 'https://devapi.qweather.com';
         }
         
         // Prepare Headers
@@ -305,6 +394,7 @@ const WeatherWidget = React.memo(({ widget }: { widget: Widget }) => {
 
   // Layout Modes
   const isCompact = w <= 2 && h <= 2; // 2x2 or smaller
+  const isTinyWidth = w === 1;        // Single column width
   const isWide = w >= 3 && h <= 2;    // 3x2, 4x2 (Landscape)
   const isShort = h === 1;            // 150px height
   
@@ -373,8 +463,83 @@ const WeatherWidget = React.memo(({ widget }: { widget: Widget }) => {
                </div>
              </div>
           </div>
+        ) : w === 2 ? (
+          // New 1x2 Specific Layout (Left: Info, Right: Visual)
+          <div className="flex items-center justify-between w-full h-full p-3 relative z-10">
+             {/* Left: City & Info (Takes priority space) */}
+             <div className="flex flex-col justify-center min-w-0 flex-1 mr-2">
+                <span className="text-lg font-semibold tracking-wide drop-shadow-sm truncate w-full leading-tight" title={city}>
+                   {city}
+                </span>
+                <span className="text-xs text-blue-100/80 font-medium truncate w-full mb-1.5">
+                  {current.text}
+                </span>
+                {/* Micro Details */}
+                <div className="flex items-center gap-3 text-[10px] text-blue-50/70">
+                   <div className="flex items-center gap-1">
+                      <Droplets size={10} />
+                      <span>{current.humidity}%</span>
+                   </div>
+                   <div className="flex items-center gap-1">
+                      <Wind size={10} />
+                      <span>{current.windScale}</span>
+                   </div>
+                </div>
+             </div>
+
+             {/* Right: Temp & Icon */}
+             <div className="flex flex-col items-end gap-1 shrink-0">
+                <div className="drop-shadow-lg filter">
+                  {getWeatherIcon(current.icon, 32, "text-white")}
+                </div>
+                <span className="text-3xl font-light tracking-tighter drop-shadow-md leading-none">
+                  {current.temp}°
+                </span>
+             </div>
+          </div>
+        ) : w === 3 ? (
+          // Optimized 1x3 Layout: City-First Hybrid
+          <div className="flex justify-between w-full h-full p-4 relative z-10">
+             {/* Left Group: City & Main Info */}
+             <div className="flex flex-col justify-between flex-1 min-w-0 mr-4">
+                {/* Top: City Name & Text */}
+                <div className="flex items-center gap-2 mb-1">
+                   <span className="text-xl font-bold tracking-wide drop-shadow-md truncate leading-tight" title={city}>
+                      {city}
+                   </span>
+                   <span className="text-sm font-medium text-blue-100/80 shrink-0">
+                     {current.text}
+                   </span>
+                </div>
+                
+                {/* Bottom: Temp & Icon */}
+                <div className="flex items-center gap-3">
+                   <div className="drop-shadow-lg filter">
+                     {getWeatherIcon(current.icon, 36, "text-white")}
+                   </div>
+                   <span className="text-4xl font-light tracking-tighter drop-shadow-md leading-none">
+                     {current.temp}°
+                   </span>
+                </div>
+             </div>
+
+             {/* Right Group: Details */}
+             <div className="flex flex-col justify-end items-end shrink-0 py-1">
+                {/* Details Stack */}
+                <div className="flex flex-col items-end gap-1.5 text-xs text-blue-50 font-medium">
+                   <div className="flex items-center gap-1.5">
+                      <Droplets size={14} className="opacity-70" />
+                      <span>{current.humidity}%</span>
+                   </div>
+                   <div className="flex items-center gap-1.5">
+                      <Wind size={14} className="opacity-70" />
+                      <span>{current.windScale}</span>
+                   </div>
+                </div>
+             </div>
+          </div>
         ) : (
-          // Optimized Horizontal Layout for Short (h=1) widgets (w >= 2)
+          // Standard Wide Layout (w >= 4)
           <div className="flex items-center justify-between w-full h-full p-4 relative z-10">
              {/* Left: Icon & Temp */}
              <div className="flex items-center gap-3 shrink-0">
@@ -388,7 +553,7 @@ const WeatherWidget = React.memo(({ widget }: { widget: Widget }) => {
                 </div>
              </div>
 
-             {/* Center: City & Text (Show if w >= 2) */}
+             {/* Center: City & Text */}
              <div className="flex flex-col items-start justify-center px-4 border-l border-white/10 ml-4 min-w-0 flex-1">
                 <span className="text-sm font-semibold tracking-wide drop-shadow-sm flex items-center gap-1 truncate w-full">
                    {city}
@@ -398,7 +563,7 @@ const WeatherWidget = React.memo(({ widget }: { widget: Widget }) => {
                 </span>
              </div>
 
-             {/* Right: Details (Show if w >= 2 to maximize info) */}
+             {/* Right: Details */}
              <div className="flex items-center gap-3 ml-auto text-xs text-blue-50 shrink-0">
                 <div className="flex items-center gap-1">
                    <Droplets size={14} className="opacity-70" />
@@ -418,28 +583,28 @@ const WeatherWidget = React.memo(({ widget }: { widget: Widget }) => {
           {/* Current Weather Section - Takes full height now */}
           <div className={`flex flex-col w-full h-full transition-all duration-300`}>
             {/* Header: City & Date */}
-            <div className={`flex items-start justify-between ${isCompact ? 'p-3 pb-0' : 'p-4 pb-0'} z-10 shrink-0`}>
-              <div className="flex flex-col">
-                <span className={`${isCompact ? 'text-sm' : 'text-xl'} font-semibold tracking-wide drop-shadow-sm flex items-center gap-1`}>
+            <div className={`flex items-start justify-between ${isCompact ? 'p-3 pb-0' : 'p-4 pb-0'} z-10 shrink-0 w-full`}>
+              <div className="flex flex-col min-w-0 w-full">
+                <span className={`${isCompact ? 'text-sm' : 'text-xl'} font-semibold tracking-wide drop-shadow-sm truncate block w-full`} title={city}>
                    {city}
                 </span>
-                <span className="text-xs text-blue-100/80 font-medium">
-                  {new Date().toLocaleDateString(locale, { weekday: 'long', month: 'short', day: 'numeric' })}
+                <span className="text-xs text-blue-100/80 font-medium truncate block w-full">
+                  {new Date().toLocaleDateString(locale, { weekday: isTinyWidth ? 'short' : 'long', month: 'short', day: 'numeric' })}
                 </span>
               </div>
             </div>
 
             {/* Main Weather Display */}
-            <div className={`flex flex-col items-center justify-center flex-1 z-10 py-2`}>
-              <div className={`flex items-center justify-center ${isCompact ? 'gap-2' : 'gap-6'}`}>
+            <div className={`flex flex-col items-center justify-center flex-1 z-10 py-2 min-h-0`}>
+              <div className={`flex ${isTinyWidth ? 'flex-col gap-0' : 'items-center justify-center gap-2'} ${!isCompact && 'gap-6'}`}>
                 <div className="drop-shadow-lg filter transform hover:scale-105 transition-transform duration-300">
-                   {getWeatherIcon(current.icon, isCompact ? 64 : 96, "text-white")}
+                   {getWeatherIcon(current.icon, isTinyWidth ? 48 : (isCompact ? 64 : 96), "text-white")}
                 </div>
-                <div className="flex flex-col">
-                  <span className={`${isCompact ? 'text-5xl' : 'text-8xl'} font-light tracking-tighter drop-shadow-md`}>
+                <div className={`flex flex-col ${isTinyWidth ? 'items-center' : ''}`}>
+                  <span className={`${isTinyWidth ? 'text-4xl' : (isCompact ? 'text-5xl' : 'text-8xl')} font-light tracking-tighter drop-shadow-md`}>
                     {current.temp}°
                   </span>
-                  <span className={`${isCompact ? 'text-sm' : 'text-lg'} font-medium text-blue-100/90 capitalize mt-1 text-center`}>
+                  <span className={`${isCompact ? 'text-sm' : 'text-lg'} font-medium text-blue-100/90 capitalize mt-1 text-center truncate max-w-full px-2`}>
                     {current.text}
                   </span>
                 </div>
@@ -447,26 +612,26 @@ const WeatherWidget = React.memo(({ widget }: { widget: Widget }) => {
             </div>
 
             {/* Details Card */}
-            <div className={`z-10 bg-white/10 backdrop-blur-md border border-white/10 shadow-lg shrink-0 ${isCompact ? 'mx-2 mb-2 rounded-xl p-2' : 'mx-6 mb-6 rounded-2xl p-4'}`}>
+            <div className={`z-10 bg-white/10 backdrop-blur-md border border-white/10 shadow-lg shrink-0 ${isCompact ? (isTinyWidth ? 'mx-1 mb-1 rounded-lg p-1' : 'mx-2 mb-2 rounded-xl p-2') : 'mx-6 mb-6 rounded-2xl p-4'}`}>
                 <div className="flex items-center justify-between text-xs text-blue-50">
-                  <div className="flex flex-col items-center gap-1 flex-1 border-r border-white/10">
-                     <Droplets size={isCompact ? 14 : 18} className="opacity-70" />
-                     <span className={`font-medium ${!isCompact && 'text-sm mt-1'}`}>{current.humidity}%</span>
+                  <div className="flex flex-col items-center gap-0.5 flex-1 border-r border-white/10">
+                     <Droplets size={isTinyWidth ? 12 : (isCompact ? 14 : 18)} className="opacity-70" />
+                     <span className={`font-medium ${!isCompact && 'text-sm mt-1'} ${isTinyWidth && 'text-[10px] leading-tight'}`}>{current.humidity}%</span>
                      {!isCompact && <span className="text-[10px] opacity-60">Humidity</span>}
                   </div>
-                  <div className="flex flex-col items-center gap-1 flex-1 border-r border-white/10">
-                     <Wind size={isCompact ? 14 : 18} className="opacity-70" />
-                     <span className={`font-medium ${!isCompact && 'text-sm mt-1'}`}>{current.windScale}</span>
+                  <div className="flex flex-col items-center gap-0.5 flex-1 border-r border-white/10">
+                     <Wind size={isTinyWidth ? 12 : (isCompact ? 14 : 18)} className="opacity-70" />
+                     <span className={`font-medium ${!isCompact && 'text-sm mt-1'} ${isTinyWidth && 'text-[10px] leading-tight'}`}>{current.windScale}</span>
                      {!isCompact && <span className="text-[10px] opacity-60">Wind</span>}
                   </div>
-                  <div className="flex flex-col items-center gap-1 flex-1 border-r border-white/10">
-                     <Thermometer size={isCompact ? 14 : 18} className="opacity-70" />
-                     <span className={`font-medium ${!isCompact && 'text-sm mt-1'}`}>{current.feelsLike}°</span>
+                  <div className="flex flex-col items-center gap-0.5 flex-1">
+                     <Thermometer size={isTinyWidth ? 12 : (isCompact ? 14 : 18)} className="opacity-70" />
+                     <span className={`font-medium ${!isCompact && 'text-sm mt-1'} ${isTinyWidth && 'text-[10px] leading-tight'}`}>{current.feelsLike}°</span>
                      {!isCompact && <span className="text-[10px] opacity-60">Feels Like</span>}
                   </div>
                    {/* Extra details for non-compact modes */}
                    {!isCompact && (
-                     <div className="flex flex-col items-center gap-1 flex-1">
+                     <div className="flex flex-col items-center gap-1 flex-1 border-l border-white/10">
                         <Cloud size={18} className="opacity-70" />
                         <span className="font-medium text-sm mt-1">{current.cloud || '0'}%</span>
                         <span className="text-[10px] opacity-60">Cloud</span>
