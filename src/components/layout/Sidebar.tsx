@@ -503,21 +503,23 @@ export default function Sidebar() {
       </div>
 
       <div className="p-2 border-t border-gray-100">
-        <button 
-            onClick={(e) => {
-                e.stopPropagation();
-                handleAddCategory();
-            }}
-            className={cn(
-                "w-full flex items-center justify-center p-2 rounded-md transition-colors text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200/50",
-                !isOpen && "bg-transparent hover:bg-gray-100 border-transparent text-gray-500"
-            )}
-            title={t('add_category')}
-            aria-label={t('add_category')}
-        >
-            <Plus size={20} />
-            {isOpen && <span className="ml-2 text-sm font-medium">{t('add_category')}</span>}
-        </button>
+        {!isDemoMode && (
+          <button 
+              onClick={(e) => {
+                  e.stopPropagation();
+                  handleAddCategory();
+              }}
+              className={cn(
+                  "w-full flex items-center justify-center p-2 rounded-md transition-colors text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200/50",
+                  !isOpen && "bg-transparent hover:bg-gray-100 border-transparent text-gray-500"
+              )}
+              title={t('add_category')}
+              aria-label={t('add_category')}
+          >
+              <Plus size={20} />
+              {isOpen && <span className="ml-2 text-sm font-medium">{t('add_category')}</span>}
+          </button>
+        )}
       </div>
 
       <BookmarkModal

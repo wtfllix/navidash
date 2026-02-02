@@ -36,6 +36,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isResetting, setIsResetting] = useState(false);
+  const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
 
   const handleLanguageChange = (newLocale: string) => {
     startTransition(() => {
@@ -237,59 +238,63 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         </div>
 
         {/* Import Section */}
-        <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-          <h3 className="text-sm font-semibold text-gray-900 mb-2 flex items-center">
-            <Upload size={16} className="mr-2" />
-            {t('import_config')}
-          </h3>
-          <p className="text-sm text-gray-500 mb-4">
-            {t('import_desc')}
-          </p>
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            onChange={handleFileChange} 
-            accept=".json" 
-            className="hidden" 
-          />
-          <button
-            onClick={handleImportClick}
-            className="w-full flex items-center justify-center px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 hover:bg-blue-100 transition-colors shadow-sm"
-          >
-            <Upload size={16} className="mr-2" />
-            {t('select_file')}
-          </button>
-        </div>
+        {!isDemoMode && (
+          <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+            <h3 className="text-sm font-semibold text-gray-900 mb-2 flex items-center">
+              <Upload size={16} className="mr-2" />
+              {t('import_config')}
+            </h3>
+            <p className="text-sm text-gray-500 mb-4">
+              {t('import_desc')}
+            </p>
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              onChange={handleFileChange} 
+              accept=".json" 
+              className="hidden" 
+            />
+            <button
+              onClick={handleImportClick}
+              className="w-full flex items-center justify-center px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 hover:bg-blue-100 transition-colors shadow-sm"
+            >
+              <Upload size={16} className="mr-2" />
+              {t('select_file')}
+            </button>
+          </div>
+        )}
 
         {/* Reset Section */}
-        <div className="border-t border-gray-100 pt-6">
-           <button
-            onClick={handleReset}
-            className={cn(
-                "w-full flex items-center justify-center px-4 py-2 rounded-lg transition-colors border shadow-sm",
-                isResetting 
-                    ? "bg-red-600 text-white border-red-600 hover:bg-red-700" 
-                    : "bg-white text-red-600 border-red-200 hover:bg-red-50"
+        {!isDemoMode && (
+          <div className="border-t border-gray-100 pt-6">
+             <button
+              onClick={handleReset}
+              className={cn(
+                  "w-full flex items-center justify-center px-4 py-2 rounded-lg transition-colors border shadow-sm",
+                  isResetting 
+                      ? "bg-red-600 text-white border-red-600 hover:bg-red-700" 
+                      : "bg-white text-red-600 border-red-200 hover:bg-red-50"
+              )}
+            >
+              {isResetting ? (
+                  <>
+                      <AlertTriangle size={16} className="mr-2" />
+                      {t('confirm_reset')}
+                  </>
+              ) : (
+                  <>
+                      <RefreshCw size={16} className="mr-2" />
+                      {t('reset_defaults')}
+                  </>
+              )}
+            </button>
+            {isResetting && (
+              <p className="text-xs text-center text-red-500 mt-2">
+                  {t('reset_warning')}
+              </p>
             )}
-          >
-            {isResetting ? (
-                <>
-                    <AlertTriangle size={16} className="mr-2" />
-                    {t('confirm_reset')}
-                </>
-            ) : (
-                <>
-                    <RefreshCw size={16} className="mr-2" />
-                    {t('reset_defaults')}
-                </>
-            )}
-          </button>
-          {isResetting && (
-            <p className="text-xs text-center text-red-500 mt-2">
-                {t('reset_warning')}
-            </p>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </Modal>
   );
