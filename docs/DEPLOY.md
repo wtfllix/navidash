@@ -59,7 +59,7 @@ If you prefer not to use Docker, you can deploy using Node.js directly.
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/your-username/navidash.git
+   git clone https://github.com/wtfllix/navidash.git
    cd navidash
    ```
 
