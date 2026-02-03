@@ -10,6 +10,7 @@ interface SettingsState {
   themeColor: string;
   customFavicon: string;
   customTitle: string;
+  language: string;
   
   setBackgroundImage: (url: string) => void;
   setBackgroundBlur: (blur: number) => void;
@@ -19,6 +20,7 @@ interface SettingsState {
   setThemeColor: (color: string) => void;
   setCustomFavicon: (url: string) => void;
   setCustomTitle: (title: string) => void;
+  setLanguage: (lang: string) => void;
   resetSettings: () => void;
   fetchSettings: () => Promise<void>;
 }
@@ -130,6 +132,10 @@ export const useSettingsStore = create<SettingsState>()(
         set({ customTitle: title });
         saveToServer(get());
       },
+      setLanguage: (lang) => {
+        set({ language: lang });
+        saveToServer(get());
+      },
       resetSettings: () => {
         const defaults = {
           backgroundImage: 'radial-gradient(#d1d5db 2px, transparent 2px)',
@@ -139,7 +145,8 @@ export const useSettingsStore = create<SettingsState>()(
           backgroundRepeat: 'repeat',
           themeColor: '#3b82f6',
           customFavicon: '/favicon.svg',
-          customTitle: 'Navidash'
+          customTitle: 'Navidash',
+          language: 'en'
         };
         set(defaults);
         saveToServer(get());

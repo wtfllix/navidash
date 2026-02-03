@@ -5,7 +5,7 @@ import { useBookmarkStore } from '@/store/useBookmarkStore';
 import { useWidgetStore } from '@/store/useWidgetStore';
 import { useToastStore } from '@/store/useToastStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
-import { Download, Upload, RefreshCw, AlertTriangle, FileJson, Globe, Palette, Image as ImageIcon } from 'lucide-react';
+import { Download, Upload, RefreshCw, AlertTriangle, FileJson, Globe, Palette, Image as ImageIcon, Save } from 'lucide-react';
 import { Bookmark, Widget } from '@/types';
 import { useTranslations, useLocale } from 'next-intl';
 import { usePathname, useRouter } from '@/navigation';
@@ -41,9 +41,11 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isResetting, setIsResetting] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
 
   const handleLanguageChange = (newLocale: string) => {
+    setLanguage(newLocale);
     startTransition(() => {
       // @ts-ignore
       router.replace(pathname, { locale: newLocale });
@@ -150,6 +152,38 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     }
     localStorage.clear();
     window.location.reload();
+  };
+
+  const handleSync = async () => {
+    setIsSyncing(true);
+    try {
+      const settings = {
+        themeColor,
+        customFavicon,
+        customTitle,
+        backgroundImage,
+        backgroundBlur,
+        backgroundOpacity,
+        backgroundSize,
+        backgroundRepeat,
+        language: locale
+      };
+      
+      await fetch('/api/settings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(settings),
+      });
+      
+      addToast(t('sync_success') || 'Settings synced successfully', 'success');
+    } catch (error) {
+      console.error('Sync failed:', error);
+      addToast(t('sync_failed') || 'Sync failed', 'error');
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   const COLOR_OPTIONS = [
