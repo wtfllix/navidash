@@ -2,7 +2,7 @@ version: '3'
 
 services:
   navidash:
-    image: ghcr.io/wtfllix/navidash:latest
+    image: ghcr.io/wtfllix/navidash:master
     container_name: navidash
     restart: unless-stopped
     ports:
