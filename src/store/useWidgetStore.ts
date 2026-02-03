@@ -43,7 +43,7 @@ const saveToServer = (widgets: Widget[]) => {
 
   saveTimeout = setTimeout(async () => {
     try {
-      await fetch('/api/widgets', {
+      const res = await fetch('/api/widgets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(widgets),

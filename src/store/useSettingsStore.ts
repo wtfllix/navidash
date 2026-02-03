@@ -64,7 +64,7 @@ const saveToServer = (settings: SettingsState) => {
         language
       };
 
-      await fetch('/api/settings', {
+      const res = await fetch('/api/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
