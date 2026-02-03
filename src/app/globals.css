@@ -6,6 +6,7 @@
   :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
+    --primary-color: 59 130 246; /* Default Blue-500 in RGB */
   }
 
   body {
@@ -17,7 +18,7 @@
   /* Override react-grid-layout placeholder style */
   /* Using specific selector to ensure override */
   .layout .react-grid-placeholder {
-    background: rgba(59, 130, 246, 0.3) !important; /* blue-500/30 - 柔和的蓝色 */
+    background: rgba(var(--primary-color), 0.3) !important;
     opacity: 1 !important;
     border-radius: 0.75rem !important; /* rounded-xl */
     z-index: 1 !important;

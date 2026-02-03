@@ -3,6 +3,7 @@ import { Inter, DM_Serif_Display, Outfit, Bebas_Neue } from "next/font/google";
 import "../globals.css";
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
+import ThemeManager from '@/components/settings/ThemeManager';
 
 const inter = Inter({ subsets: ["latin"], variable: '--font-inter' });
 const dmSerif = DM_Serif_Display({ weight: "400", subsets: ["latin"], variable: '--font-dm-serif' });
@@ -12,6 +13,9 @@ const bebas = Bebas_Neue({ weight: "400", subsets: ["latin"], variable: '--font-
 export const metadata: Metadata = {
   title: "Navidash",
   description: "Personal Navigation Dashboard",
+  icons: {
+    icon: '/favicon.svg',
+  },
 };
 
 export default async function LocaleLayout({
@@ -27,6 +31,7 @@ export default async function LocaleLayout({
     <html lang={locale}>
       <body className={`${inter.variable} ${dmSerif.variable} ${outfit.variable} ${bebas.variable} font-sans`}>
         <NextIntlClientProvider messages={messages}>
+          <ThemeManager />
           {children}
         </NextIntlClientProvider>
       </body>

@@ -20,7 +20,12 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     backgroundImage, setBackgroundImage, 
     backgroundBlur, setBackgroundBlur,
     backgroundOpacity, setBackgroundOpacity,
-    setBackgroundSize, setBackgroundRepeat
+    backgroundSize, setBackgroundSize,
+    backgroundRepeat, setBackgroundRepeat,
+    themeColor, setThemeColor,
+    customFavicon, setCustomFavicon,
+    customTitle, setCustomTitle,
+    resetSettings
   } = useSettingsStore();
   const { bookmarks } = useBookmarkStore();
   const { widgets, setWidgets } = useWidgetStore();
@@ -50,6 +55,16 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     const data = {
       bookmarks,
       widgets,
+      settings: {
+        themeColor,
+        customFavicon,
+        customTitle,
+        backgroundImage,
+        backgroundBlur,
+        backgroundOpacity,
+        backgroundSize,
+        backgroundRepeat
+      },
       exportDate: new Date().toISOString(),
       version: '1.0'
     };
@@ -90,6 +105,33 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           setWidgets(data.widgets);
         }
 
+        if (data.settings) {
+          if (typeof data.settings.themeColor === 'string') {
+            setThemeColor(data.settings.themeColor);
+          }
+          if (typeof data.settings.customFavicon === 'string') {
+            setCustomFavicon(data.settings.customFavicon);
+          }
+          if (typeof data.settings.customTitle === 'string') {
+            setCustomTitle(data.settings.customTitle);
+          }
+          if (typeof data.settings.backgroundImage === 'string') {
+            setBackgroundImage(data.settings.backgroundImage);
+          }
+          if (typeof data.settings.backgroundBlur === 'number') {
+            setBackgroundBlur(data.settings.backgroundBlur);
+          }
+          if (typeof data.settings.backgroundOpacity === 'number') {
+            setBackgroundOpacity(data.settings.backgroundOpacity);
+          }
+          if (typeof data.settings.backgroundSize === 'string') {
+            setBackgroundSize(data.settings.backgroundSize);
+          }
+          if (typeof data.settings.backgroundRepeat === 'string') {
+            setBackgroundRepeat(data.settings.backgroundRepeat);
+          }
+        }
+
         addToast(t('config_restored'), 'success');
         onClose();
       } catch (error) {
@@ -110,11 +152,21 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     window.location.reload();
   };
 
+  const COLOR_OPTIONS = [
+    { label: 'Blue', color: '#3b82f6' },
+    { label: 'Purple', color: '#a855f7' },
+    { label: 'Pink', color: '#ec4899' },
+    { label: 'Orange', color: '#f97316' },
+    { label: 'Green', color: '#22c55e' },
+    { label: 'Red', color: '#ef4444' },
+    { label: 'Slate', color: '#64748b' },
+  ];
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={t('title')}>
       <div className="space-y-6">
         
-        {/* Background Settings */}
+        {/* Appearance Settings */}
           <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
             <h3 className="text-sm font-semibold text-gray-900 mb-2 flex items-center">
               <Palette size={16} className="mr-2" />
@@ -124,10 +176,80 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               {t('appearance_desc') || '自定义主区域的背景风格。'}
             </p>
             
-            <div className="space-y-4">
+            <div className="space-y-6">
+               {/* Theme Color */}
                <div className="space-y-2">
                  <label className="text-xs font-medium text-gray-700 block">
-                   {t('image_url') || '图片链接'}
+                   {t('theme_color') || '主题色'}
+                 </label>
+                 <div className="flex flex-wrap gap-3">
+                    {COLOR_OPTIONS.map((option) => (
+                      <button
+                        key={option.color}
+                        onClick={() => setThemeColor(option.color)}
+                        className={cn(
+                          "w-6 h-6 rounded-full transition-transform hover:scale-110 focus:outline-none ring-2 ring-offset-1",
+                          themeColor === option.color ? "ring-gray-400 scale-110" : "ring-transparent"
+                        )}
+                        style={{ backgroundColor: option.color }}
+                        title={option.label}
+                      />
+                    ))}
+                    <div className="relative group w-6 h-6">
+                       <input 
+                          type="color" 
+                          value={themeColor}
+                          onChange={(e) => setThemeColor(e.target.value)}
+                          className="w-full h-full rounded-full overflow-hidden border-0 p-0 cursor-pointer opacity-0 absolute inset-0 z-10"
+                       />
+                       <div className="w-full h-full rounded-full bg-gradient-to-br from-gray-100 to-gray-300 border border-gray-200 flex items-center justify-center text-[10px] text-gray-500 group-hover:bg-gray-200 transition-colors">
+                          +
+                       </div>
+                    </div>
+                 </div>
+               </div>
+
+               {/* Website Title */}
+               <div className="space-y-2">
+                 <label className="text-xs font-medium text-gray-700 block">
+                   {t('website_title') || '网站标题'}
+                 </label>
+                 <input
+                   type="text"
+                   value={customTitle}
+                   onChange={(e) => setCustomTitle(e.target.value)}
+                   placeholder="Navidash"
+                   className="w-full text-sm border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                 />
+               </div>
+
+               {/* Favicon */}
+               <div className="space-y-2">
+                 <label className="text-xs font-medium text-gray-700 block">
+                   {t('custom_favicon') || '自定义 Favicon'}
+                 </label>
+                 <div className="flex gap-2">
+                    <input
+                       type="text"
+                       value={customFavicon}
+                       onChange={(e) => setCustomFavicon(e.target.value)}
+                       placeholder="/favicon.svg"
+                       className="flex-1 text-sm border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                    />
+                    <div className="w-9 h-9 shrink-0 rounded border border-gray-200 bg-white flex items-center justify-center p-1.5">
+                       {/* eslint-disable-next-line @next/next/no-img-element */}
+                       <img src={customFavicon} alt="icon" className="w-full h-full object-contain" onError={(e) => e.currentTarget.src = '/favicon.svg'} />
+                    </div>
+                 </div>
+                 <p className="text-[10px] text-gray-400">
+                   {t('favicon_desc') || '输入图片 URL 或使用默认的 /favicon.svg'}
+                 </p>
+               </div>
+
+               {/* Background Image */}
+               <div className="space-y-2">
+                 <label className="text-xs font-medium text-gray-700 block">
+                   {t('image_url') || '背景图片链接'}
                  </label>
                  <input
                    type="text"
