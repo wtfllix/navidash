@@ -15,9 +15,10 @@
 
 @layer components {
   /* Override react-grid-layout placeholder style */
-  .react-grid-placeholder {
-    background: #e2e8f0 !important; /* slate-200 */
-    opacity: 0.5 !important;
+  /* Using specific selector to ensure override */
+  .layout .react-grid-placeholder {
+    background: rgba(59, 130, 246, 0.3) !important; /* blue-500/30 - 柔和的蓝色 */
+    opacity: 1 !important;
     border-radius: 0.75rem !important; /* rounded-xl */
     z-index: 1 !important;
   }
