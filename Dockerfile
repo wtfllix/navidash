@@ -63,10 +63,19 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # Using 777 permissions to ensure writability regardless of volume mount ownership issues
 RUN mkdir -p /app/data && chmod 777 /app/data
 
+# Install su-exec for privilege dropping
+RUN apk add --no-cache su-exec
+
+# Copy entrypoint script
+COPY docker-entrypoint.sh /app/
+RUN chmod +x /app/docker-entrypoint.sh
+
 # Declare volume for data persistence
 VOLUME ["/app/data"]
 
-USER nextjs
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
+# CMD is passed to the entrypoint script
+CMD ["node", "server.js"]
 
 EXPOSE 3000
 
