@@ -14,6 +14,7 @@ interface BookmarkState {
   updateBookmark: (id: string, data: Partial<Bookmark>) => void; // 更新书签/分类
   setBookmarks: (bookmarks: Bookmark[]) => void; // 全量设置书签（用于导入/重置）
   fetchBookmarks: () => Promise<void>; // 从服务器获取书签数据
+  dataVersion?: number; // 数据版本（时间戳）
 }
 
 // 初始默认书签数据 (Moved to src/config/initialData.ts)
@@ -44,6 +45,10 @@ const saveToServer = (bookmarks: Bookmark[]) => {
       if (!res.ok) {
         throw new Error(`Server responded with ${res.status}`);
       }
+      const data = await res.json();
+      if (data.version) {
+        useBookmarkStore.setState({ dataVersion: data.version });
+      }
     } catch (error) {
       console.error('Failed to save bookmarks:', error);
       // Notify user about the failure
@@ -67,9 +72,15 @@ export const useBookmarkStore = create<BookmarkState>()(
         try {
           const res = await fetch(`/api/bookmarks?t=${Date.now()}`);
           if (res.ok) {
-            const data = await res.json();
-            if (data && Array.isArray(data)) {
-              set({ bookmarks: data });
+            const serverVersion = Number(res.headers.get('X-Data-Version')) || 0;
+            const currentVersion = get().dataVersion || 0;
+
+            // Only update if server version is different/newer or we have no version
+            if (serverVersion !== currentVersion) {
+              const data = await res.json();
+              if (data && Array.isArray(data)) {
+                set({ bookmarks: data, dataVersion: serverVersion });
+              }
             }
           }
         } catch (error) {
@@ -118,34 +129,34 @@ export const useBookmarkStore = create<BookmarkState>()(
       // 递归删除指定 ID 的书签或分类
       removeBookmark: (id) => {
         set((state) => {
-            const removeRecursive = (items: Bookmark[]): Bookmark[] => {
-                return items.filter(item => item.id !== id).map(item => ({
-                    ...item,
-                    children: item.children ? removeRecursive(item.children) : undefined
-                }));
-            };
-            const newBookmarks = removeRecursive(state.bookmarks);
-            saveToServer(newBookmarks);
-            return { bookmarks: newBookmarks };
+          const removeRecursive = (items: Bookmark[]): Bookmark[] => {
+            return items.filter(item => item.id !== id).map(item => ({
+              ...item,
+              children: item.children ? removeRecursive(item.children) : undefined
+            }));
+          };
+          const newBookmarks = removeRecursive(state.bookmarks);
+          saveToServer(newBookmarks);
+          return { bookmarks: newBookmarks };
         });
       },
       // 递归更新书签信息
       updateBookmark: (id, data) => {
         set((state) => {
-            const updateRecursive = (items: Bookmark[]): Bookmark[] => {
-                return items.map(item => {
-                    if (item.id === id) {
-                        return { ...item, ...data };
-                    }
-                    if (item.children) {
-                        return { ...item, children: updateRecursive(item.children) };
-                    }
-                    return item;
-                });
-            };
-            const newBookmarks = updateRecursive(state.bookmarks);
-            saveToServer(newBookmarks);
-            return { bookmarks: newBookmarks };
+          const updateRecursive = (items: Bookmark[]): Bookmark[] => {
+            return items.map(item => {
+              if (item.id === id) {
+                return { ...item, ...data };
+              }
+              if (item.children) {
+                return { ...item, children: updateRecursive(item.children) };
+              }
+              return item;
+            });
+          };
+          const newBookmarks = updateRecursive(state.bookmarks);
+          saveToServer(newBookmarks);
+          return { bookmarks: newBookmarks };
         });
       },
       setBookmarks: (bookmarks) => {

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getWidgets, saveWidgets } from '@/lib/server/storage';
+import { getWidgets, saveWidgets, getWidgetsLastModified } from '@/lib/server/storage';
 import { WidgetsArraySchema } from '@/lib/schemas';
 import { z, ZodError } from 'zod';
 
@@ -12,7 +12,13 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET() {
   const widgets = await getWidgets();
-  return NextResponse.json(widgets);
+  const lastModified = await getWidgetsLastModified();
+
+  return NextResponse.json(widgets, {
+    headers: {
+      'X-Data-Version': lastModified.toString(),
+    },
+  });
 }
 
 /**
@@ -27,7 +33,8 @@ export async function POST(request: Request) {
     const body = await request.json();
     const widgets = WidgetsArraySchema.parse(body); // Validation
     await saveWidgets(widgets);
-    return NextResponse.json({ success: true });
+    const lastModified = await getWidgetsLastModified();
+    return NextResponse.json({ success: true, version: lastModified });
   } catch (error) {
     if (error instanceof ZodError) {
       console.error('Validation error:', JSON.stringify(error.errors, null, 2));

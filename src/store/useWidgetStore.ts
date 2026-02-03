@@ -9,6 +9,7 @@ interface WidgetState {
   updateWidget: (id: string, data: Partial<Widget>) => void;
   setWidgets: (widgets: Widget[]) => void;
   fetchWidgets: () => Promise<void>;
+  dataVersion?: number;
 }
 
 const initialWidgets: Widget[] = [
@@ -47,6 +48,10 @@ const saveToServer = (widgets: Widget[]) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(widgets),
       });
+      const data = await res.json();
+      if (data.version) {
+        useWidgetStore.setState({ dataVersion: data.version });
+      }
     } catch (error) {
       console.error('Failed to save widgets:', error);
     } finally {
@@ -68,9 +73,14 @@ export const useWidgetStore = create<WidgetState>()(
         try {
           const res = await fetch(`/api/widgets?t=${Date.now()}`);
           if (res.ok) {
-            const data = await res.json();
-            if (data && Array.isArray(data)) {
-              set({ widgets: data });
+            const serverVersion = Number(res.headers.get('X-Data-Version')) || 0;
+            const currentVersion = useWidgetStore.getState().dataVersion || 0;
+
+            if (serverVersion !== currentVersion) {
+              const data = await res.json();
+              if (data && Array.isArray(data)) {
+                set({ widgets: data, dataVersion: serverVersion });
+              }
             }
           }
         } catch (error) {

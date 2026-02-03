@@ -11,7 +11,7 @@ interface SettingsState {
   customFavicon: string;
   customTitle: string;
   language: string;
-  
+
   setBackgroundImage: (url: string) => void;
   setBackgroundBlur: (blur: number) => void;
   setBackgroundOpacity: (opacity: number) => void;
@@ -23,6 +23,7 @@ interface SettingsState {
   setLanguage: (lang: string) => void;
   resetSettings: () => void;
   fetchSettings: () => Promise<void>;
+  dataVersion?: number;
 }
 
 /**
@@ -68,6 +69,10 @@ const saveToServer = (settings: SettingsState) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
+      const data = await res.json();
+      if (data.version) {
+        useSettingsStore.setState({ dataVersion: data.version });
+      }
     } catch (error) {
       console.error('Failed to save settings:', error);
     } finally {
@@ -93,9 +98,15 @@ export const useSettingsStore = create<SettingsState>()(
         try {
           const res = await fetch(`/api/settings?t=${Date.now()}`);
           if (res.ok) {
-            const data = await res.json();
-            if (data && Object.keys(data).length > 0) {
-              set(data);
+            const serverVersion = Number(res.headers.get('X-Data-Version')) || 0;
+            const currentVersion = get().dataVersion || 0;
+
+            if (serverVersion !== currentVersion) {
+              const data = await res.json();
+              // Only update if we received valid data
+              if (data && Object.keys(data).length > 0) {
+                set({ ...data, dataVersion: serverVersion });
+              }
             }
           }
         } catch (error) {

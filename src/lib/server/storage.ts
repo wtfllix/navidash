@@ -42,7 +42,7 @@ export async function getBookmarks(): Promise<Bookmark[] | null> {
     logger.info('Demo mode: returning initial bookmarks');
     return initialBookmarks;
   }
-  
+
   try {
     await ensureDataDir();
     const data = await fs.readFile(BOOKMARKS_FILE, 'utf-8');
@@ -55,6 +55,29 @@ export async function getBookmarks(): Promise<Bookmark[] | null> {
     }
     logger.error('Failed to read bookmarks', error);
     return null;
+  }
+}
+
+/**
+ * 获取书签文件的最后修改时间
+ * 用于前端轮询检查数据是否有更新
+ * @returns {Promise<number>} 时间戳 (ms)
+ */
+export async function getBookmarksLastModified(): Promise<number> {
+  if (IS_DEMO_MODE) {
+    return 0;
+  }
+
+  try {
+    await ensureDataDir();
+    const stats = await fs.stat(BOOKMARKS_FILE);
+    return stats.mtimeMs;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      return 0;
+    }
+    logger.error('Failed to get bookmarks stats', error);
+    return 0;
   }
 }
 
@@ -107,6 +130,23 @@ export async function getWidgets(): Promise<Widget[] | null> {
 }
 
 /**
+ * 获取小组件文件的最后修改时间
+ * @returns {Promise<number>} 时间戳 (ms)
+ */
+export async function getWidgetsLastModified(): Promise<number> {
+  if (IS_DEMO_MODE) return 0;
+  try {
+    await ensureDataDir();
+    const stats = await fs.stat(WIDGETS_FILE);
+    return stats.mtimeMs;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return 0;
+    logger.error('Failed to get widgets stats', error);
+    return 0;
+  }
+}
+
+/**
  * 保存小组件配置数据
  * 将小组件列表写入 JSON 文件
  * @param {Widget[]} widgets - 要保存的小组件列表
@@ -151,6 +191,26 @@ export async function getSettings(): Promise<any | null> {
     }
     logger.error('Failed to read settings', error);
     return null;
+  }
+}
+
+/**
+ * 保存设置数据
+ * 将设置对象写入 JSON 文件
+ * @param {any} settings - 要保存的设置对象
+ * @returns {Promise<void>}
+ * @throws {Error} 如果写入失败则抛出错误
+ */
+export async function getSettingsLastModified(): Promise<number> {
+  if (IS_DEMO_MODE) return 0;
+  try {
+    await ensureDataDir();
+    const stats = await fs.stat(SETTINGS_FILE);
+    return stats.mtimeMs;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return 0;
+    logger.error('Failed to get settings stats', error);
+    return 0;
   }
 }
 

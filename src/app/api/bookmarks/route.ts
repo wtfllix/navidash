@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getBookmarks, saveBookmarks } from '@/lib/server/storage';
+import { getBookmarks, saveBookmarks, getBookmarksLastModified } from '@/lib/server/storage';
 import { BookmarksArraySchema } from '@/lib/schemas';
 import { z, ZodError } from 'zod';
 
@@ -12,7 +12,13 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET() {
   const bookmarks = await getBookmarks();
-  return NextResponse.json(bookmarks);
+  const lastModified = await getBookmarksLastModified();
+
+  return NextResponse.json(bookmarks, {
+    headers: {
+      'X-Data-Version': lastModified.toString(),
+    },
+  });
 }
 
 /**
@@ -27,7 +33,8 @@ export async function POST(request: Request) {
     const body = await request.json();
     const bookmarks = BookmarksArraySchema.parse(body); // Validation
     await saveBookmarks(bookmarks);
-    return NextResponse.json({ success: true });
+    const lastModified = await getBookmarksLastModified();
+    return NextResponse.json({ success: true, version: lastModified });
   } catch (error) {
     if (error instanceof ZodError) {
       console.error('Validation error:', JSON.stringify(error.errors, null, 2));
