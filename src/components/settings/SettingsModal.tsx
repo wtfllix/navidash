@@ -25,6 +25,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     themeColor, setThemeColor,
     customFavicon, setCustomFavicon,
     customTitle, setCustomTitle,
+    setLanguage,
     resetSettings
   } = useSettingsStore();
   const { bookmarks } = useBookmarkStore();
