@@ -85,6 +85,7 @@ export const useSettingsStore = create<SettingsState>()(
       themeColor: '#3b82f6', // blue-500
       customFavicon: '/favicon.svg',
       customTitle: 'Navidash',
+      language: 'en',
 
       fetchSettings: async () => {
         try {
