@@ -1,9 +1,9 @@
 version: '3'
 
 services:
-  nav2:
-    build: .
-    container_name: nav2
+  navidash:
+    image: ghcr.io/wtfllix/navidash:latest
+    container_name: navidash
     restart: unless-stopped
     ports:
       - "3000:3000"
