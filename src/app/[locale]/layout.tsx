@@ -4,6 +4,7 @@ import "../globals.css";
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import ThemeManager from '@/components/settings/ThemeManager';
+import DataSyncer from '@/components/layout/DataSyncer';
 
 const inter = Inter({ subsets: ["latin"], variable: '--font-inter' });
 const dmSerif = DM_Serif_Display({ weight: "400", subsets: ["latin"], variable: '--font-dm-serif' });
@@ -31,6 +32,7 @@ export default async function LocaleLayout({
     <html lang={locale}>
       <body className={`${inter.variable} ${dmSerif.variable} ${outfit.variable} ${bebas.variable} font-sans`}>
         <NextIntlClientProvider messages={messages}>
+          <DataSyncer />
           <ThemeManager />
           {children}
         </NextIntlClientProvider>

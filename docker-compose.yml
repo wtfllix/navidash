@@ -2,12 +2,18 @@ version: '3'
 
 services:
   navidash:
-    image: ghcr.io/wtfllix/navidash:master
+    # Use the local Dockerfile for building
+    build: .
+    # Or use the pre-built image
+    # image: ghcr.io/wtfllix/navidash:latest
     container_name: navidash
     restart: unless-stopped
     ports:
       - "3000:3000"
     volumes:
+      # Persist data to local ./data directory
       - ./data:/app/data
     environment:
       - NODE_ENV=production
+      # - NEXT_PUBLIC_DEMO_MODE=false
+

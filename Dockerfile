@@ -62,6 +62,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # Ensure data directory exists and is writable
 RUN mkdir -p /app/data && chown nextjs:nodejs /app/data
 
+# Declare volume for data persistence
+VOLUME ["/app/data"]
+
 USER nextjs
 
 EXPOSE 3000
