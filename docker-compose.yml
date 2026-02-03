@@ -15,5 +15,7 @@ services:
       - ./data:/app/data
     environment:
       - NODE_ENV=production
-      # - NEXT_PUBLIC_DEMO_MODE=false
+      - DEMO_MODE=false
+      - NEXT_PUBLIC_DEMO_MODE=false
+      - DATA_DIR=/app/data
 

@@ -47,7 +47,8 @@ const saveToServer = (settings: SettingsState) => {
         backgroundRepeat,
         themeColor,
         customFavicon,
-        customTitle
+        customTitle,
+        language
       } = settings;
 
       const payload = {
@@ -58,7 +59,8 @@ const saveToServer = (settings: SettingsState) => {
         backgroundRepeat,
         themeColor,
         customFavicon,
-        customTitle
+        customTitle,
+        language
       };
 
       await fetch('/api/settings', {

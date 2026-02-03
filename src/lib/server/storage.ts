@@ -1,16 +1,21 @@
 import fs from 'fs/promises';
+import fsSync from 'fs';
 import path from 'path';
 import { Bookmark, Widget } from '@/types';
 import { logger } from '@/lib/logger';
 import { initialBookmarks } from '@/config/initialData';
 
-const DATA_DIR = path.join(process.cwd(), 'data');
+const DEFAULT_DIR = '/app/data';
+const CWD_DATA = path.join(process.cwd(), 'data');
+const DATA_DIR = process.env.DATA_DIR || (fsSync.existsSync(DEFAULT_DIR) ? DEFAULT_DIR : CWD_DATA);
 const BOOKMARKS_FILE = path.join(DATA_DIR, 'bookmarks.json');
 const WIDGETS_FILE = path.join(DATA_DIR, 'widgets.json');
 const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
 
-// 检查是否为演示模式
-const IS_DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+// 检查是否为演示模式（兼容服务端与客户端环境变量）
+const IS_DEMO_MODE =
+  process.env.DEMO_MODE === 'true' ||
+  process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
 
 /**
  * 确保数据目录存在
