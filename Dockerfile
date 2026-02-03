@@ -60,7 +60,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 # Ensure data directory exists and is writable
-RUN mkdir -p /app/data && chown nextjs:nodejs /app/data
+# Using 777 permissions to ensure writability regardless of volume mount ownership issues
+RUN mkdir -p /app/data && chmod 777 /app/data
 
 # Declare volume for data persistence
 VOLUME ["/app/data"]
