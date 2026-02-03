@@ -3,6 +3,8 @@ import { getBookmarks, saveBookmarks } from '@/lib/server/storage';
 import { BookmarksArraySchema } from '@/lib/schemas';
 import { z, ZodError } from 'zod';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/bookmarks
  * 获取所有书签数据

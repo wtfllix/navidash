@@ -65,10 +65,10 @@ export const useBookmarkStore = create<BookmarkState>()(
       // 从服务器 API 获取最新书签数据
       fetchBookmarks: async () => {
         try {
-          const res = await fetch('/api/bookmarks');
+          const res = await fetch(`/api/bookmarks?t=${Date.now()}`);
           if (res.ok) {
             const data = await res.json();
-            if (data && Array.isArray(data) && data.length > 0) {
+            if (data && Array.isArray(data)) {
               set({ bookmarks: data });
             }
           }

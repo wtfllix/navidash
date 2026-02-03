@@ -69,7 +69,7 @@ export const useWidgetStore = create<WidgetState>()(
           const res = await fetch(`/api/widgets?t=${Date.now()}`);
           if (res.ok) {
             const data = await res.json();
-            if (data && Array.isArray(data) && data.length > 0) {
+            if (data && Array.isArray(data)) {
               set({ widgets: data });
             }
           }
