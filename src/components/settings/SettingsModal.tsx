@@ -386,6 +386,30 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           </div>
         )}
 
+        {/* Sync Section */}
+        {!isDemoMode && (
+          <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+            <h3 className="text-sm font-semibold text-gray-900 mb-2 flex items-center">
+              <Save size={16} className="mr-2" />
+              {t('sync_data')}
+            </h3>
+            <p className="text-sm text-gray-500 mb-4">
+              {t('sync_desc')}
+            </p>
+            <button
+              onClick={handleSync}
+              disabled={isSyncing}
+              className={cn(
+                "w-full flex items-center justify-center px-4 py-2 bg-green-50 border border-green-200 rounded-lg text-green-700 hover:bg-green-100 transition-colors shadow-sm",
+                isSyncing && "opacity-50 cursor-not-allowed"
+              )}
+            >
+              <Save size={16} className="mr-2" />
+              {isSyncing ? tGeneral('loading') : t('sync_now')}
+            </button>
+          </div>
+        )}
+
         {/* Reset Section */}
         {!isDemoMode && (
           <div className="border-t border-gray-100 pt-6">
