@@ -121,3 +121,5 @@ MIT License
 - 🕰️ **拟真时钟**：新增无边框拟真时钟。
 - 🎨 **背景管理**：支持自定义图片 + 模糊调节。
 - ⚙️ **配置简化**：移除冗余预设，优化交互。
+
+<iframe style="width:100%;height:auto;min-width:600px;min-height:400px;" src="https://www.star-history.com/embed?secret=#wtfllix/navidash&type=date&legend=top-left" frameBorder="0"></iframe>
