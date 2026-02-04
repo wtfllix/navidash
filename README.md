@@ -6,7 +6,7 @@
 **中文** | [English](./README_EN.md)
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Version](https://img.shields.io/badge/version-0.2.1-green)
+![Version](https://img.shields.io/badge/version-0.3.0-green)
 ![Next.js](https://img.shields.io/badge/Next.js-14-black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
 ![Docker](https://img.shields.io/badge/Docker-Ready-2496ed)
@@ -14,6 +14,14 @@
 **NaviDash** 专为追求极致效率与美学的用户设计。它摒弃了繁杂的装饰，以经典的“洞洞板”风格为基础，结合自由拖拽的网格布局，为您打造一个既美观又实用的浏览器起始页。
 
 ---
+
+## ✨ v0.3.0 更新日志 (Changelog)
+
+- 🔄 **全方位多端同步**：重构了数据存储架构，支持书签、小组件布局、个性化设置在多设备间实时同步（轮询机制）。
+- 🚀 **智能性能优化**：引入针对页面可见性的智能轮询策略，页面后台运行时自动暂停同步，极致省电省流。
+- 🐳 **Docker 部署体验升级**：
+  - 新增 `entrypoint` 脚本，容器启动时自动修复数据目录权限，彻底解决 `EACCES` 问题。
+  - 优化 Docker 镜像构建流程。
 
 ## ✨ v0.2.1 更新日志 (Changelog)
 
@@ -48,7 +56,7 @@
 
 - 💾 **数据安全与自托管**
   - **完全掌控**：所有数据均可导出为 JSON 备份，随时恢复。
-  - **Docker 部署**：提供开箱即用的 Docker 镜像，数据存储在本地 JSON 文件中，迁移只需复制文件。
+  - **Docker 部署**：提供开箱即用的 Docker 镜像，数据存储在本地 JSON 文件中，支持多端实时同步。
 
 ---
 
