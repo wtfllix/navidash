@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Widget } from '@/types';
 import { useWidgetStore } from '@/store/useWidgetStore';
 import { ExternalLink, Edit2, Check, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { cn } from '@/lib/utils';
 
 /**
  * QuickLinkWidget Component
@@ -17,6 +18,22 @@ export default React.memo(function QuickLinkWidget({ widget }: { widget: Widget 
   const [title, setTitle] = useState(widget.config?.title || '');
   const [url, setUrl] = useState(widget.config?.url || '');
   const t = useTranslations('Widgets');
+
+  // 当外部配置(如模态框)更新时，同步本地状态
+  useEffect(() => {
+    const newTitle = widget.config?.title || '';
+    const newUrl = widget.config?.url || '';
+
+    setTitle(newTitle);
+    setUrl(newUrl);
+
+    // 如果配置中有URL，且当前处于编辑模式（可能是因为之前是空的），则退出编辑模式
+    // 注意：如果是用户手动点击编辑按钮进入的，这里也会强制退出，这在保存时是符合预期的。
+    // 但如果在模态框只改了标题，也会导致内联编辑退出，这也是合理的。
+    if (widget.config?.url) {
+      setIsEditing(false);
+    }
+  }, [widget.config]);
 
   const handleSave = () => {
     if (title && url) {
@@ -48,7 +65,7 @@ export default React.memo(function QuickLinkWidget({ widget }: { widget: Widget 
           onChange={(e) => setUrl(e.target.value)}
         />
         <div className="flex space-x-2 mt-auto">
-          <button 
+          <button
             onClick={handleSave}
             className="flex-1 bg-blue-600 text-white text-xs py-1.5 rounded hover:bg-blue-700 flex items-center justify-center space-x-1"
           >
@@ -56,28 +73,43 @@ export default React.memo(function QuickLinkWidget({ widget }: { widget: Widget 
           </button>
           {/* 只有在已有 URL 的情况下才允许取消编辑（如果是新组件则必须配置） */}
           {widget.config?.url && (
-             <button 
-                onClick={() => setIsEditing(false)}
-                className="px-3 bg-gray-100 text-gray-600 text-xs py-1.5 rounded hover:bg-gray-200"
-             >
-                <X size={12} />
-             </button>
+            <button
+              onClick={() => setIsEditing(false)}
+              className="px-3 bg-gray-100 text-gray-600 text-xs py-1.5 rounded hover:bg-gray-200"
+            >
+              <X size={12} />
+            </button>
           )}
         </div>
       </div>
     );
   }
 
+  /* Helper to get valid URL */
   const getValidUrl = (url?: string) => {
     if (!url) return '#';
     if (url.startsWith('http://') || url.startsWith('https://')) return url;
     return `https://${url}`;
   };
 
+  /* Helper to get Favicon URL */
+  const getFaviconUrl = (url?: string) => {
+    try {
+      if (!url) return null;
+      // Extract domain from URL
+      const domain = new URL(url.startsWith('http') ? url : `https://${url}`).hostname;
+      return `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+    } catch (e) {
+      return null;
+    }
+  };
+
+  const faviconUrl = getFaviconUrl(widget.config?.url);
+
   return (
     <div className="relative group w-full h-full">
       {/* 悬停显示的编辑按钮 */}
-      <button 
+      <button
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -88,18 +120,35 @@ export default React.memo(function QuickLinkWidget({ widget }: { widget: Widget 
       >
         <Edit2 size={12} />
       </button>
-      
-      <a 
-        href={getValidUrl(widget.config?.url)} 
-        target="_blank" 
+
+      <a
+        href={getValidUrl(widget.config?.url)}
+        target="_blank"
         rel="noreferrer"
         className="flex flex-col items-center justify-center w-full h-full p-4 space-y-3 group-hover:bg-gray-50/50 transition-colors"
         aria-label={widget.config?.title || t('quick_link')}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform duration-200" aria-hidden="true">
-           {/* TODO: 后续可以集成 Favicon 获取服务 */}
-           <ExternalLink size={24} />
+        <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm overflow-hidden group-hover:scale-110 transition-transform duration-200 border border-gray-100 relative" aria-hidden="true">
+          {faviconUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={faviconUrl}
+              alt=""
+              className="w-8 h-8 object-contain"
+              onError={(e) => {
+                // Fallback to Icon if image fails loading
+                e.currentTarget.style.display = 'none';
+                // Show the sibling icon
+                e.currentTarget.parentElement?.querySelector('.fallback-icon')?.classList.remove('hidden');
+                e.currentTarget.parentElement?.classList.add('bg-blue-50'); // Add bg for better visibility of icon
+              }}
+            />
+          )}
+          {/* Fallback Icon (displayed if no favicon url or if image fails) */}
+          <div className={cn("text-blue-600 fallback-icon", faviconUrl ? "hidden" : "")}>
+            <ExternalLink size={24} />
+          </div>
         </div>
         <span className="font-medium text-gray-700 text-sm truncate max-w-full px-2">{widget.config?.title}</span>
       </a>

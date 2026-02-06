@@ -27,14 +27,14 @@ function useDebounce<T>(value: T, delay: number): T {
 const MemoWidget = ({ widget }: { widget: Widget }) => {
   const { updateWidget } = useWidgetStore();
   const t = useTranslations('Widgets');
-  
+
   // Local state for immediate typing feedback
   const [content, setContent] = useState(widget.config?.content || '');
-  
+
   // Debounce saving to store
   const debouncedContent = useDebounce(content, 1000);
 
-  // Sync with store when debounced value changes
+  // Sync with store when debounced value changes (Local -> Store)
   useEffect(() => {
     if (debouncedContent !== (widget.config?.content || '')) {
       updateWidget(widget.id, {
@@ -45,6 +45,18 @@ const MemoWidget = ({ widget }: { widget: Widget }) => {
       });
     }
   }, [debouncedContent, widget.id, widget.config, updateWidget]);
+
+  // Sync local state when widget prop changes (Store -> Local)
+  // This handles updates from other devices/DataSyncer
+  useEffect(() => {
+    const remoteContent = widget.config?.content || '';
+    if (remoteContent !== content && remoteContent !== debouncedContent) {
+      setContent(remoteContent);
+    }
+    // Note: We deliberately exclude 'content' and 'debouncedContent' dependencies to avoid loops
+    // We only want to run this when the *prop* changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [widget.config?.content]);
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setContent(e.target.value);
@@ -60,12 +72,12 @@ const MemoWidget = ({ widget }: { widget: Widget }) => {
       bgColor
     )}>
       <div className="flex items-center justify-between p-3 pb-1 shrink-0">
-         <div className="flex items-center gap-2 opacity-60">
-            <StickyNote size={16} className={textColor} />
-            <span className={cn("text-xs font-semibold", textColor)}>{t('memo')}</span>
-         </div>
+        <div className="flex items-center gap-2 opacity-60">
+          <StickyNote size={16} className={textColor} />
+          <span className={cn("text-xs font-semibold", textColor)}>{t('memo')}</span>
+        </div>
       </div>
-      
+
       <textarea
         className={cn(
           "flex-1 w-full h-full p-3 bg-transparent border-none outline-none resize-none text-sm font-medium leading-relaxed placeholder-black/20",

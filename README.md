@@ -6,7 +6,7 @@
 **中文** | [English](./README_EN.md)
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Version](https://img.shields.io/badge/version-0.3.0-green)
+![Version](https://img.shields.io/badge/version-0.3.1-green)
 ![Next.js](https://img.shields.io/badge/Next.js-14-black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
 ![Docker](https://img.shields.io/badge/Docker-Ready-2496ed)
@@ -105,6 +105,11 @@ MIT License
 ---
 
 ## 📝 更新日志 (Changelog)
+
+### v0.3.1
+- 🐛 **Bug Fixes**: 修复了快捷链接 (Quick Link) 和备忘录 (Memo) 组件在部分情况下无法同步配置的问题。
+- ✨ **Feature**: 快捷链接组件现在支持自动获取网站图标 (Favicon)。
+- 🐳 **Docker**: 优化了 `docker-compose.yml` 配置，默认使用 GHCR 镜像。
 
 ### v0.3.0
 - 🔄 **全方位多端同步**：支持书签、小组件布局、个性化设置在多设备间实时同步。
