@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { cn } from '@/lib/utils';
-import { 
+import {
   ChevronRight, ChevronDown, Menu, PanelLeft, Plus, Edit2, Trash2, Search, Settings, Layers
 } from 'lucide-react';
 import { useSidebarStore } from '@/store/useSidebarStore';
@@ -83,18 +83,18 @@ const BookmarkItem = ({ item, isCollapsed, forceOpen, onEdit, onDelete, onAddChi
 
   const handleCollapsedClick = () => {
     if (isFolder) {
-        open(); // Expand the sidebar
-        setIsOpen(true); // Expand the folder
-        setSelectedCategoryId(item.id);
+      open(); // Expand the sidebar
+      setIsOpen(true); // Expand the folder
+      setSelectedCategoryId(item.id);
     }
   };
 
   if (isCollapsed) {
     return (
-      <div 
+      <div
         className={cn(
-            "flex justify-center py-2 cursor-pointer hover:bg-gray-100/80 transition-all duration-200 relative group rounded-lg mx-1 my-1",
-            isSelected && "bg-blue-50 text-blue-600 shadow-sm"
+          "flex justify-center py-2 cursor-pointer hover:bg-gray-100/80 transition-all duration-200 relative group rounded-lg mx-1 my-1",
+          isSelected && "bg-blue-50 text-blue-600 shadow-sm"
         )}
         title={item.title}
         onClick={handleCollapsedClick}
@@ -108,8 +108,8 @@ const BookmarkItem = ({ item, isCollapsed, forceOpen, onEdit, onDelete, onAddChi
     <div className="px-1 py-0.5">
       <div
         className={cn(
-            "group flex items-center py-1.5 px-2 hover:bg-gray-100/80 rounded-lg cursor-pointer transition-all duration-200",
-            isSelected && "bg-blue-50 text-blue-600 font-medium shadow-sm"
+          "group flex items-center py-1.5 px-2 hover:bg-gray-100/80 rounded-lg cursor-pointer transition-all duration-200",
+          isSelected && "bg-blue-50 text-blue-600 font-medium shadow-sm"
         )}
         onClick={handleClick}
       >
@@ -117,18 +117,18 @@ const BookmarkItem = ({ item, isCollapsed, forceOpen, onEdit, onDelete, onAddChi
           {isFolder ? (
             isOpen ? <ChevronDown size={14} strokeWidth={2.5} /> : <ChevronRight size={14} strokeWidth={2.5} />
           ) : (
-             <span className="w-3.5 inline-block" />
+            <span className="w-3.5 inline-block" />
           )}
         </span>
         <span className="mr-1.5">
-            <span
-              className={cn(
-                "transition-colors",
-                isSelected ? "text-blue-600" : "text-gray-500 group-hover:text-gray-700"
-              )}
-            >
-              {getIcon(item.icon, isFolder, 18)}
-            </span>
+          <span
+            className={cn(
+              "transition-colors",
+              isSelected ? "text-blue-600" : "text-gray-500 group-hover:text-gray-700"
+            )}
+          >
+            {getIcon(item.icon, isFolder, 18)}
+          </span>
         </span>
         <div className="flex-1 min-w-0">
           {isFolder ? (
@@ -163,36 +163,36 @@ const BookmarkItem = ({ item, isCollapsed, forceOpen, onEdit, onDelete, onAddChi
         </div>
 
         <div className="opacity-0 group-hover:opacity-100 flex items-center space-x-1 transition-opacity">
-            {!isDemoMode && isFolder && (
-                <button 
-                    onClick={(e) => { e.stopPropagation(); onAddChild(item.id); }}
-                    className="p-1 hover:bg-blue-100 text-gray-400 hover:text-blue-600 rounded"
-                    title={t('create')}
-                    aria-label={t('create')}
-                >
-                    <Plus size={12} />
-                </button>
-            )}
-            {!isDemoMode && (
-                <>
-                    <button 
-                        onClick={(e) => { e.stopPropagation(); onEdit(item); }}
-                        className="p-1 hover:bg-gray-200 text-gray-400 hover:text-gray-700 rounded"
-                        title={t('edit')}
-                        aria-label={t('edit')}
-                    >
-                        <Edit2 size={12} />
-                    </button>
-                    <button 
-                        onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
-                        className="p-1 hover:bg-red-100 text-gray-400 hover:text-red-600 rounded"
-                        title={t('delete')}
-                        aria-label={t('delete')}
-                    >
-                        <Trash2 size={12} />
-                    </button>
-                </>
-            )}
+          {!isDemoMode && isFolder && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onAddChild(item.id); }}
+              className="p-1 hover:bg-blue-100 text-gray-400 hover:text-blue-600 rounded"
+              title={t('create')}
+              aria-label={t('create')}
+            >
+              <Plus size={12} />
+            </button>
+          )}
+          {!isDemoMode && (
+            <>
+              <button
+                onClick={(e) => { e.stopPropagation(); onEdit(item); }}
+                className="p-1 hover:bg-gray-200 text-gray-400 hover:text-gray-700 rounded"
+                title={t('edit')}
+                aria-label={t('edit')}
+              >
+                <Edit2 size={12} />
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
+                className="p-1 hover:bg-red-100 text-gray-400 hover:text-red-600 rounded"
+                title={t('delete')}
+                aria-label={t('delete')}
+              >
+                <Trash2 size={12} />
+              </button>
+            </>
+          )}
         </div>
       </div>
       {isFolder && (
@@ -232,22 +232,22 @@ const BookmarkItem = ({ item, isCollapsed, forceOpen, onEdit, onDelete, onAddChi
  * 4. 底部包含设置和布局切换按钮
  */
 export default function Sidebar() {
-  const { 
-    bookmarks, 
-    addBookmark, 
-    removeBookmark, 
+  const {
+    bookmarks,
+    addBookmark,
+    removeBookmark,
     updateBookmark
   } = useBookmarkStore();
-  
-  const { 
-    isOpen, 
-    toggle, 
-    close, 
+
+  const {
+    isOpen,
+    toggle,
+    close,
     open,
-    layoutMode, 
-    toggleLayoutMode, 
-    selectedCategoryId, 
-    setSelectedCategoryId 
+    layoutMode,
+    toggleLayoutMode,
+    selectedCategoryId,
+    setSelectedCategoryId
   } = useSidebarStore();
 
   const { addToast } = useToastStore();
@@ -257,7 +257,7 @@ export default function Sidebar() {
   const { isSettingsOpen, openSettings, closeSettings } = useUIStore();
   const [mounted, setMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  
+
   // Modal State
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
@@ -270,7 +270,7 @@ export default function Sidebar() {
 
   // 使用 useMemo 缓存搜索结果，避免频繁重计算
   const filteredBookmarks = useMemo(() => {
-      return filterBookmarks(bookmarks, searchQuery);
+    return filterBookmarks(bookmarks, searchQuery);
   }, [bookmarks, searchQuery]);
 
   // 处理添加分类
@@ -298,17 +298,17 @@ export default function Sidebar() {
 
   const handleDelete = (id: string) => {
     if (confirm(t('delete_confirm'))) {
-        removeBookmark(id);
-        addToast(t('bookmark_deleted'), 'success');
+      removeBookmark(id);
+      addToast(t('bookmark_deleted'), 'success');
     }
   };
 
   if (!mounted) {
     return (
       <aside className={cn("h-screen bg-white border-r border-gray-200 transition-all duration-300 flex flex-col w-[64px]")}>
-         <div className="h-14 flex items-center justify-center border-b border-gray-100">
-             <Menu size={20} className="text-gray-400" />
-         </div>
+        <div className="h-14 flex items-center justify-center border-b border-gray-100">
+          <Menu size={20} className="text-gray-400" />
+        </div>
       </aside>
     );
   }
@@ -330,13 +330,13 @@ export default function Sidebar() {
         // 鼠标进入事件：仅在 overlay 模式下触发自动展开
         onMouseEnter={(e) => {
           if (layoutMode === 'overlay' && !isOpen) {
-             open();
+            open();
           }
         }}
         // 鼠标离开事件：仅在 overlay 模式且未打开设置弹窗时自动收起
         onMouseLeave={(e) => {
           if (layoutMode === 'overlay' && isOpen && !isSettingsOpen) {
-             close();
+            close();
           }
         }}
       >
@@ -367,102 +367,111 @@ export default function Sidebar() {
           </div>
         </div>
 
-      {isOpen && (
-      <div className="p-3 border-b border-gray-100">
+        {isOpen && (
+          <div className="p-3 border-b border-gray-100">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={14} />
-                <input 
-                    type="text" 
-                    placeholder={t('search')} 
-                  className="w-full pl-9 pr-2 py-1.5 bg-gray-50 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    aria-label={t('search')}
-                />
+              <input
+                type="text"
+                placeholder={t('search')}
+                className="w-full pl-9 pr-2 py-1.5 bg-gray-50 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                aria-label={t('search')}
+              />
             </div>
-        </div>
-      )}
-      
-      <div className="flex-1 overflow-y-auto overflow-x-hidden py-4">
-        {filteredBookmarks.length > 0 ? (
+          </div>
+        )}
+
+        <div className="flex-1 overflow-y-auto overflow-x-hidden py-4">
+          {filteredBookmarks.length > 0 ? (
             filteredBookmarks.map((bookmark) => (
-            <BookmarkItem 
-                key={bookmark.id} 
-                item={bookmark} 
-                isCollapsed={!isOpen} 
+              <BookmarkItem
+                key={bookmark.id}
+                item={bookmark}
+                isCollapsed={!isOpen}
                 forceOpen={!!searchQuery}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onAddChild={handleAddChild}
-            />
+              />
             ))
-        ) : (
+          ) : (
             isOpen && <div className="text-center text-xs text-gray-400 py-4">{t('no_results')}</div>
-        )}
-      </div>
+          )}
+        </div>
 
-      {/* Bottom Actions */}
-      <div className={cn(
-        "p-4 border-t border-gray-100 flex items-center justify-between bg-gray-50",
-        !isOpen && "flex-col gap-4 p-2"
-      )}>
-        <button 
-          onClick={(e) => {
-            e.stopPropagation();
-            openSettings();
-          }}
-          className="p-2 text-gray-400 hover:text-gray-600 hover:bg-white rounded-lg transition-all shadow-sm hover:shadow"
-          title={tGeneral('settings')}
-          aria-label={tGeneral('settings')}
-        >
-          <Settings size={20} />
-        </button>
-        <button 
-          onClick={(e) => {
-            e.stopPropagation();
-            toggleLayoutMode();
-          }}
-          className="p-2 text-gray-400 hover:text-gray-600 hover:bg-white rounded-lg transition-all shadow-sm hover:shadow"
-          title={layoutMode === 'overlay' ? t('switch_to_fixed') : t('switch_to_auto')}
-          aria-label={layoutMode === 'overlay' ? t('switch_to_fixed') : t('switch_to_auto')}
-        >
-          {layoutMode === 'overlay' ? <Layers size={20} /> : <PanelLeft size={20} />}
-        </button>
-      </div>
+        {/* Bottom Actions */}
+        <div className={cn(
+          "p-4 border-t border-gray-100 flex items-center justify-between bg-gray-50",
+          !isOpen && "flex-col gap-4 p-2"
+        )}>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              openSettings();
+            }}
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-white rounded-lg transition-all shadow-sm hover:shadow"
+            title={tGeneral('settings')}
+            aria-label={tGeneral('settings')}
+          >
+            <Settings size={20} />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleLayoutMode();
+            }}
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-white rounded-lg transition-all shadow-sm hover:shadow"
+            title={layoutMode === 'overlay' ? t('switch_to_fixed') : t('switch_to_auto')}
+            aria-label={layoutMode === 'overlay' ? t('switch_to_fixed') : t('switch_to_auto')}
+          >
+            {layoutMode === 'overlay' ? <Layers size={20} /> : <PanelLeft size={20} />}
+          </button>
+        </div>
 
-      <div className="p-2 border-t border-gray-100">
-        {!isDemoMode && (
-          <button 
+        <div className="p-2 border-t border-gray-100 flex flex-col gap-2">
+          {!isDemoMode && (
+            <button
               onClick={(e) => {
-                  e.stopPropagation();
-                  handleAddCategory();
+                e.stopPropagation();
+                handleAddCategory();
               }}
               className={cn(
-                  "w-full flex items-center justify-center p-2 rounded-md transition-colors text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200/50",
-                  !isOpen && "bg-transparent hover:bg-gray-100 border-transparent text-gray-500"
+                "w-full flex items-center justify-center p-2 rounded-md transition-colors text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200/50",
+                !isOpen && "bg-transparent hover:bg-gray-100 border-transparent text-gray-500"
               )}
               title={t('add_category')}
               aria-label={t('add_category')}
-          >
+            >
               <Plus size={20} />
               {isOpen && <span className="ml-2 text-sm font-medium">{t('add_category')}</span>}
-          </button>
-        )}
-      </div>
+            </button>
+          )}
 
-      <BookmarkModal
-        isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
-        mode={modalMode}
-        initialData={modalData}
-        parentId={modalParentId}
-      />
-      
-      <SettingsModal
-        isOpen={isSettingsOpen}
-        onClose={closeSettings}
-      />
-    </aside>
+          {/* Version Display */}
+          {isOpen && (
+            <div className="text-center">
+              <span className="text-[10px] text-gray-300 font-mono select-none hover:text-gray-400 transition-colors cursor-default">
+                v{process.env.NEXT_PUBLIC_APP_VERSION}
+              </span>
+            </div>
+          )}
+        </div>
+
+        <BookmarkModal
+          isOpen={modalOpen}
+          onClose={() => setModalOpen(false)}
+          mode={modalMode}
+          initialData={modalData}
+          parentId={modalParentId}
+        />
+
+        <SettingsModal
+          isOpen={isSettingsOpen}
+          onClose={closeSettings}
+        />
+      </aside>
     </>
   );
 }
