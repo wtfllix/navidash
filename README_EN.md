@@ -5,7 +5,7 @@
 [中文](./README.md) | **English**
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Version](https://img.shields.io/badge/version-0.2.1-green)
+![Version](https://img.shields.io/badge/version-0.3.2-green)
 ![Next.js](https://img.shields.io/badge/Next.js-14-black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
 ![Docker](https://img.shields.io/badge/Docker-Ready-2496ed)
@@ -13,6 +13,26 @@
 **NaviDash** is designed for users who seek ultimate efficiency and aesthetics. Abandoning clutter, it uses a classic "Pegboard" style foundation combined with a free-dragging grid layout to create a browser start page that is both beautiful and practical.
 
 ---
+
+## ✨ v0.3.2 Changelog
+
+- 🔗 **New Links Widget**: Added links collection widget with group title, icon size adjustment, label toggle, and bulk import functionality
+- 🧠 **Smart Layout**: Improved WidgetPicker's intelligent occupancy detection algorithm to prevent widget overlap
+- 🖱️ **Interaction Optimization**: Enhanced drag handle styling for better visual feedback and user experience
+- 🔧 **Type Safety**: Updated Zod schema validation to support links widget type
+- 🧪 **Test Coverage**: Added schema validation tests for links widget
+
+## ✨ v0.3.1 Changelog
+
+- 🐛 **Bug Fixes**: Fixed configuration sync issues for Quick Link and Memo widgets in certain scenarios.
+- ✨ **Feature**: Quick Link widget now supports automatic website icon (Favicon) fetching.
+- 🐳 **Docker**: Optimized `docker-compose.yml` configuration, defaulting to GHCR images.
+
+## ✨ v0.3.0 Changelog
+
+- 🔄 **Full Multi‑Device Sync**: Bookmarks, widget layouts, and personal settings now sync in real‑time across multiple devices.
+- 🚀 **Smart Performance Optimization**: Introduced page visibility detection to pause synchronization when the page is in the background.
+- 🐳 **Docker Deployment Upgrade**: Added `entrypoint` script to automatically fix permissions, resolving `EACCES` issues.
 
 ## ✨ v0.2.1 Changelog
 

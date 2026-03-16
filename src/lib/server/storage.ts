@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import fsSync from 'fs';
 import path from 'path';
-import { Bookmark, Widget } from '@/types';
+import { Bookmark, Widget, Settings } from '@/types';
 import { logger } from '@/lib/logger';
 import { initialBookmarks } from '@/config/initialData';
 
@@ -172,9 +172,9 @@ export async function saveWidgets(widgets: Widget[]): Promise<void> {
 /**
  * 读取设置数据
  * 从 JSON 文件中读取设置，如果文件不存在则返回 null
- * @returns {Promise<any | null>} 设置对象或 null
+ * @returns {Promise<Settings | null>} 设置对象或 null
  */
-export async function getSettings(): Promise<any | null> {
+export async function getSettings(): Promise<Settings | null> {
   if (IS_DEMO_MODE) {
     logger.info('Demo mode: returning empty settings');
     return null;
@@ -195,11 +195,9 @@ export async function getSettings(): Promise<any | null> {
 }
 
 /**
- * 保存设置数据
- * 将设置对象写入 JSON 文件
- * @param {any} settings - 要保存的设置对象
- * @returns {Promise<void>}
- * @throws {Error} 如果写入失败则抛出错误
+ * 获取设置文件的最后修改时间
+ * 用于前端轮询检查数据是否有更新
+ * @returns {Promise<number>} 时间戳 (ms)
  */
 export async function getSettingsLastModified(): Promise<number> {
   if (IS_DEMO_MODE) return 0;
@@ -217,11 +215,11 @@ export async function getSettingsLastModified(): Promise<number> {
 /**
  * 保存设置数据
  * 将设置对象写入 JSON 文件
- * @param {any} settings - 要保存的设置对象
+ * @param {Settings} settings - 要保存的设置对象
  * @returns {Promise<void>}
  * @throws {Error} 如果写入失败则抛出错误
  */
-export async function saveSettings(settings: any): Promise<void> {
+export async function saveSettings(settings: Settings): Promise<void> {
   if (IS_DEMO_MODE) {
     logger.info('Demo mode: save skipped');
     return;

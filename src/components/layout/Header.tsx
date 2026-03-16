@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Search, Settings, Pencil, Check, Plus, ExternalLink, Folder } from 'lucide-react';
+import { Search, Settings, Pencil, Check, Plus, ExternalLink, Folder, PanelLeft } from 'lucide-react';
 import { useUIStore } from '@/store/useUIStore';
 import { useBookmarkStore } from '@/store/useBookmarkStore';
+import { useSidebarStore } from '@/store/useSidebarStore';
 import { useTranslations } from 'next-intl';
 import Fuse from 'fuse.js';
 import { Bookmark } from '@/types';
@@ -36,6 +37,7 @@ export default function Header() {
   
   const { isEditing, toggleEditing, openWidgetPicker, openSettings } = useUIStore();
   const { bookmarks } = useBookmarkStore();
+  const { toggle: toggleSidebar, isOpen: isSidebarOpen } = useSidebarStore();
 
   // Flatten bookmarks for search
   const flattenedBookmarks = useMemo(() => {
@@ -123,7 +125,22 @@ export default function Header() {
   };
 
   return (
-    <header className="h-16 flex items-center justify-between px-8 bg-white/80 backdrop-blur-md border-b border-gray-200/50 sticky top-0 z-10 transition-all">
+    <header className="h-16 flex items-center gap-3 px-4 bg-white/80 backdrop-blur-md border-b border-gray-200/50 sticky top-0 z-10 transition-all">
+      {/* 书签侧边栏 toggle */}
+      <button
+        onClick={toggleSidebar}
+        title={t('bookmarks')}
+        aria-label={t('bookmarks')}
+        aria-expanded={isSidebarOpen}
+        className={`p-2 rounded-lg transition-all duration-200 border shrink-0 ${
+          isSidebarOpen
+            ? 'bg-blue-50 text-blue-600 border-blue-200 shadow-sm'
+            : 'text-gray-500 border-transparent hover:bg-gray-100 hover:text-gray-900'
+        }`}
+      >
+        <PanelLeft size={20} />
+      </button>
+
       <div className="flex-1 max-w-2xl mx-auto w-full relative z-30">
         <form onSubmit={handleSearch} role="search" className="relative flex items-center bg-gray-100/50 hover:bg-gray-100 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:shadow-sm rounded-xl transition-all duration-200 border border-transparent focus-within:border-blue-500/30">
            <div className="relative shrink-0">

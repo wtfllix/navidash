@@ -2,9 +2,271 @@
 
 import React, { useState, useEffect } from 'react';
 import Modal from '@/components/ui/Modal';
-import { Widget } from '@/types';
+import { Widget, LinkItem, WidgetConfig, ClockWidgetConfig, DateWidgetConfig, WeatherWidgetConfig } from '@/types';
 import { useWidgetStore } from '@/store/useWidgetStore';
 import { useTranslations, useLocale } from 'next-intl';
+import { v4 as uuidv4 } from 'uuid';
+import { Trash2, Edit2, Check, X, Plus, ExternalLink } from 'lucide-react';
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const getLinkDomain = (url: string) => {
+  try {
+    return new URL(url.startsWith('http') ? url : `https://${url}`).hostname.replace(/^www\./, '');
+  } catch {
+    return url;
+  }
+};
+
+const getFaviconUrl = (url: string) => {
+  try {
+    const domain = new URL(url.startsWith('http') ? url : `https://${url}`).hostname;
+    return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+  } catch {
+    return null;
+  }
+};
+
+// ─── LinksConfigEditor ────────────────────────────────────────────────────────
+
+function LinksConfigEditor({
+  config,
+  setConfig,
+}: {
+  config: WidgetConfig;
+  setConfig: (c: WidgetConfig) => void;
+}) {
+  const t = useTranslations('Widgets');
+  const links: LinkItem[] = config.links || [];
+
+  // 新增链接表单
+  const [showAdd, setShowAdd] = useState(false);
+  const [newTitle, setNewTitle] = useState('');
+  const [newUrl, setNewUrl] = useState('');
+
+  // 编辑链接
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editUrl, setEditUrl] = useState('');
+
+  // 批量导入
+  const [showBulk, setShowBulk] = useState(false);
+  const [bulkText, setBulkText] = useState('');
+
+  const updateLinks = (next: LinkItem[]) => setConfig({ ...config, links: next });
+
+  const handleAdd = () => {
+    const url = newUrl.trim();
+    if (!url) return;
+    const title = newTitle.trim() || getLinkDomain(url);
+    updateLinks([...links, { id: uuidv4(), title, url }]);
+    setNewTitle('');
+    setNewUrl('');
+    setShowAdd(false);
+  };
+
+  const handleDelete = (id: string) => updateLinks(links.filter((l) => l.id !== id));
+
+  const startEdit = (link: LinkItem) => {
+    setEditingId(link.id);
+    setEditTitle(link.title);
+    setEditUrl(link.url);
+  };
+
+  const handleSaveEdit = () => {
+    updateLinks(links.map((l) => (l.id === editingId ? { ...l, title: editTitle, url: editUrl } : l)));
+    setEditingId(null);
+  };
+
+  const handleBulkImport = () => {
+    const newLinks: LinkItem[] = bulkText
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line) => {
+        const pipeIdx = line.indexOf('|');
+        if (pipeIdx > -1) {
+          const title = line.slice(0, pipeIdx).trim();
+          const url = line.slice(pipeIdx + 1).trim();
+          return { id: uuidv4(), title: title || getLinkDomain(url), url };
+        }
+        return { id: uuidv4(), title: getLinkDomain(line), url: line };
+      });
+    updateLinks([...links, ...newLinks]);
+    setBulkText('');
+    setShowBulk(false);
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* 分组标题 */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">{t('links_group_title')}</label>
+        <input
+          type="text"
+          value={config.title || ''}
+          onChange={(e) => setConfig({ ...config, title: e.target.value })}
+          placeholder={t('links_group_title_placeholder')}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+        />
+      </div>
+
+      {/* 图标大小 & 显示标签 */}
+      <div className="flex gap-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t('links_icon_size')}</label>
+          <div className="flex gap-1">
+            {(['sm', 'md', 'lg'] as const).map((s) => (
+              <button
+                key={s}
+                onClick={() => setConfig({ ...config, iconSize: s })}
+                className={`px-3 py-1.5 rounded-md border text-xs transition-colors ${
+                  (config.iconSize ?? 'md') === s
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                {t(`links_size_${s}` as any)}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t('links_show_labels')}</label>
+          <button
+            onClick={() => setConfig({ ...config, showLabels: !(config.showLabels ?? true) })}
+            className={`px-3 py-1.5 rounded-md border text-xs transition-colors ${
+              (config.showLabels ?? true)
+                ? 'bg-blue-600 text-white border-blue-600'
+                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+            }`}
+          >
+            {(config.showLabels ?? true) ? t('links_labels_on') : t('links_labels_off')}
+          </button>
+        </div>
+      </div>
+
+      {/* 链接列表 */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">{t('links_list')}</label>
+        <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
+          {links.length === 0 && (
+            <p className="text-xs text-gray-400 py-2 text-center">{t('links_empty')}</p>
+          )}
+          {links.map((link) =>
+            editingId === link.id ? (
+              /* 内联编辑行 */
+              <div key={link.id} className="flex gap-1 items-center">
+                <input
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  className="flex-1 px-2 py-1 text-xs border border-blue-400 rounded focus:outline-none"
+                  placeholder={t('placeholder_title')}
+                />
+                <input
+                  value={editUrl}
+                  onChange={(e) => setEditUrl(e.target.value)}
+                  className="flex-[2] px-2 py-1 text-xs border border-blue-400 rounded focus:outline-none"
+                  placeholder="https://..."
+                />
+                <button onClick={handleSaveEdit} className="p-1 text-green-600 hover:bg-green-50 rounded">
+                  <Check size={14} />
+                </button>
+                <button onClick={() => setEditingId(null)} className="p-1 text-gray-400 hover:bg-gray-100 rounded">
+                  <X size={14} />
+                </button>
+              </div>
+            ) : (
+              /* 普通行 */
+              <div key={link.id} className="flex items-center gap-2 py-1 px-2 rounded-lg hover:bg-gray-50 group">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={getFaviconUrl(link.url) || ''}
+                  alt=""
+                  className="w-4 h-4 object-contain shrink-0"
+                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                />
+                <span className="flex-1 text-sm truncate">{link.title}</span>
+                <span className="text-xs text-gray-400 truncate max-w-[8rem]">{getLinkDomain(link.url)}</span>
+                <div className="opacity-0 group-hover:opacity-100 flex gap-1 transition-opacity shrink-0">
+                  <button onClick={() => startEdit(link)} className="p-1 hover:bg-gray-200 rounded text-gray-500">
+                    <Edit2 size={12} />
+                  </button>
+                  <button onClick={() => handleDelete(link.id)} className="p-1 hover:bg-red-100 rounded text-gray-400 hover:text-red-500">
+                    <Trash2 size={12} />
+                  </button>
+                </div>
+              </div>
+            )
+          )}
+        </div>
+
+        {/* 新增链接表单 */}
+        {showAdd ? (
+          <div className="mt-2 flex gap-1 items-center">
+            <input
+              autoFocus
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
+              placeholder={t('placeholder_title')}
+              className="w-24 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-400"
+            />
+            <input
+              value={newUrl}
+              onChange={(e) => setNewUrl(e.target.value)}
+              placeholder="https://..."
+              onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
+              className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-400"
+            />
+            <button onClick={handleAdd} className="p-1 text-green-600 hover:bg-green-50 rounded">
+              <Check size={14} />
+            </button>
+            <button onClick={() => setShowAdd(false)} className="p-1 text-gray-400 hover:bg-gray-100 rounded">
+              <X size={14} />
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => setShowAdd(true)}
+            className="mt-2 flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium"
+          >
+            <Plus size={13} /> {t('links_add')}
+          </button>
+        )}
+      </div>
+
+      {/* 批量导入 */}
+      <div className="border-t border-gray-100 pt-3">
+        <button
+          onClick={() => setShowBulk(!showBulk)}
+          className="text-xs text-gray-500 hover:text-gray-700 font-medium flex items-center gap-1"
+        >
+          <ExternalLink size={12} />
+          {t('links_bulk_import')}
+        </button>
+        {showBulk && (
+          <div className="mt-2 space-y-2">
+            <p className="text-xs text-gray-400">{t('links_bulk_hint')}</p>
+            <textarea
+              value={bulkText}
+              onChange={(e) => setBulkText(e.target.value)}
+              placeholder={t('links_bulk_placeholder')}
+              rows={4}
+              className="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-blue-400 font-mono resize-none"
+            />
+            <button
+              onClick={handleBulkImport}
+              disabled={!bulkText.trim()}
+              className="px-3 py-1.5 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {t('links_bulk_import_btn')}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 interface WidgetSettingsModalProps {
   widget: Widget | null;
@@ -15,7 +277,7 @@ interface WidgetSettingsModalProps {
 export default function WidgetSettingsModal({ widget, isOpen, onClose }: WidgetSettingsModalProps) {
   const { updateWidget } = useWidgetStore();
   const [size, setSize] = useState({ w: 1, h: 1 });
-  const [config, setConfig] = useState<Record<string, any>>({});
+  const [config, setConfig] = useState<WidgetConfig>({});
   const [citySearch, setCitySearch] = useState('');
   const [showCityList, setShowCityList] = useState(false);
   const tWidgets = useTranslations('Widgets');
@@ -89,7 +351,7 @@ export default function WidgetSettingsModal({ widget, isOpen, onClose }: WidgetS
     
     // If city name matches a preset, ensure coordinates match (auto-fix coordinates)
     if (widget.type === 'weather' && finalConfig.city) {
-      const matchedCity = PRESET_CITIES.find(c => c.name.toLowerCase() === finalConfig.city.toLowerCase());
+      const matchedCity = PRESET_CITIES.find(c => c.name.toLowerCase() === finalConfig.city!.toLowerCase());
       if (matchedCity) {
          finalConfig.lat = matchedCity.lat;
          finalConfig.lon = matchedCity.lon;
@@ -137,7 +399,7 @@ export default function WidgetSettingsModal({ widget, isOpen, onClose }: WidgetS
                 <button
                   key={style.id}
                   onClick={() => {
-                    const newConfig = { ...config, clockStyle: style.id };
+                    const newConfig = { ...config, clockStyle: style.id as ClockWidgetConfig['clockStyle'] };
                      setConfig(newConfig);
                      if (style.id === 'flip') {
                        setSize({ w: 2, h: 1 });
@@ -171,7 +433,7 @@ export default function WidgetSettingsModal({ widget, isOpen, onClose }: WidgetS
                   ].map((style) => (
                     <button
                       key={style.id}
-                      onClick={() => setConfig({ ...config, style: style.id })}
+                      onClick={() => setConfig({ ...config, style: style.id as DateWidgetConfig['style'] })}
                       className={`px-3 py-2 rounded-md border text-sm transition-colors ${
                         (config.style === style.id || (!config.style && style.id === 'classic'))
                           ? 'bg-blue-600 text-white border-blue-600'
@@ -251,7 +513,7 @@ export default function WidgetSettingsModal({ widget, isOpen, onClose }: WidgetS
               <label className="block text-sm font-medium text-gray-700 mb-1">{tWidgets('auth_type')}</label>
               <select
                 value={config.weatherAuthType || 'param'}
-                onChange={(e) => setConfig({ ...config, weatherAuthType: e.target.value })}
+                onChange={(e) => setConfig({ ...config, weatherAuthType: e.target.value as WeatherWidgetConfig['weatherAuthType'] })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
               >
                 <option value="param">{tWidgets('auth_param')}</option>
@@ -369,6 +631,8 @@ export default function WidgetSettingsModal({ widget, isOpen, onClose }: WidgetS
             />
           </div>
         );
+      case 'links':
+        return <LinksConfigEditor config={config} setConfig={setConfig} />;
       default:
         return <p className="text-sm text-gray-500">{tWidgets('no_config')}</p>;
     }

@@ -25,7 +25,8 @@
     "add_widget": "添加组件",
     "done": "完成",
     "customize": "自定义",
-    "settings": "设置"
+    "settings": "设置",
+    "bookmarks": "书签"
   },
   "BookmarkModal": {
     "add_bookmark": "添加书签",
@@ -211,6 +212,24 @@
     "cat_all": "全部",
     "cat_system": "基础",
     "cat_productivity": "效率",
-    "cat_custom": "自定义"
+    "cat_custom": "自定义",
+    "links": "链接集合",
+    "links_desc": "将一组常用链接放在一个格子里",
+    "links_empty": "还没有链接，在设置中添加吧。",
+    "links_group_title": "分组标题",
+    "links_group_title_placeholder": "如：工作、社交...",
+    "links_icon_size": "图标大小",
+    "links_size_sm": "小",
+    "links_size_md": "中",
+    "links_size_lg": "大",
+    "links_show_labels": "显示标签",
+    "links_labels_on": "开",
+    "links_labels_off": "关",
+    "links_list": "链接列表",
+    "links_add": "添加链接",
+    "links_bulk_import": "批量导入",
+    "links_bulk_hint": "每行一条：URL  或  名称 | URL",
+    "links_bulk_placeholder": "https://google.com\nGitHub | https://github.com\nhttps://notion.so",
+    "links_bulk_import_btn": "导入"
   }
 }

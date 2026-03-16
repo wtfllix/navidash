@@ -6,7 +6,7 @@
 **中文** | [English](./README_EN.md)
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Version](https://img.shields.io/badge/version-0.3.1-green)
+![Version](https://img.shields.io/badge/version-0.3.2-green)
 ![Next.js](https://img.shields.io/badge/Next.js-14-black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
 ![Docker](https://img.shields.io/badge/Docker-Ready-2496ed)
@@ -126,6 +126,13 @@ MIT License
 ---
 
 ## 📝 更新日志 (Changelog)
+
+### v0.3.2
+- 🔗 **新增 Links Widget**: 新增链接集合小组件，支持分组标题、图标大小调整、标签显示开关，以及批量导入功能
+- 🧠 **智能布局**: 改进 WidgetPicker 添加组件时的智能占位检测算法，避免组件重叠
+- 🖱️ **交互优化**: 增强拖拽手柄样式，提升视觉反馈和操作体验
+- 🔧 **类型安全**: 更新 Zod schema 验证，支持 links 类型组件
+- 🧪 **测试覆盖**: 添加 links widget 的 schema 验证测试
 
 ### v0.3.1
 - 🐛 **Bug Fixes**: 修复了快捷链接 (Quick Link) 和备忘录 (Memo) 组件在部分情况下无法同步配置的问题。

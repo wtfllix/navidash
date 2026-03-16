@@ -25,7 +25,8 @@
     "add_widget": "Add Widget",
     "done": "Done",
     "customize": "Customize",
-    "settings": "Settings"
+    "settings": "Settings",
+    "bookmarks": "Bookmarks"
   },
   "Toast": {
     "save_error": "Failed to save data to server",
@@ -211,6 +212,24 @@
     "cat_all": "All",
     "cat_system": "System",
     "cat_productivity": "Productivity",
-    "cat_custom": "Custom"
+    "cat_custom": "Custom",
+    "links": "Links",
+    "links_desc": "A collection of quick-access links",
+    "links_empty": "No links yet. Add some in settings.",
+    "links_group_title": "Group Title",
+    "links_group_title_placeholder": "e.g. Work, Social...",
+    "links_icon_size": "Icon Size",
+    "links_size_sm": "S",
+    "links_size_md": "M",
+    "links_size_lg": "L",
+    "links_show_labels": "Labels",
+    "links_labels_on": "On",
+    "links_labels_off": "Off",
+    "links_list": "Links",
+    "links_add": "Add link",
+    "links_bulk_import": "Bulk import",
+    "links_bulk_hint": "One per line: URL  or  Title | URL",
+    "links_bulk_placeholder": "https://google.com\nGitHub | https://github.com\nhttps://notion.so",
+    "links_bulk_import_btn": "Import"
   }
 }

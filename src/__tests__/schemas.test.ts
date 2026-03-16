@@ -60,4 +60,24 @@ describe('Zod Schemas', () => {
     const result = WidgetSchema.safeParse(widget);
     expect(result.success).toBe(true);
   });
+
+  it('should validate a links widget', () => {
+    const widget = {
+      id: 'w3',
+      type: 'links',
+      size: { w: 2, h: 1 },
+      position: { x: 0, y: 0 },
+      config: {
+        title: 'Work Links',
+        links: [
+          { id: 'l1', title: 'GitHub', url: 'https://github.com' },
+          { id: 'l2', title: 'Notion', url: 'https://notion.so' }
+        ],
+        showLabels: true,
+        iconSize: 'md'
+      }
+    };
+    const result = WidgetSchema.safeParse(widget);
+    expect(result.success).toBe(true);
+  });
 });

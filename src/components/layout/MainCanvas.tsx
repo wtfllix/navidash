@@ -5,22 +5,17 @@ import { Widget } from '@/types';
 import { useWidgetStore } from '@/store/useWidgetStore';
 import { useUIStore } from '@/store/useUIStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
-import ClockWidget from '../widgets/ClockWidget';
-import WeatherWidget from '../widgets/WeatherWidget';
-import DateWidget from '../widgets/DateWidget';
-import QuickLinkWidget from '../widgets/QuickLinkWidget';
-import TodoWidget from '../widgets/TodoWidget';
-import MemoWidget from '../widgets/MemoWidget';
-import CalendarWidget from '../widgets/CalendarWidget';
-import PhotoWidget from '../widgets/PhotoWidget';
-import MostVisitedWidget from '../widgets/MostVisitedWidget';
+import { widgetComponentRegistry } from '../widgets/registry';
 import WidgetPicker from '../widgets/WidgetPicker';
 import WidgetSettingsModal from '../widgets/WidgetSettingsModal';
 import { Trash2, GripHorizontal, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
 
-import GridLayout, { Layout, LayoutItem } from 'react-grid-layout';
+import GridLayoutBase, { Layout, LayoutItem } from 'react-grid-layout';
+
+// react-grid-layout 的类型定义与实际 props 有出入，用宽松断言规避
+const GridLayout = GridLayoutBase as React.ComponentType<any>;
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 
@@ -62,33 +57,14 @@ const WidgetItemContent = React.memo(({ widget, onEdit }: { widget: Widget; onEd
   const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
 
   const renderContent = () => {
-    switch (widget.type) {
-      case 'clock':
-        return <ClockWidget widget={widget} />;
-      case 'weather':
-        return <WeatherWidget widget={widget} />;
-      case 'date':
-        return <DateWidget widget={widget} />;
-      case 'quick-link':
-        return <QuickLinkWidget widget={widget} />;
-      case 'todo':
-        return <TodoWidget widget={widget} />;
-      case 'memo':
-        return <MemoWidget widget={widget} />;
-      case 'calendar':
-        return <CalendarWidget widget={widget} />;
-      case 'photo-frame':
-        return <PhotoWidget widget={widget} />;
-      case 'most-visited':
-        return <MostVisitedWidget widget={widget} />;
-      default:
-        return (
-          <div className="flex flex-col items-center justify-center h-full">
-            <span className="text-xs font-bold uppercase text-gray-400 mb-2">{widget.type}</span>
-            <div className="text-gray-600 font-medium">{t('coming_soon')}</div>
-          </div>
-        );
-    }
+    const Component = widgetComponentRegistry[widget.type];
+    if (Component) return <Component widget={widget} />;
+    return (
+      <div className="flex flex-col items-center justify-center h-full">
+        <span className="text-xs font-bold uppercase text-gray-400 mb-2">{widget.type}</span>
+        <div className="text-gray-600 font-medium">{t('coming_soon')}</div>
+      </div>
+    );
   };
 
   const isTransparent = !isEditing && widget.type === 'clock' && ['analog', 'apple', 'flip'].includes(widget.config?.clockStyle || 'digital');
@@ -118,8 +94,8 @@ const WidgetItemContent = React.memo(({ widget, onEdit }: { widget: Widget; onEd
               <Trash2 size={14} />
             </button>
           </div>
-          <div className="absolute top-2 left-2 z-10 text-gray-400 cursor-grab active:cursor-grabbing draggable-handle bg-white/50 p-1 rounded-md backdrop-blur-sm" aria-hidden="true">
-             <GripHorizontal size={16} />
+          <div className="absolute top-2 left-2 z-10 text-gray-600 cursor-grab active:cursor-grabbing draggable-handle bg-white/90 p-1.5 rounded-lg shadow-sm border border-gray-200 hover:bg-white hover:shadow-md hover:border-blue-300 transition-all duration-150" aria-hidden="true">
+             <GripHorizontal size={18} />
           </div>
         </>
       )}
@@ -241,7 +217,6 @@ export default function MainCanvas() {
             className="layout"
             layout={layout}
             width={width}
-            // @ts-ignore: Type definition missing cols prop
             cols={currentCols}
             rowHeight={120}
             margin={[8, 8]}
