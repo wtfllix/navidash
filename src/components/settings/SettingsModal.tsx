@@ -1,12 +1,11 @@
 import React, { useRef, useState, useTransition } from 'react';
 import { cn } from '@/lib/utils';
 import Modal from '@/components/ui/Modal';
-import { useBookmarkStore } from '@/store/useBookmarkStore';
 import { useWidgetStore } from '@/store/useWidgetStore';
 import { useToastStore } from '@/store/useToastStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { Download, Upload, RefreshCw, AlertTriangle, FileJson, Globe, Palette, Image as ImageIcon, Save } from 'lucide-react';
-import { Bookmark, Widget } from '@/types';
+import { Widget } from '@/types';
 import { useTranslations, useLocale } from 'next-intl';
 import { usePathname, useRouter } from '@/navigation';
 
@@ -28,7 +27,6 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     setLanguage,
     resetSettings
   } = useSettingsStore();
-  const { bookmarks } = useBookmarkStore();
   const { widgets, setWidgets } = useWidgetStore();
   const { addToast } = useToastStore();
 
@@ -56,7 +54,6 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   // Helper to trigger download
   const handleExport = () => {
     const data = {
-      bookmarks,
       widgets,
       settings: {
         themeColor,
@@ -98,11 +95,6 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       try {
         const result = event.target?.result as string;
         const data = JSON.parse(result);
-
-        if (data.bookmarks && Array.isArray(data.bookmarks)) {
-          // @ts-ignore
-          useBookmarkStore.getState().setBookmarks?.(data.bookmarks);
-        }
 
         if (data.widgets && Array.isArray(data.widgets)) {
           setWidgets(data.widgets);
@@ -182,17 +174,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           return res;
         }),
 
-        // 2. Sync Bookmarks
-        fetch('/api/bookmarks', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(bookmarks),
-        }).then(res => {
-          if (!res.ok) throw new Error('Failed to sync bookmarks');
-          return res;
-        }),
-
-        // 3. Sync Widgets
+        // 2. Sync Widgets
         fetch('/api/widgets', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

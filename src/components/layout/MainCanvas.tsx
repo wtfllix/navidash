@@ -11,6 +11,7 @@ import WidgetSettingsModal from '../widgets/WidgetSettingsModal';
 import { Trash2, GripHorizontal, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
+import DroppableGridArea from './DroppableGridArea';
 
 import GridLayoutBase, { Layout, LayoutItem } from 'react-grid-layout';
 
@@ -141,6 +142,7 @@ export default function MainCanvas() {
     setMounted(true);
   }, []);
 
+
   // 根据容器宽度计算当前列数 (响应式断点)
   const currentCols = useMemo(() => {
     if (!width) return 8;
@@ -190,7 +192,11 @@ export default function MainCanvas() {
   }, [widgets, setWidgets, isEditing]);
 
   return (
-    <main className="flex-1 relative flex flex-col overflow-hidden">
+    <main
+      className="flex-1 relative flex flex-col overflow-hidden focus:outline-none"
+      data-main-canvas
+      tabIndex={-1}
+    >
       <>
         <div 
           className="absolute inset-0 z-0 pointer-events-none"
@@ -213,24 +219,45 @@ export default function MainCanvas() {
       <div className="flex-1 overflow-y-auto p-6 relative z-10">
         <div ref={containerRef} className="max-w-7xl mx-auto min-h-[500px]">
          {mounted && width > 0 && (
-           <GridLayout
-            className="layout"
-            layout={layout}
-            width={width}
-            cols={currentCols}
-            rowHeight={120}
-            margin={[8, 8]}
-            isDraggable={isEditing}
-            isResizable={isEditing}
-            draggableHandle=".draggable-handle"
-            onLayoutChange={onLayoutChange}
-          >
-             {widgets.map((widget) => (
-               <div key={widget.id}>
-                 <WidgetItemContent widget={widget} onEdit={setEditingWidget} />
-               </div>
-             ))}
-           </GridLayout>
+           <DroppableGridArea
+             containerRef={containerRef}
+             width={width}
+             cols={currentCols}
+             rowHeight={120}
+             margin={[8, 8]}
+           >
+             <GridLayout
+               className="layout"
+               layout={layout}
+               width={width}
+               cols={currentCols}
+               rowHeight={120}
+               margin={[8, 8]}
+               compactType={null}
+               preventCollision={true}
+               isDraggable={isEditing}
+               isResizable={isEditing}
+               draggableHandle=".draggable-handle"
+               onLayoutChange={onLayoutChange}
+               // 动画配置
+               useCSSTransforms={true}
+               measureBeforeMount={false}
+               isBounded={false}
+               // 确保布局变化时有平滑动画
+               style={{
+                 transition: 'all 300ms ease-in-out',
+               }}
+             >
+               {widgets.map((widget) => (
+                 <div key={widget.id}>
+                   <WidgetItemContent
+                     widget={widget}
+                     onEdit={setEditingWidget}
+                   />
+                 </div>
+               ))}
+             </GridLayout>
+           </DroppableGridArea>
          )}
 
          {/* Add Widget Button moved to Header */}

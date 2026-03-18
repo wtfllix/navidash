@@ -4,6 +4,7 @@ import { useWidgetStore } from '@/store/useWidgetStore';
 import { v4 as uuidv4 } from 'uuid';
 import { useTranslations } from 'next-intl';
 import { widgetMeta, widgetCategories, WidgetCategory } from './registry';
+import { buildPlacementResult } from '@/lib/widgetPlacement';
 
 interface WidgetPickerProps {
   isOpen: boolean;
@@ -16,77 +17,19 @@ interface WidgetPickerProps {
  * 允许用户从预定义列表中选择并添加新的小组件到仪表盘
  */
 export default function WidgetPicker({ isOpen, onClose }: WidgetPickerProps) {
-  const { widgets, addWidget } = useWidgetStore();
+  const { widgets, addWidgetWithLayout } = useWidgetStore();
   const t = useTranslations('Widgets');
   const [activeCategory, setActiveCategory] = useState<'all' | WidgetCategory>('all');
 
   const handleAddWidget = (type: string, defaultSize: { w: number; h: number }) => {
-    const cols = 8; // 默认网格列数（与 WidgetSettingsModal 中最大列数一致）
-
-    // 生成占用网格的映射
-    const grid: boolean[][] = [];
-    widgets.forEach(w => {
-      const x = w.position?.x || 0;
-      const y = w.position?.y || 0;
-      const ww = w.size.w;
-      const hh = w.size.h;
-
-      for (let dy = 0; dy < hh; dy++) {
-        const row = y + dy;
-        if (!grid[row]) grid[row] = [];
-        for (let dx = 0; dx < ww; dx++) {
-          const col = x + dx;
-          grid[row][col] = true;
-        }
-      }
+    const placement = buildPlacementResult({
+      widgets,
+      widgetType: type as any,
+      widgetId: uuidv4(),
+      defaultSize,
+      cols: 8,
     });
-
-    // 查找第一个能容纳新 widget 的位置
-    const newWidth = defaultSize.w;
-    const newHeight = defaultSize.h;
-    let foundX = -1, foundY = -1;
-
-    // 限制搜索范围：y 从 0 到 20（避免无限循环）
-    outer: for (let y = 0; y < 20; y++) {
-      for (let x = 0; x <= cols - newWidth; x++) {
-        // 检查矩形区域是否空闲
-        let canPlace = true;
-        for (let dy = 0; dy < newHeight; dy++) {
-          const row = y + dy;
-          for (let dx = 0; dx < newWidth; dx++) {
-            const col = x + dx;
-            if (grid[row] && grid[row][col]) {
-              canPlace = false;
-              break;
-            }
-          }
-          if (!canPlace) break;
-        }
-        if (canPlace) {
-          foundX = x;
-          foundY = y;
-          break outer;
-        }
-      }
-    }
-
-    // 如果没找到合适位置，回退到原来的逻辑（放在最底部）
-    if (foundX === -1 || foundY === -1) {
-      const maxY = widgets.reduce((max, w) => {
-        const bottom = (w.position?.y || 0) + w.size.h;
-        return bottom > max ? bottom : max;
-      }, 0);
-      foundX = 0;
-      foundY = maxY;
-    }
-
-    addWidget({
-      id: uuidv4(),
-      type: type as any,
-      size: defaultSize,
-      position: { x: foundX, y: foundY },
-      config: {},
-    });
+    addWidgetWithLayout(placement.newWidget, placement.positionUpdates);
     onClose();
   };
 

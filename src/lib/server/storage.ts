@@ -1,14 +1,12 @@
 import fs from 'fs/promises';
 import fsSync from 'fs';
 import path from 'path';
-import { Bookmark, Widget, Settings } from '@/types';
+import { Widget, Settings } from '@/types';
 import { logger } from '@/lib/logger';
-import { initialBookmarks } from '@/config/initialData';
 
 const DEFAULT_DIR = '/app/data';
 const CWD_DATA = path.join(process.cwd(), 'data');
 const DATA_DIR = process.env.DATA_DIR || (fsSync.existsSync(DEFAULT_DIR) ? DEFAULT_DIR : CWD_DATA);
-const BOOKMARKS_FILE = path.join(DATA_DIR, 'bookmarks.json');
 const WIDGETS_FILE = path.join(DATA_DIR, 'widgets.json');
 const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
 
@@ -32,77 +30,8 @@ async function ensureDataDir() {
   }
 }
 
-/**
- * 读取书签数据
- * 从 JSON 文件中读取书签列表，如果文件不存在则返回 null
- * @returns {Promise<Bookmark[] | null>} 书签列表或 null
- */
-export async function getBookmarks(): Promise<Bookmark[] | null> {
-  if (IS_DEMO_MODE) {
-    logger.info('Demo mode: returning initial bookmarks');
-    return initialBookmarks;
-  }
 
-  try {
-    await ensureDataDir();
-    const data = await fs.readFile(BOOKMARKS_FILE, 'utf-8');
-    return JSON.parse(data);
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-      logger.info('Bookmarks file not found, returning initial bookmarks');
-      // 如果文件不存在，也返回初始数据，而不是 null
-      return initialBookmarks;
-    }
-    logger.error('Failed to read bookmarks', error);
-    return null;
-  }
-}
 
-/**
- * 获取书签文件的最后修改时间
- * 用于前端轮询检查数据是否有更新
- * @returns {Promise<number>} 时间戳 (ms)
- */
-export async function getBookmarksLastModified(): Promise<number> {
-  if (IS_DEMO_MODE) {
-    return 0;
-  }
-
-  try {
-    await ensureDataDir();
-    const stats = await fs.stat(BOOKMARKS_FILE);
-    return stats.mtimeMs;
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-      return 0;
-    }
-    logger.error('Failed to get bookmarks stats', error);
-    return 0;
-  }
-}
-
-/**
- * 保存书签数据
- * 将书签列表写入 JSON 文件
- * @param {Bookmark[]} bookmarks - 要保存的书签列表
- * @returns {Promise<void>}
- * @throws {Error} 如果写入失败则抛出错误
- */
-export async function saveBookmarks(bookmarks: Bookmark[]): Promise<void> {
-  if (IS_DEMO_MODE) {
-    logger.info('Demo mode: save skipped');
-    return;
-  }
-
-  try {
-    await ensureDataDir();
-    await fs.writeFile(BOOKMARKS_FILE, JSON.stringify(bookmarks, null, 2), 'utf-8');
-    logger.info('Bookmarks saved successfully');
-  } catch (error) {
-    logger.error('Failed to save bookmarks', error);
-    throw error;
-  }
-}
 
 /**
  * 读取小组件配置数据

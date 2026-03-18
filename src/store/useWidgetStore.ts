@@ -10,6 +10,20 @@ interface WidgetState {
   setWidgets: (widgets: Widget[]) => void;
   fetchWidgets: () => Promise<void>;
   dataVersion?: number;
+  /**
+   * 批量更新组件位置（用于智能布局推动）
+   * @param updates 位置更新列表
+   */
+  batchUpdatePositions: (updates: Array<{ id: string; position: { x: number; y: number } }>) => void;
+  /**
+   * 添加新组件并批量更新现有组件位置（原子操作）
+   * @param newWidget 新组件
+   * @param positionUpdates 需要移动的现有组件位置更新
+   */
+  addWidgetWithLayout: (
+    newWidget: Widget,
+    positionUpdates: Array<{ id: string; position: { x: number; y: number } }>
+  ) => void;
 }
 
 const initialWidgets: Widget[] = [
@@ -109,6 +123,35 @@ export const useWidgetStore = create<WidgetState>()(
         saveToServer(widgets);
         set({ widgets });
       },
+      // 批量更新组件位置
+      batchUpdatePositions: (updates) =>
+        set((state) => {
+          const newWidgets = state.widgets.map((w) => {
+            const update = updates.find((u) => u.id === w.id);
+            if (update) {
+              return { ...w, position: update.position };
+            }
+            return w;
+          });
+          saveToServer(newWidgets);
+          return { widgets: newWidgets };
+        }),
+      // 添加新组件并批量更新现有组件位置
+      addWidgetWithLayout: (newWidget, positionUpdates) =>
+        set((state) => {
+          // 先更新现有组件位置
+          const updatedWidgets = state.widgets.map((w) => {
+            const update = positionUpdates.find((u) => u.id === w.id);
+            if (update) {
+              return { ...w, position: update.position };
+            }
+            return w;
+          });
+          // 添加新组件
+          const newWidgets = [...updatedWidgets, newWidget];
+          saveToServer(newWidgets);
+          return { widgets: newWidgets };
+        }),
     }),
     {
       name: 'widget-storage', // LocalStorage Key
