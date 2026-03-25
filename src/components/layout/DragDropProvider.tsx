@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback, ReactNode, useRef } from 'react';
+import React, { createContext, useContext, useState, useCallback, ReactNode, useRef, useEffect } from 'react';
 import {
   DndContext,
   DragEndEvent,
@@ -11,11 +11,13 @@ import {
   PointerSensor,
   MouseSensor,
   TouchSensor,
-  pointerWithin,
+  rectIntersection,
   DragMoveEvent,
+  Modifier,
 } from '@dnd-kit/core';
 import { Coordinates } from '@dnd-kit/utilities';
 import { WidgetDropDetail } from '@/lib/widgetPlacement';
+import { useSidebarStore } from '@/store/useSidebarStore';
 
 // 拖拽数据的类型定义
 export interface DragData {
@@ -59,6 +61,15 @@ function getClientFromEvent(event: Event | undefined): { x: number; y: number } 
   return null;
 }
 
+function getClientFromActiveRect(activeRect: DragEndEvent['active']['rect']): { x: number; y: number } | null {
+  const translated = activeRect.current.translated;
+  if (!translated) return null;
+  return {
+    x: translated.left + translated.width / 2,
+    y: translated.top + translated.height / 2,
+  };
+}
+
 /**
  * DragDropProvider
  * 提供全局拖拽上下文，管理侧边栏到主画布的拖拽功能
@@ -68,6 +79,38 @@ export default function DragDropProvider({ children }: DragDropProviderProps) {
   const [dragOverlayPosition, setDragOverlayPosition] = useState<Coordinates | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const lastPointerClientRef = useRef<{ x: number; y: number } | null>(null);
+  const smoothTransformRef = useRef<{ x: number; y: number } | null>(null);
+  const { close: closeSidebar } = useSidebarStore();
+
+  const dragLagModifier: Modifier = useCallback(({ transform }) => {
+    const prev = smoothTransformRef.current;
+    if (!prev) {
+      smoothTransformRef.current = { x: transform.x, y: transform.y };
+      return transform;
+    }
+
+    // 低通滤波：让卡片跟随略有迟滞，避免“过快直跟手”
+    const nextX = prev.x + (transform.x - prev.x) * 0.35;
+    const nextY = prev.y + (transform.y - prev.y) * 0.35;
+    smoothTransformRef.current = { x: nextX, y: nextY };
+
+    return {
+      ...transform,
+      x: nextX,
+      y: nextY,
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handlePointerMove = (event: PointerEvent) => {
+      lastPointerClientRef.current = { x: event.clientX, y: event.clientY };
+    };
+
+    window.addEventListener('pointermove', handlePointerMove);
+    return () => window.removeEventListener('pointermove', handlePointerMove);
+  }, [isDragging]);
 
   // 配置传感器
   const sensors = useSensors(
@@ -88,9 +131,12 @@ export default function DragDropProvider({ children }: DragDropProviderProps) {
     if (dragData) {
       setActiveDragData(dragData);
       setIsDragging(true);
+      smoothTransformRef.current = null;
       lastPointerClientRef.current = getClientFromEvent(event.activatorEvent);
+      // 拖拽开始即自动收起组件商店，释放主面板操作空间
+      closeSidebar();
     }
-  }, []);
+  }, [closeSidebar]);
 
   // 拖拽移动
   const handleDragMove = useCallback((event: DragMoveEvent) => {
@@ -112,24 +158,43 @@ export default function DragDropProvider({ children }: DragDropProviderProps) {
     setDragOverlayPosition(null);
     setIsDragging(false);
 
-    // 仅当拖拽到主画布可放置区域时才触发新增
-    if (over?.data.current && (over.data.current as { type?: string }).type === 'grid-drop-area') {
-      const dragData = active.data.current as DragData;
-      const dropData = over.data.current as { type: string; gridPosition?: { x: number; y: number } };
-      const dropClient = lastPointerClientRef.current ?? getClientFromEvent(event.activatorEvent);
+    const dragData = active.data.current as DragData | undefined;
+    if (!dragData) {
+      lastPointerClientRef.current = null;
+      return;
+    }
 
-      // 触发放置事件
-      const dropEvent = new CustomEvent<WidgetDropDetail>('widget-drop', {
+    const dropClient =
+      lastPointerClientRef.current ??
+      getClientFromActiveRect(active.rect) ??
+      getClientFromEvent(event.activatorEvent);
+
+    const droppedByOver = over?.id === 'main-canvas-drop-area';
+    let droppedByRect = false;
+    const dropArea = document.querySelector('[data-grid-drop-area="true"]');
+    if (dropClient && dropArea instanceof HTMLElement) {
+      const rect = dropArea.getBoundingClientRect();
+      droppedByRect =
+        dropClient.x >= rect.left &&
+        dropClient.x <= rect.right &&
+        dropClient.y >= rect.top &&
+        dropClient.y <= rect.bottom;
+    }
+    const droppedOnGrid = droppedByOver || droppedByRect;
+
+    // 无论是否命中网格都派发：未命中时由主面板回退到末尾空白位
+    const dropEvent = new CustomEvent<WidgetDropDetail>('widget-drop', {
         detail: {
           widgetType: dragData.type,
           defaultSize: dragData.defaultSize,
-          gridPosition: dropData?.gridPosition,
+          gridPosition: undefined,
           dropClient,
+          droppedOnGrid,
         },
-      });
-      window.dispatchEvent(dropEvent);
-    }
+    });
+    window.dispatchEvent(dropEvent);
     lastPointerClientRef.current = null;
+    smoothTransformRef.current = null;
   }, []);
 
   // 拖拽取消
@@ -138,13 +203,15 @@ export default function DragDropProvider({ children }: DragDropProviderProps) {
     setDragOverlayPosition(null);
     setIsDragging(false);
     lastPointerClientRef.current = null;
+    smoothTransformRef.current = null;
   }, []);
 
   return (
     <DragDropContext.Provider value={{ activeDragData, dragOverlayPosition, isDragging }}>
       <DndContext
         sensors={sensors}
-        collisionDetection={pointerWithin}
+        modifiers={[dragLagModifier]}
+        collisionDetection={rectIntersection}
         onDragStart={handleDragStart}
         onDragMove={handleDragMove}
         onDragEnd={handleDragEnd}
@@ -153,9 +220,9 @@ export default function DragDropProvider({ children }: DragDropProviderProps) {
         {children}
 
         {/* 拖拽覆盖层 */}
-        <DragOverlay>
+        <DragOverlay dropAnimation={null}>
           {activeDragData && (
-            <div className="p-3 bg-white border border-blue-300 rounded-xl shadow-lg flex items-center space-x-3 opacity-90">
+            <div className="p-3 bg-white border border-blue-300 rounded-xl shadow-lg flex items-center space-x-3 opacity-90 will-change-transform">
               <div className="p-2 bg-blue-50 rounded-lg">
                 <div className="w-6 h-6 flex items-center justify-center text-blue-600 font-bold">
                   {activeDragData.type.charAt(0).toUpperCase()}

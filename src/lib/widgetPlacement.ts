@@ -6,6 +6,12 @@ export interface WidgetDropDetail {
   defaultSize: { w: number; h: number };
   gridPosition?: { x: number; y: number };
   dropClient?: { x: number; y: number } | null;
+  droppedOnGrid: boolean;
+}
+
+export interface WidgetDropPreviewDetail {
+  active: boolean;
+  updates: Array<{ id: string; position: { x: number; y: number } }>;
 }
 
 export interface PlacementRequest {
@@ -22,6 +28,18 @@ export interface PlacementRequest {
 export interface PlacementResult {
   newWidget: Widget;
   positionUpdates: Array<{ id: string; position: { x: number; y: number } }>;
+  movedWidgetIds: string[];
+}
+
+export interface MoveRequest {
+  widgets: Widget[];
+  widgetId: string;
+  cols: number;
+  preferredPosition: { x: number; y: number };
+}
+
+export interface MoveResult {
+  widgets: Widget[];
   movedWidgetIds: string[];
 }
 
@@ -101,5 +119,47 @@ export function buildPlacementResult(request: PlacementRequest): PlacementResult
     newWidget,
     positionUpdates,
     movedWidgetIds: layoutResult.movedWidgetIds,
+  };
+}
+
+export function buildMoveResult(request: MoveRequest): MoveResult {
+  const { widgets, widgetId, cols, preferredPosition } = request;
+  const movingWidget = widgets.find((widget) => widget.id === widgetId);
+
+  if (!movingWidget) {
+    return { widgets, movedWidgetIds: [] };
+  }
+
+  const otherWidgets = widgets.filter((widget) => widget.id !== widgetId);
+  const placement = buildPlacementResult({
+    widgets: otherWidgets,
+    widgetType: movingWidget.type,
+    widgetId: movingWidget.id,
+    defaultSize: movingWidget.size,
+    cols,
+    preferredPosition,
+    config: movingWidget.config,
+  });
+
+  const updatedOthers = otherWidgets.map((widget) => {
+    const update = placement.positionUpdates.find((item) => item.id === widget.id);
+    return update ? { ...widget, position: update.position } : widget;
+  });
+
+  const movedWidgetIds = [...placement.movedWidgetIds];
+  if (
+    placement.newWidget.position.x !== movingWidget.position.x ||
+    placement.newWidget.position.y !== movingWidget.position.y
+  ) {
+    movedWidgetIds.push(movingWidget.id);
+  }
+
+  const movedMap = new Map<string, Widget>(
+    [...updatedOthers, placement.newWidget].map((widget) => [widget.id, widget])
+  );
+
+  return {
+    widgets: widgets.map((widget) => movedMap.get(widget.id) ?? widget),
+    movedWidgetIds,
   };
 }

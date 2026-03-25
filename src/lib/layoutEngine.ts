@@ -83,67 +83,30 @@ export function findNewPosition(
   widgets: LayoutWidget[],
   movingWidget: LayoutWidget,
   cols: number,
-  preferredDirection: 'down' | 'right' | 'left' | 'up' = 'down'
+  _preferredDirection: 'down' | 'right' | 'left' | 'up' = 'down'
 ): { x: number; y: number } | null {
   const currentX = movingWidget.tempX ?? movingWidget.position.x;
   const currentY = movingWidget.tempY ?? movingWidget.position.y;
   const { w, h } = movingWidget.size;
-
-  // 定义搜索方向优先级
-  const directions: Array<{ dx: number; dy: number }> = [
-    { dx: 0, dy: 1 },   // 下
-    { dx: 1, dy: 0 },   // 右
-    { dx: -1, dy: 0 },  // 左
-    { dx: 0, dy: -1 },  // 上
-  ];
-
-  // 根据首选方向重新排序
-  if (preferredDirection === 'right') {
-    directions.splice(0, 0, directions.splice(1, 1)[0]);
-  } else if (preferredDirection === 'left') {
-    directions.splice(0, 0, directions.splice(2, 1)[0]);
-  } else if (preferredDirection === 'up') {
-    directions.splice(0, 0, directions.splice(3, 1)[0]);
-  }
-
-  // 最大搜索距离
-  const maxSearchDistance = 50;
-
-  for (const { dx, dy } of directions) {
-    for (let distance = 1; distance <= maxSearchDistance; distance++) {
-      const newX = currentX + dx * distance * w;
-      const newY = currentY + dy * distance * h;
-
-      // 检查边界
-      if (!isValidPosition(newX, newY, w, h, cols)) {
-        if (dx !== 0) break; // 水平方向到达边界，停止该方向搜索
-        continue; // 垂直方向可以继续尝试
-      }
-
-      // 检查是否与其他组件冲突
-      const conflicts = findConflicts(widgets, { x: newX, y: newY, w, h }, movingWidget.id);
-
-      if (conflicts.length === 0) {
-        return { x: newX, y: newY };
-      }
-    }
-  }
-
-  // 如果所有方向都找不到位置，尝试放到最底部
-  const maxY = widgets.reduce((max, w) => {
-    const bottom = (w.tempY ?? w.position.y) + w.size.h;
+  const maxBottom = widgets.reduce((max, widget) => {
+    const bottom = (widget.tempY ?? widget.position.y) + widget.size.h;
     return Math.max(max, bottom);
   }, 0);
+  const searchLimit = maxBottom + 200;
 
-  // 尝试在底部找到合适的位置
-  for (let x = 0; x <= cols - w; x++) {
-    const conflicts = findConflicts(widgets, { x, y: maxY, w, h }, movingWidget.id);
+  // 严格纵向挤压：仅在当前列向下寻找位置，避免横向“飞走”
+  for (let y = currentY + 1; y <= searchLimit; y++) {
+    if (!isValidPosition(currentX, y, w, h, cols, searchLimit + h + 1)) {
+      continue;
+    }
+    const conflicts = findConflicts(widgets, { x: currentX, y, w, h }, movingWidget.id);
     if (conflicts.length === 0) {
-      return { x, y: maxY };
+      return { x: currentX, y };
     }
   }
 
-  return null;
+  // 理论上不会命中，保底仍保持同列下移
+  return { x: currentX, y: maxBottom + 1 };
 }
 
 /**
@@ -193,8 +156,14 @@ export function calculateLayoutWithNewWidget(
 
   // 有冲突，需要推动组件
   const movedWidgetIds: string[] = [];
-  const widgetsToProcess = [...initialConflicts];
+  const widgetsToProcess = [...initialConflicts].sort((a, b) => {
+    const ay = a.tempY ?? a.position.y;
+    const by = b.tempY ?? b.position.y;
+    if (by !== ay) return by - ay;
+    return (b.tempX ?? b.position.x) - (a.tempX ?? a.position.x);
+  });
   const processedIds = new Set<string>();
+  const retryCounts = new Map<string, number>();
 
   while (widgetsToProcess.length > 0) {
     const currentWidget = widgetsToProcess.shift()!;
@@ -203,7 +172,55 @@ export function calculateLayoutWithNewWidget(
       continue;
     }
 
-    // 为当前组件寻找新位置
+    const currentX = currentWidget.tempX ?? currentWidget.position.x;
+    const currentY = currentWidget.tempY ?? currentWidget.position.y;
+    const oneStepDown = { x: currentX, y: currentY + 1 };
+
+    // 先尝试“仅下移一格”。若被阻挡，优先推动阻挡者，形成自然的链式下压。
+    if (isValidPosition(oneStepDown.x, oneStepDown.y, currentWidget.size.w, currentWidget.size.h, cols)) {
+      const blockers = findConflicts(
+        [...workingWidgets, newWidget as LayoutWidget],
+        {
+          x: oneStepDown.x,
+          y: oneStepDown.y,
+          w: currentWidget.size.w,
+          h: currentWidget.size.h,
+        },
+        currentWidget.id
+      );
+
+      if (blockers.length === 0) {
+        currentWidget.tempX = oneStepDown.x;
+        currentWidget.tempY = oneStepDown.y;
+        movedWidgetIds.push(currentWidget.id);
+        processedIds.add(currentWidget.id);
+        continue;
+      }
+
+      const retryCount = (retryCounts.get(currentWidget.id) ?? 0) + 1;
+      retryCounts.set(currentWidget.id, retryCount);
+      const maxRetries = workingWidgets.length + 2;
+
+      if (retryCount <= maxRetries) {
+        for (const blocker of blockers) {
+          if (!processedIds.has(blocker.id) && !widgetsToProcess.includes(blocker)) {
+            widgetsToProcess.push(blocker);
+          }
+        }
+        if (!widgetsToProcess.includes(currentWidget)) {
+          widgetsToProcess.push(currentWidget);
+        }
+        widgetsToProcess.sort((a, b) => {
+          const ay = a.tempY ?? a.position.y;
+          const by = b.tempY ?? b.position.y;
+          if (by !== ay) return by - ay;
+          return (b.tempX ?? b.position.x) - (a.tempX ?? a.position.x);
+        });
+        continue;
+      }
+    }
+
+    // 回退：在同列向下寻找可用位置
     const newPosition = findNewPosition(
       [...workingWidgets, newWidget as LayoutWidget],
       currentWidget,
@@ -235,6 +252,13 @@ export function calculateLayoutWithNewWidget(
           widgetsToProcess.push(conflict);
         }
       }
+      // 冲突链按“先下后上”处理，避免上方组件被直接推到末尾
+      widgetsToProcess.sort((a, b) => {
+        const ay = a.tempY ?? a.position.y;
+        const by = b.tempY ?? b.position.y;
+        if (by !== ay) return by - ay;
+        return (b.tempX ?? b.position.x) - (a.tempX ?? a.position.x);
+      });
     }
 
     processedIds.add(currentWidget.id);

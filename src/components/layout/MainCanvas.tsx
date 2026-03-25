@@ -12,13 +12,11 @@ import { Trash2, GripHorizontal, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
 import DroppableGridArea from './DroppableGridArea';
+import { buildMoveResult } from '@/lib/widgetPlacement';
+import { WidgetDropPreviewDetail } from '@/lib/widgetPlacement';
 
-import GridLayoutBase, { Layout, LayoutItem } from 'react-grid-layout';
-
-// react-grid-layout 的类型定义与实际 props 有出入，用宽松断言规避
-const GridLayout = GridLayoutBase as React.ComponentType<any>;
-import 'react-grid-layout/css/styles.css';
-import 'react-resizable/css/styles.css';
+const GRID_ROW_HEIGHT = 120;
+const GRID_MARGIN: [number, number] = [8, 8];
 
 /**
  * useContainerWidth Hook
@@ -51,7 +49,15 @@ const useContainerWidth = () => {
  * WidgetItemContent Component
  * 小组件容器封装，处理编辑模式下的拖拽手柄和操作按钮
  */
-const WidgetItemContent = React.memo(({ widget, onEdit }: { widget: Widget; onEdit: (widget: Widget) => void }) => {
+const WidgetItemContent = React.memo(({
+  widget,
+  onEdit,
+  onDragHandlePointerDown,
+}: {
+  widget: Widget;
+  onEdit: (widget: Widget) => void;
+  onDragHandlePointerDown: (widget: Widget, event: React.PointerEvent<HTMLDivElement>) => void;
+}) => {
   const { removeWidget } = useWidgetStore();
   const { isEditing } = useUIStore();
   const t = useTranslations('Widgets');
@@ -95,14 +101,18 @@ const WidgetItemContent = React.memo(({ widget, onEdit }: { widget: Widget; onEd
               <Trash2 size={14} />
             </button>
           </div>
-          <div className="absolute top-2 left-2 z-10 text-gray-600 cursor-grab active:cursor-grabbing draggable-handle bg-white/90 p-1.5 rounded-lg shadow-sm border border-gray-200 hover:bg-white hover:shadow-md hover:border-blue-300 transition-all duration-150" aria-hidden="true">
+          <div
+            className="absolute top-2 left-2 z-10 text-gray-600 cursor-grab active:cursor-grabbing draggable-handle bg-white/90 p-1.5 rounded-lg shadow-sm border border-gray-200 hover:bg-white hover:shadow-md hover:border-blue-300 transition-all duration-150"
+            aria-hidden="true"
+            onPointerDown={(event) => onDragHandlePointerDown(widget, event)}
+          >
              <GripHorizontal size={18} />
           </div>
         </>
       )}
       
       <div className={cn(
-        "w-full h-full transition-all duration-200",
+        "w-full h-full transition-all duration-300",
         isEditing 
           ? "overflow-hidden rounded-xl border border-blue-400 border-dashed ring-4 ring-blue-50 bg-gray-50/50 scale-[0.98]" 
           : isTransparent
@@ -134,6 +144,21 @@ export default function MainCanvas() {
   const { isEditing, isWidgetPickerOpen, closeWidgetPicker } = useUIStore();
   const [editingWidget, setEditingWidget] = useState<Widget | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [draggingWidgetId, setDraggingWidgetId] = useState<string | null>(null);
+  const [dragPreviewPosition, setDragPreviewPosition] = useState<{ x: number; y: number } | null>(null);
+  const [dropPreviewUpdates, setDropPreviewUpdates] = useState<Array<{ id: string; position: { x: number; y: number } }>>([]);
+  const [editPreviewUpdates, setEditPreviewUpdates] = useState<Array<{ id: string; position: { x: number; y: number } }>>([]);
+  const dragPreviewRef = useRef<{ x: number; y: number } | null>(null);
+  const widgetsRef = useRef(widgets);
+  const pointerFrameRef = useRef<number | null>(null);
+  const pendingPointerRef = useRef<{ x: number; y: number } | null>(null);
+  const dragStartRef = useRef<{
+    widgetId: string;
+    startClientX: number;
+    startClientY: number;
+    startGridX: number;
+    startGridY: number;
+  } | null>(null);
   
   // 获取容器宽度以动态调整网格列数
   const { width, containerRef } = useContainerWidth();
@@ -141,6 +166,38 @@ export default function MainCanvas() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    widgetsRef.current = widgets;
+  }, [widgets]);
+
+  useEffect(() => {
+    const handlePreview = (event: CustomEvent<WidgetDropPreviewDetail>) => {
+      if (!event.detail.active) {
+        setDropPreviewUpdates([]);
+        return;
+      }
+      setDropPreviewUpdates(event.detail.updates);
+    };
+
+    window.addEventListener('widget-drop-preview', handlePreview as EventListener);
+    return () => window.removeEventListener('widget-drop-preview', handlePreview as EventListener);
+  }, []);
+
+  useEffect(() => {
+    if (!isEditing) {
+      dragStartRef.current = null;
+      setDraggingWidgetId(null);
+      setDragPreviewPosition(null);
+      setEditPreviewUpdates([]);
+      dragPreviewRef.current = null;
+      pendingPointerRef.current = null;
+      if (pointerFrameRef.current !== null) {
+        window.cancelAnimationFrame(pointerFrameRef.current);
+        pointerFrameRef.current = null;
+      }
+    }
+  }, [isEditing]);
 
 
   // 根据容器宽度计算当前列数 (响应式断点)
@@ -153,43 +210,148 @@ export default function MainCanvas() {
     return 2;
   }, [width]);
 
-  // 生成 react-grid-layout 所需的布局配置
-  const layout = useMemo<Layout>(() => {
-    return widgets.map<LayoutItem>((widget) => ({
-      i: widget.id,
-      x: widget.position?.x ?? 0,
-      y: widget.position?.y ?? Infinity,
-      w: widget.size.w,
-      h: widget.size.h,
-      isDraggable: isEditing,
-      isResizable: isEditing,
-    }));
-  }, [widgets, isEditing]);
+  const cellWidth = useMemo(() => {
+    if (!width) return 0;
+    return (width - (currentCols - 1) * GRID_MARGIN[0]) / currentCols;
+  }, [width, currentCols]);
 
-  // 布局变更回调：更新小组件的位置和尺寸
-  const onLayoutChange = useCallback((layout: Layout) => {
-    if (!isEditing) return;
-    const hasChanged = layout.some(l => {
-      const w = widgets.find(w => w.id === l.i);
-      if (!w) return false;
-      return w.position.x !== l.x || w.position.y !== l.y || w.size.w !== l.w || w.size.h !== l.h;
+  const toPixelRect = useCallback((widget: Widget, overridePosition?: { x: number; y: number }) => {
+    const position = overridePosition ?? widget.position;
+    const left = position.x * (cellWidth + GRID_MARGIN[0]);
+    const top = position.y * (GRID_ROW_HEIGHT + GRID_MARGIN[1]);
+    const widthPx = cellWidth * widget.size.w + GRID_MARGIN[0] * (widget.size.w - 1);
+    const heightPx = GRID_ROW_HEIGHT * widget.size.h + GRID_MARGIN[1] * (widget.size.h - 1);
+    return { left, top, width: widthPx, height: heightPx };
+  }, [cellWidth]);
+
+  const canvasHeight = useMemo(() => {
+    const bottoms = widgets.map((widget) => {
+      const editPreview = editPreviewUpdates.find((item) => item.id === widget.id)?.position;
+      const dropPreview = dropPreviewUpdates.find((item) => item.id === widget.id)?.position;
+      const previewPos =
+        dragPreviewPosition && draggingWidgetId === widget.id
+          ? dragPreviewPosition
+          : editPreview ?? dropPreview;
+      const rect = toPixelRect(widget, previewPos);
+      return rect.top + rect.height;
     });
+    const maxBottom = bottoms.length > 0 ? Math.max(...bottoms) : 0;
+    return Math.max(500, maxBottom + 16);
+  }, [widgets, draggingWidgetId, dragPreviewPosition, editPreviewUpdates, dropPreviewUpdates, toPixelRect]);
 
-    if (hasChanged) {
-      const newWidgets = widgets.map(w => {
-        const l = layout.find(item => item.i === w.id);
-        if (l) {
-          return {
-            ...w,
-            position: { x: l.x, y: l.y },
-            size: { w: l.w, h: l.h }
-          };
-        }
-        return w;
+  const handleDragHandlePointerDown = useCallback((widget: Widget, event: React.PointerEvent<HTMLDivElement>) => {
+    if (!isEditing || !cellWidth || dragStartRef.current) return;
+    event.preventDefault();
+    event.stopPropagation();
+
+    const flushPointerMove = () => {
+      pointerFrameRef.current = null;
+      const pending = pendingPointerRef.current;
+      if (!pending || !dragStartRef.current) return;
+      const moveEvent = pending;
+      if (!dragStartRef.current) return;
+      const drag = dragStartRef.current;
+      const deltaX = moveEvent.x - drag.startClientX;
+      const deltaY = moveEvent.y - drag.startClientY;
+
+      const startLeft = drag.startGridX * (cellWidth + GRID_MARGIN[0]);
+      const startTop = drag.startGridY * (GRID_ROW_HEIGHT + GRID_MARGIN[1]);
+      const nextLeft = startLeft + deltaX;
+      const nextTop = startTop + deltaY;
+
+      const movingWidget = widgetsRef.current.find((item) => item.id === drag.widgetId);
+      if (!movingWidget) return;
+
+      const nextX = Math.max(
+        0,
+        Math.min(
+          Math.round(nextLeft / (cellWidth + GRID_MARGIN[0])),
+          currentCols - movingWidget.size.w
+        )
+      );
+      const nextY = Math.max(0, Math.round(nextTop / (GRID_ROW_HEIGHT + GRID_MARGIN[1])));
+      const prevPreview = dragPreviewRef.current;
+      if (prevPreview && prevPreview.x === nextX && prevPreview.y === nextY) {
+        return;
+      }
+
+      const previewLayout = buildMoveResult({
+        widgets: widgetsRef.current,
+        widgetId: drag.widgetId,
+        cols: currentCols,
+        preferredPosition: { x: nextX, y: nextY },
       });
-      setWidgets(newWidgets);
-    }
-  }, [widgets, setWidgets, isEditing]);
+
+      const movingPreview = previewLayout.widgets.find((item) => item.id === drag.widgetId)?.position ?? {
+        x: nextX,
+        y: nextY,
+      };
+      setDragPreviewPosition(movingPreview);
+      dragPreviewRef.current = movingPreview;
+
+      const previewUpdates = previewLayout.widgets
+        .filter((item) => item.id !== drag.widgetId)
+        .map((item) => {
+          const original = widgetsRef.current.find((w) => w.id === item.id);
+          return original &&
+            (original.position.x !== item.position.x || original.position.y !== item.position.y)
+            ? { id: item.id, position: item.position }
+            : null;
+        })
+        .filter((item): item is { id: string; position: { x: number; y: number } } => !!item);
+      setEditPreviewUpdates(previewUpdates);
+    };
+
+    const onPointerMove = (moveEvent: PointerEvent) => {
+      pendingPointerRef.current = { x: moveEvent.clientX, y: moveEvent.clientY };
+      if (pointerFrameRef.current !== null) return;
+      pointerFrameRef.current = window.requestAnimationFrame(flushPointerMove);
+    };
+
+    const onPointerUp = () => {
+      const drag = dragStartRef.current;
+      if (!drag) return;
+
+      const preview = dragPreviewRef.current ?? { x: drag.startGridX, y: drag.startGridY };
+      const moveResult = buildMoveResult({
+        widgets: widgetsRef.current,
+        widgetId: drag.widgetId,
+        cols: currentCols,
+        preferredPosition: preview,
+      });
+
+      if (moveResult.movedWidgetIds.length > 0) {
+        setWidgets(moveResult.widgets);
+      }
+
+      dragStartRef.current = null;
+      setDraggingWidgetId(null);
+      setDragPreviewPosition(null);
+      setEditPreviewUpdates([]);
+      dragPreviewRef.current = null;
+      pendingPointerRef.current = null;
+      if (pointerFrameRef.current !== null) {
+        window.cancelAnimationFrame(pointerFrameRef.current);
+        pointerFrameRef.current = null;
+      }
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+    };
+
+    dragStartRef.current = {
+      widgetId: widget.id,
+      startClientX: event.clientX,
+      startClientY: event.clientY,
+      startGridX: widget.position.x,
+      startGridY: widget.position.y,
+    };
+    setDraggingWidgetId(widget.id);
+    setDragPreviewPosition(widget.position);
+    setEditPreviewUpdates([]);
+    dragPreviewRef.current = widget.position;
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+  }, [isEditing, cellWidth, currentCols, setWidgets]);
 
   return (
     <main
@@ -223,40 +385,49 @@ export default function MainCanvas() {
              containerRef={containerRef}
              width={width}
              cols={currentCols}
-             rowHeight={120}
-             margin={[8, 8]}
+             rowHeight={GRID_ROW_HEIGHT}
+             margin={GRID_MARGIN}
            >
-             <GridLayout
-               className="layout"
-               layout={layout}
-               width={width}
-               cols={currentCols}
-               rowHeight={120}
-               margin={[8, 8]}
-               compactType={null}
-               preventCollision={true}
-               isDraggable={isEditing}
-               isResizable={isEditing}
-               draggableHandle=".draggable-handle"
-               onLayoutChange={onLayoutChange}
-               // 动画配置
-               useCSSTransforms={true}
-               measureBeforeMount={false}
-               isBounded={false}
-               // 确保布局变化时有平滑动画
-               style={{
-                 transition: 'all 300ms ease-in-out',
-               }}
-             >
-               {widgets.map((widget) => (
-                 <div key={widget.id}>
-                   <WidgetItemContent
-                     widget={widget}
-                     onEdit={setEditingWidget}
-                   />
-                 </div>
-               ))}
-             </GridLayout>
+             <div className="relative w-full" style={{ height: `${canvasHeight}px` }}>
+               {widgets.map((widget) => {
+                 const editPreview = editPreviewUpdates.find((item) => item.id === widget.id)?.position;
+                 const dropPreview = dropPreviewUpdates.find((item) => item.id === widget.id)?.position;
+                 const previewPos =
+                   dragPreviewPosition && draggingWidgetId === widget.id
+                     ? dragPreviewPosition
+                     : editPreview ?? dropPreview;
+                 const rect = toPixelRect(widget, previewPos);
+                 const isDraggingThis = draggingWidgetId === widget.id;
+                 const isBeingPushed = (!!editPreview || !!dropPreview) && !isDraggingThis;
+
+                 return (
+                   <div
+                     key={widget.id}
+                     className={cn(
+                       "absolute transition-[left,top,width,height,transform,filter]",
+                       isDraggingThis
+                         ? "duration-100 ease-linear"
+                         : isBeingPushed
+                           ? "duration-430 [transition-timing-function:cubic-bezier(0.22,1,0.36,1)]"
+                           : "duration-260 ease-out",
+                       isDraggingThis && "z-30 scale-[1.02] drop-shadow-xl"
+                     )}
+                     style={{
+                       left: `${rect.left}px`,
+                       top: `${rect.top}px`,
+                       width: `${rect.width}px`,
+                       height: `${rect.height}px`,
+                     }}
+                   >
+                     <WidgetItemContent
+                       widget={widget}
+                       onEdit={setEditingWidget}
+                       onDragHandlePointerDown={handleDragHandlePointerDown}
+                     />
+                   </div>
+                 );
+               })}
+             </div>
            </DroppableGridArea>
          )}
 
