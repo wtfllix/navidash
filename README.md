@@ -6,7 +6,7 @@
 **中文** | [English](./README_EN.md)
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Version](https://img.shields.io/badge/version-0.3.2-green)
+![Version](https://img.shields.io/badge/version-0.4.0-green)
 ![Next.js](https://img.shields.io/badge/Next.js-14-black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
 ![Docker](https://img.shields.io/badge/Docker-Ready-2496ed)
@@ -126,6 +126,13 @@ MIT License
 ---
 
 ## 📝 更新日志 (Changelog)
+
+### v0.4.0
+- 🧩 **组件商店拖拽升级**：支持从组件商店拖拽到主面板后自动收起侧栏，并将焦点切回主面板。
+- 📍 **放置体验优化**：拖拽时提供占位反馈，放置后按目标位置落位，不再出现“回弹飞回”效果。
+- 🔁 **冲突避让增强**：新增链式下移重排，冲突组件按顺序下移，减少跨列跳跃与尾部飞移。
+- ✨ **编辑模式一致性**：编辑模式拖动与组件商店拖拽统一冲突检测与预排版反馈，交互更稳定。
+- 🧪 **回归测试补充**：新增组件放置与冲突场景测试（含长条组件与异高组件场景）。
 
 ### v0.3.2
 - 🔗 **新增 Links Widget**: 新增链接集合小组件，支持分组标题、图标大小调整、标签显示开关，以及批量导入功能

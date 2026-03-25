@@ -5,7 +5,7 @@
 [中文](./README.md) | **English**
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Version](https://img.shields.io/badge/version-0.3.2-green)
+![Version](https://img.shields.io/badge/version-0.4.0-green)
 ![Next.js](https://img.shields.io/badge/Next.js-14-black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
 ![Docker](https://img.shields.io/badge/Docker-Ready-2496ed)
@@ -13,6 +13,14 @@
 **NaviDash** is designed for users who seek ultimate efficiency and aesthetics. Abandoning clutter, it uses a classic "Pegboard" style foundation combined with a free-dragging grid layout to create a browser start page that is both beautiful and practical.
 
 ---
+
+## ✨ v0.4.0 Changelog
+
+- 🧩 **Widget Store Drag & Drop Upgrade**: Dragging from the widget store now auto-collapses the sidebar and returns focus to the main canvas.
+- 📍 **Placement UX Improvements**: Improved placeholder feedback and drop positioning; removed the "fly-back" overlay effect.
+- 🔁 **Conflict Reflow Enhancement**: Added chain-style downward reflow so conflicting widgets move in sequence with fewer cross-column jumps.
+- ✨ **Edit-Mode Consistency**: Unified conflict detection and preview reflow behavior between edit-mode dragging and store-to-canvas dragging.
+- 🧪 **Regression Coverage**: Added tests for placement and conflict scenarios, including tall-widget and mixed-height cases.
 
 ## ✨ v0.3.2 Changelog
 
