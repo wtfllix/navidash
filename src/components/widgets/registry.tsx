@@ -34,7 +34,6 @@ import TodoWidget from './TodoWidget';
 import MemoWidget from './MemoWidget';
 import CalendarWidget from './CalendarWidget';
 import PhotoWidget from './PhotoWidget';
-import MostVisitedWidget from './MostVisitedWidget';
 
 // ─── 渲染组件映射 ─────────────────────────────────────────────────────────────
 
@@ -54,7 +53,6 @@ export const widgetComponentRegistry: Partial<
   memo: MemoWidget,
   calendar: CalendarWidget,
   'photo-frame': PhotoWidget,
-  'most-visited': MostVisitedWidget,
   // rss、monitor 尚未实现，不注册
 };
 
@@ -156,15 +154,6 @@ export const widgetMeta: WidgetMeta[] = [
     descKey: 'photo_frame_desc',
     Icon: ImageIcon,
     iconClassName: 'text-pink-500',
-    defaultSize: { w: 2, h: 2 },
-    category: 'custom',
-  },
-  {
-    type: 'most-visited',
-    titleKey: 'most_visited',
-    descKey: 'most_visited_desc',
-    Icon: BarChart,
-    iconClassName: 'text-blue-500',
     defaultSize: { w: 2, h: 2 },
     category: 'custom',
   },

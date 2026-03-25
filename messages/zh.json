@@ -26,26 +26,7 @@
     "done": "完成",
     "customize": "自定义",
     "settings": "设置",
-    "bookmarks": "书签"
-  },
-  "BookmarkModal": {
-    "add_bookmark": "添加书签",
-    "edit_item": "编辑项目",
-    "title": "标题",
-    "url": "链接地址",
-    "icon": "图标",
-    "is_folder": "这是一个文件夹吗？",
-    "folder": "文件夹",
-    "link": "链接",
-    "bookmark_added": "书签已添加",
-    "category_added": "分类已添加",
-    "changes_saved": "更改已保存",
-    "cat_general": "常用",
-    "cat_dev": "开发",
-    "cat_social": "社交",
-    "cat_office": "办公",
-    "cat_media": "媒体",
-    "cat_ai": "AI"
+    "bookmarks": "组件商店"
   },
   "SettingsModal": {
     "title": "设置与数据",
@@ -62,7 +43,7 @@
     "blur": "模糊程度",
     "opacity": "遮罩浓度",
     "export_config": "导出配置",
-    "export_desc": "下载包含书签和布局的备份文件。",
+    "export_desc": "下载包含组件布局和设置的备份文件。",
     "download_json": "下载 JSON 备份",
     "import_config": "导入配置",
     "import_desc": "从之前导出的 JSON 文件恢复。",
@@ -71,7 +52,7 @@
     "config_restored": "配置恢复成功",
     "import_failed": "导入失败：无效的 JSON 文件",
     "sync_data": "数据同步",
-    "sync_desc": "手动将本地所有数据（书签、组件布局、设置）同步到服务器。",
+    "sync_desc": "手动将本地所有数据（组件布局、设置）同步到服务器。",
     "sync_now": "立即同步到服务器",
     "sync_success": "数据已成功同步到服务器",
     "sync_error": "同步失败，请检查网络或日志",
@@ -120,9 +101,6 @@
     "memo_desc": "记录随手笔记",
     "memo_placeholder": "在此输入笔记...",
     "photo_frame_desc": "展示一张您喜爱的照片",
-    "most_visited": "常访问",
-    "most_visited_desc": "访问频率最高的5个书签",
-    "no_history": "暂无访问记录",
     "city_name": "城市名称",
     "latitude": "纬度",
     "longitude": "经度",
@@ -230,6 +208,9 @@
     "links_bulk_import": "批量导入",
     "links_bulk_hint": "每行一条：URL  或  名称 | URL",
     "links_bulk_placeholder": "https://google.com\nGitHub | https://github.com\nhttps://notion.so",
-    "links_bulk_import_btn": "导入"
+    "links_bulk_import_btn": "导入",
+    "search_widgets": "搜索小组件...",
+    "no_search_results": "未找到匹配的小组件",
+    "no_widgets": "暂无可用小组件"
   }
 }

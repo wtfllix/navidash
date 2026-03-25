@@ -1,13 +1,10 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Search, Settings, Pencil, Check, Plus, ExternalLink, Folder, PanelLeft } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Search, Settings, Pencil, Check, Plus, PanelLeft } from 'lucide-react';
 import { useUIStore } from '@/store/useUIStore';
-import { useBookmarkStore } from '@/store/useBookmarkStore';
 import { useSidebarStore } from '@/store/useSidebarStore';
 import { useTranslations } from 'next-intl';
-import Fuse from 'fuse.js';
-import { Bookmark } from '@/types';
 
 const ENGINES = [
   { name: 'Google', url: 'https://www.google.com/search?q=', icon: 'G' },
@@ -16,64 +13,17 @@ const ENGINES = [
   { name: 'GitHub', url: 'https://github.com/search?q=', icon: 'Gh' },
 ];
 
-interface SearchResult {
-  item: {
-    id: string;
-    title: string;
-    url?: string;
-    icon?: string;
-    path: string[];
-  };
-}
 
 export default function Header() {
   const t = useTranslations('Header');
   const [isSearchDropdownOpen, setIsSearchDropdownOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [engine, setEngine] = useState(ENGINES[0]);
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
-  const [selectedIndex, setSelectedIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
   
   const { isEditing, toggleEditing, openWidgetPicker, openSettings } = useUIStore();
-  const { bookmarks } = useBookmarkStore();
   const { toggle: toggleSidebar, isOpen: isSidebarOpen } = useSidebarStore();
 
-  // Flatten bookmarks for search
-  const flattenedBookmarks = useMemo(() => {
-    const flatten = (items: Bookmark[], path: string[] = []): any[] => {
-      return items.reduce((acc: any[], item) => {
-        const currentPath = [...path, item.title];
-        const current = {
-          id: item.id,
-          title: item.title,
-          url: item.url,
-          icon: item.icon,
-          path: path, // parent path
-        };
-        
-        if (item.url) {
-          acc.push(current);
-        }
-        
-        if (item.children) {
-          acc.push(...flatten(item.children, currentPath));
-        }
-        
-        return acc;
-      }, []);
-    };
-    return flatten(bookmarks);
-  }, [bookmarks]);
-
-  // Initialize Fuse
-  const fuse = useMemo(() => {
-    return new Fuse(flattenedBookmarks, {
-      keys: ['title', 'url', 'path'],
-      threshold: 0.4,
-      distance: 100,
-    });
-  }, [flattenedBookmarks]);
 
   // Handle keyboard shortcuts (Ctrl+K)
   useEffect(() => {
@@ -87,46 +37,25 @@ export default function Header() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Perform search
-  useEffect(() => {
-    if (!query.trim()) {
-      setSearchResults([]);
-      return;
-    }
-    const results = fuse.search(query).slice(0, 5); // Limit to 5 results
-    setSearchResults(results);
-    setSelectedIndex(-1);
-  }, [query, fuse]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (selectedIndex >= 0 && searchResults[selectedIndex]) {
-      const url = searchResults[selectedIndex].item.url;
-      if (url) window.open(url, '_blank');
-    } else if (query.trim()) {
+    if (query.trim()) {
       window.open(`${engine.url}${encodeURIComponent(query)}`, '_blank');
+      setQuery('');
     }
-    setQuery('');
-    setSearchResults([]);
   };
 
   const handleInputKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setSelectedIndex(prev => (prev + 1) % searchResults.length);
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setSelectedIndex(prev => (prev - 1 + searchResults.length) % searchResults.length);
-    } else if (e.key === 'Escape') {
+    if (e.key === 'Escape') {
       setQuery('');
-      setSearchResults([]);
       inputRef.current?.blur();
     }
   };
 
   return (
     <header className="h-16 flex items-center gap-3 px-4 bg-white/80 backdrop-blur-md border-b border-gray-200/50 sticky top-0 z-10 transition-all">
-      {/* 书签侧边栏 toggle */}
+      {/* 小组件商店侧边栏 toggle */}
       <button
         onClick={toggleSidebar}
         title={t('bookmarks')}
@@ -195,38 +124,6 @@ export default function Header() {
           </button>
         </form>
 
-        {/* Search Results Dropdown */}
-        {searchResults.length > 0 && (
-          <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden z-40">
-            <ul>
-              {searchResults.map((result, index) => (
-                <li 
-                  key={result.item.id}
-                  className={`px-4 py-3 cursor-pointer flex items-center gap-3 ${
-                    index === selectedIndex ? 'bg-blue-50' : 'hover:bg-gray-50'
-                  }`}
-                  onClick={() => {
-                    if (result.item.url) window.open(result.item.url, '_blank');
-                    setQuery('');
-                    setSearchResults([]);
-                  }}
-                  onMouseEnter={() => setSelectedIndex(index)}
-                >
-                  <div className="p-2 bg-gray-100 rounded-lg text-gray-500">
-                    {result.item.url ? <ExternalLink size={16} /> : <Folder size={16} />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-gray-900 truncate">{result.item.title}</div>
-                    <div className="text-xs text-gray-500 truncate">
-                      {result.item.path.length > 0 && result.item.path.join(' > ') + ' > '}
-                      {result.item.url}
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
       </div>
 
       <div className="flex items-center space-x-2 ml-4">

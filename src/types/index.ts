@@ -1,15 +1,3 @@
-/**
- * Bookmark Interface
- * 定义书签节点结构，支持无限层级嵌套
- */
-export interface Bookmark {
-  id: string;       // 唯一标识符
-  title: string;    // 显示标题
-  url?: string;     // 链接地址（文件夹节点可为空）
-  icon?: string;    // 图标名称（对应 Lucide 图标库）
-  color?: string;   // 自定义颜色（可选）
-  children?: Bookmark[]; // 子节点列表（实现树形结构）
-}
 
 // ─── Widget 类型 ──────────────────────────────────────────────────────────────
 
@@ -24,8 +12,7 @@ export type WidgetType =
   | 'memo'
   | 'todo'
   | 'photo-frame'
-  | 'date'
-  | 'most-visited';
+  | 'date';
 
 // ─── per-Widget config 接口 ───────────────────────────────────────────────────
 

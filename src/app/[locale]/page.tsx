@@ -3,8 +3,8 @@
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import MainCanvas from "@/components/layout/MainCanvas";
-import DataSyncer from "@/components/layout/DataSyncer";
 import ToastContainer from "@/components/ui/ToastContainer";
+import DragDropProvider from "@/components/layout/DragDropProvider";
 
 /**
  * Home Page
@@ -21,13 +21,14 @@ import ToastContainer from "@/components/ui/ToastContainer";
 export default function Home() {
   return (
     <div className="flex h-screen w-full bg-gray-50 overflow-hidden text-slate-800">
-      <DataSyncer />
       <ToastContainer />
-      <Sidebar />
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
-        <Header />
-        <MainCanvas />
-      </div>
+      <DragDropProvider>
+        <Sidebar />
+        <div className="flex-1 flex flex-col h-full overflow-hidden">
+          <Header />
+          <MainCanvas />
+        </div>
+      </DragDropProvider>
     </div>
   );
 }

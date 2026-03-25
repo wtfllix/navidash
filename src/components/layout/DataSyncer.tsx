@@ -1,19 +1,16 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useBookmarkStore } from '@/store/useBookmarkStore';
 import { useWidgetStore } from '@/store/useWidgetStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 
 export default function DataSyncer() {
-  const { fetchBookmarks } = useBookmarkStore();
   const { fetchWidgets } = useWidgetStore();
   const { fetchSettings } = useSettingsStore();
 
   useEffect(() => {
     // Initial fetch
     const fetchAll = () => {
-      fetchBookmarks();
       fetchWidgets();
       fetchSettings();
     };
@@ -57,7 +54,7 @@ export default function DataSyncer() {
       stopPolling();
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [fetchBookmarks, fetchWidgets, fetchSettings]);
+  }, [fetchWidgets, fetchSettings]);
 
   return null;
 }

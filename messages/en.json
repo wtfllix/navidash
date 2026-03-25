@@ -26,30 +26,11 @@
     "done": "Done",
     "customize": "Customize",
     "settings": "Settings",
-    "bookmarks": "Bookmarks"
+    "bookmarks": "Widget Store"
   },
   "Toast": {
     "save_error": "Failed to save data to server",
     "save_success": "Saved successfully"
-  },
-  "BookmarkModal": {
-    "add_bookmark": "Add Bookmark",
-    "edit_item": "Edit Item",
-    "title": "Title",
-    "url": "URL",
-    "icon": "Icon",
-    "is_folder": "Is this a folder?",
-    "folder": "Folder",
-    "link": "Link",
-    "bookmark_added": "Bookmark added",
-    "category_added": "Category added",
-    "changes_saved": "Changes saved",
-    "cat_general": "General",
-    "cat_dev": "Dev",
-    "cat_social": "Social",
-    "cat_office": "Office",
-    "cat_media": "Media",
-    "cat_ai": "AI"
   },
   "SettingsModal": {
     "title": "Settings & Data",
@@ -66,7 +47,7 @@
     "blur": "Blur",
     "opacity": "Opacity",
     "export_config": "Export Configuration",
-    "export_desc": "Download a backup of your bookmarks and widgets layout.",
+    "export_desc": "Download a backup of your widgets layout and settings.",
     "download_json": "Download JSON Backup",
     "import_config": "Import Configuration",
     "import_desc": "Restore from a previously exported JSON file.",
@@ -75,7 +56,7 @@
     "config_restored": "Configuration restored successfully",
     "import_failed": "Failed to import: Invalid JSON file",
     "sync_data": "Data Sync",
-    "sync_desc": "Manually sync all local data (bookmarks, widgets, settings) to server.",
+    "sync_desc": "Manually sync all local data (widgets, settings) to server.",
     "sync_now": "Sync to Server",
     "sync_success": "Data successfully synced to server",
     "sync_error": "Sync failed, check network or logs",
@@ -120,9 +101,6 @@
     "memo_desc": "Simple sticky notes",
     "memo_placeholder": "Type your notes here...",
     "photo_frame_desc": "Display your favorite photo",
-    "most_visited": "Most Visited",
-    "most_visited_desc": "Top 5 most visited bookmarks",
-    "no_history": "No visit history yet",
     "city_name": "City Name",
     "latitude": "Latitude",
     "longitude": "Longitude",
@@ -230,6 +208,9 @@
     "links_bulk_import": "Bulk import",
     "links_bulk_hint": "One per line: URL  or  Title | URL",
     "links_bulk_placeholder": "https://google.com\nGitHub | https://github.com\nhttps://notion.so",
-    "links_bulk_import_btn": "Import"
+    "links_bulk_import_btn": "Import",
+    "search_widgets": "Search widgets...",
+    "no_search_results": "No matching widgets found",
+    "no_widgets": "No widgets available"
   }
 }
