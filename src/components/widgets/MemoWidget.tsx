@@ -256,11 +256,11 @@ const MemoWidget = ({ widget }: { widget: WidgetOfType<'memo'> }) => {
       <div className="relative z-10 flex items-center justify-between p-3 pb-1 shrink-0">
         <div className="flex items-center gap-2 opacity-60">
           <StickyNote size={16} className={textColor} />
-          <span className={cn("text-xs font-semibold", textColor)}>{t('memo')}</span>
+          <span className={cn('text-ui-title', textColor)}>{t('memo')}</span>
         </div>
         <div
           className={cn(
-            'rounded-full px-2 py-0.5 text-[10px] font-medium transition-all duration-300',
+            'rounded-full px-2 py-0.5 text-ui-muted transition-all duration-300',
             textColor,
             saveFeedback === 'idle' && 'opacity-0',
             saveFeedback === 'saved' && 'bg-white/28 opacity-65',
@@ -276,7 +276,7 @@ const MemoWidget = ({ widget }: { widget: WidgetOfType<'memo'> }) => {
           <textarea
             ref={textareaRef}
             className={cn(
-              'memo-scrollbar h-full w-full overflow-y-auto bg-transparent px-0 py-2 border-none outline-none resize-none text-sm font-medium leading-7 placeholder-black/20',
+              'memo-scrollbar h-full w-full overflow-y-auto bg-transparent px-0 py-2 border-none outline-none resize-none text-sm font-normal leading-7 placeholder-black/20',
               textColor
             )}
             placeholder={t('memo_placeholder')}
@@ -301,7 +301,7 @@ const MemoWidget = ({ widget }: { widget: WidgetOfType<'memo'> }) => {
             type="button"
             onClick={() => setIsEditing(true)}
             className={cn(
-              'memo-scrollbar relative h-full w-full overflow-y-auto px-0 py-2 text-left text-sm font-medium leading-7',
+              'memo-scrollbar relative h-full w-full overflow-y-auto px-0 py-2 text-left text-sm font-normal leading-7',
               textColor
             )}
             aria-label={t('memo_edit_content')}

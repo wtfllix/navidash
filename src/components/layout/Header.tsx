@@ -65,7 +65,7 @@ export default function Header() {
         <div className="hidden items-center gap-2 md:flex">
           <div className="flex items-center gap-2 rounded-2xl bg-slate-900 px-3 py-2 text-white shadow-sm">
             <Sparkles size={15} />
-            <span className="text-sm font-semibold tracking-tight">NaviDash</span>
+            <span className="text-sm font-semibold tracking-[-0.02em]">NaviDash</span>
           </div>
         </div>
 
@@ -75,7 +75,7 @@ export default function Header() {
           aria-label={isSidebarOpen ? t('close_widget_store') : t('open_widget_store')}
           aria-expanded={isSidebarOpen}
           className={cn(
-            'shrink-0 rounded-2xl border px-3 py-2 text-sm font-medium transition-all duration-200',
+            'shrink-0 rounded-2xl border px-3 py-2 text-[15px] font-medium transition-all duration-200',
             isSidebarOpen
               ? 'border-transparent bg-slate-900 text-white shadow-sm'
               : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900'
@@ -97,7 +97,7 @@ export default function Header() {
               <button
                 type="button"
                 onClick={() => setIsSearchDropdownOpen((prev) => !prev)}
-                className="flex h-11 w-14 items-center justify-center rounded-l-2xl border-r border-slate-200 bg-white/70 text-sm font-semibold text-slate-500 transition-colors hover:bg-white hover:text-slate-700"
+                className="flex h-11 w-14 items-center justify-center rounded-l-2xl border-r border-slate-200 bg-white/70 text-sm font-medium text-slate-500 transition-colors hover:bg-white hover:text-slate-700"
                 aria-expanded={isSearchDropdownOpen}
                 aria-haspopup="listbox"
                 aria-label={t('search_engine')}
@@ -147,7 +147,7 @@ export default function Header() {
             />
 
             <div className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-2">
-              <span className="hidden rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-medium text-slate-400 md:inline-flex">
+              <span className="hidden rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-normal text-slate-400 md:inline-flex">
                 Ctrl+K
               </span>
               <button
@@ -167,7 +167,7 @@ export default function Header() {
               onClick={openWidgetPicker}
               title={t('add_widget')}
               aria-label={t('add_widget')}
-              className="rounded-2xl border border-[rgba(var(--primary-color),0.18)] bg-[rgba(var(--primary-color),0.08)] px-3 py-2 text-sm font-medium text-[rgb(var(--primary-color))] transition-colors hover:bg-[rgba(var(--primary-color),0.12)]"
+              className="rounded-2xl border border-[rgba(var(--primary-color),0.18)] bg-[rgba(var(--primary-color),0.08)] px-3 py-2 text-[15px] font-medium text-[rgb(var(--primary-color))] transition-colors hover:bg-[rgba(var(--primary-color),0.12)]"
             >
               <span className="flex items-center gap-2">
                 <Plus size={18} />
@@ -181,7 +181,7 @@ export default function Header() {
             title={isEditing ? t('done') : t('customize')}
             aria-label={isEditing ? t('done') : t('customize')}
             className={cn(
-              'rounded-2xl border px-3 py-2 text-sm font-medium transition-all duration-200',
+              'rounded-2xl border px-3 py-2 text-[15px] font-medium transition-all duration-200',
               isEditing
                 ? 'border-transparent bg-slate-900 text-white shadow-sm'
                 : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900'
@@ -197,7 +197,7 @@ export default function Header() {
             onClick={openSettings}
             title={t('settings')}
             aria-label={t('settings')}
-            className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
+            className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-[15px] font-medium text-slate-600 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
           >
             <span className="flex items-center gap-2">
               <Settings size={18} />

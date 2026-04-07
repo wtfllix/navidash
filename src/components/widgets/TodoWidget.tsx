@@ -119,16 +119,16 @@ export default function TodoWidget({ widget }: TodoWidgetProps) {
   return (
     <div className="flex flex-col h-full bg-white p-4 overflow-hidden">
       <div className="mb-3">
-        <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+        <h3 className="text-ui-title flex items-center gap-2 text-gray-700">
           <span>✅</span> {t('todo_list')}
         </h3>
-        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-gray-400">
+        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-ui-muted text-gray-400">
           <span>{t('todo_summary', { pending: remainingCount, done: completedCount })}</span>
           {hasCompleted && (
             <button
               type="button"
               onClick={handleClearCompleted}
-              className="font-medium text-gray-500 transition-colors hover:text-gray-700"
+              className="font-normal text-gray-500 transition-colors hover:text-gray-700"
             >
               {t('todo_clear_done')}
             </button>
@@ -139,7 +139,7 @@ export default function TodoWidget({ widget }: TodoWidgetProps) {
       <div className="min-h-0 flex-1 overflow-y-auto border-t border-gray-100 pt-2 pr-1 custom-scrollbar">
         {todos.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center px-3 text-center text-xs text-gray-400">
-            <p className="text-sm font-medium text-gray-400">{t('no_todos')}</p>
+            <p className="text-sm font-medium text-gray-500">{t('no_todos')}</p>
             <p className="mt-1 text-[11px] text-gray-300">{t('todo_empty_hint')}</p>
           </div>
         ) : (
@@ -159,7 +159,7 @@ export default function TodoWidget({ widget }: TodoWidgetProps) {
                 {todo.completed && <Check size={10} strokeWidth={3} />}
               </button>
               
-              <span className={`flex-1 text-sm leading-5 break-words ${
+              <span className={`flex-1 text-sm font-normal leading-5 break-words ${
                 todo.completed ? 'text-gray-400 line-through' : 'text-gray-700'
               }`}>
                 {todo.text}
@@ -182,7 +182,7 @@ export default function TodoWidget({ widget }: TodoWidgetProps) {
       <div className="mt-2 flex items-end justify-between gap-3">
         <div className="min-w-0 flex-1">
           {hasCompleted && (
-            <div className="text-[10px] text-gray-400">
+            <div className="text-ui-muted text-gray-400">
               {t('todo_progress', {
                 percent: Math.round((completedCount / todos.length) * 100),
               })}

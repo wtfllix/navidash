@@ -309,10 +309,10 @@ const WeatherWidget = React.memo(({ widget }: { widget: WidgetOfType<'weather'> 
         <WeatherBackground iconCode={current.icon} />
         <div className="relative flex h-full flex-col justify-between p-3">
           <div className="min-w-0">
-            <div className="truncate text-[11px] font-semibold uppercase tracking-[0.24em] text-white/70">
+            <div className="truncate text-ui-eyebrow text-white/68">
               {city}
             </div>
-            <div className="mt-1 truncate text-xs font-medium text-white/90">{current.text}</div>
+            <div className="mt-1 truncate text-xs font-normal text-white/88">{current.text}</div>
           </div>
 
           <div className="flex items-end justify-between gap-2">
@@ -321,7 +321,7 @@ const WeatherWidget = React.memo(({ widget }: { widget: WidgetOfType<'weather'> 
               <div className="text-[34px] font-light leading-none tracking-[-0.06em]">
                 {current.temp}°
               </div>
-              <div className="mt-1 flex items-center justify-end gap-1 text-[10px] text-white/72">
+              <div className="mt-1 flex items-center justify-end gap-1 text-[10px] font-normal text-white/72">
                 <Droplets size={10} />
                 <span>{current.humidity}%</span>
               </div>
@@ -338,11 +338,11 @@ const WeatherWidget = React.memo(({ widget }: { widget: WidgetOfType<'weather'> 
         <WeatherBackground iconCode={current.icon} />
         <div className="relative flex h-full items-center justify-between gap-4 p-4">
           <div className="min-w-0 flex-1">
-            <div className="truncate text-xs font-semibold uppercase tracking-[0.24em] text-white/72">
+            <div className="truncate text-ui-eyebrow text-white/70">
               {city}
             </div>
-            <div className="mt-2 truncate text-[15px] font-medium text-white/95">{current.text}</div>
-            <div className="mt-3 flex items-center gap-3 text-[11px] text-white/78">
+            <div className="mt-2 truncate text-[15px] font-normal text-white/92">{current.text}</div>
+            <div className="mt-3 flex items-center gap-3 text-[11px] font-normal text-white/76">
               <div className="flex items-center gap-1">
                 <Droplets size={11} />
                 <span>{current.humidity}%</span>
@@ -360,7 +360,7 @@ const WeatherWidget = React.memo(({ widget }: { widget: WidgetOfType<'weather'> 
               <div className="text-[42px] font-light leading-none tracking-[-0.08em]">
                 {current.temp}°
               </div>
-              <div className="mt-1 text-[11px] text-white/72">
+              <div className="mt-1 text-[11px] font-normal text-white/70">
                 {t('feels_like')} {current.feelsLike}°
               </div>
             </div>
@@ -376,13 +376,13 @@ const WeatherWidget = React.memo(({ widget }: { widget: WidgetOfType<'weather'> 
       <div className="relative flex h-full min-h-0 flex-col p-3.5">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <div className="truncate text-xs font-semibold uppercase tracking-[0.24em] text-white/72">
+            <div className="truncate text-ui-eyebrow text-white/70">
               {city}
             </div>
-            <div className="mt-1.5 truncate text-base font-medium text-white/96">{current.text}</div>
+            <div className="mt-1.5 truncate text-base font-normal text-white/92">{current.text}</div>
           </div>
           {updatedAt && sizeKey !== '2x2' && (
-            <div className="flex items-center gap-1.5 rounded-full bg-white/[0.08] px-2.5 py-1 text-[10px] text-white/64 backdrop-blur-sm">
+            <div className="flex items-center gap-1.5 rounded-full bg-white/[0.08] px-2.5 py-1 text-[10px] font-normal text-white/62 backdrop-blur-sm">
               <span className="h-1.5 w-1.5 rounded-full bg-white/45" />
               <span>{t('weather_updated_at', { time: updatedAt })}</span>
             </div>
@@ -395,7 +395,7 @@ const WeatherWidget = React.memo(({ widget }: { widget: WidgetOfType<'weather'> 
             <div className="text-[46px] font-light leading-none tracking-[-0.08em]">
               {current.temp}°
             </div>
-            <div className="mt-0.5 text-xs text-white/76">
+            <div className="mt-0.5 text-xs font-normal text-white/72">
               {t('feels_like')} {current.feelsLike}°
             </div>
           </div>
@@ -404,35 +404,35 @@ const WeatherWidget = React.memo(({ widget }: { widget: WidgetOfType<'weather'> 
         <div className="mt-auto border-t border-white/10 pt-2">
           <div className="grid grid-cols-2 gap-x-2.5 gap-y-2">
             <div className="space-y-0.5 border-r border-white/10 pr-2">
-              <div className="flex items-center gap-2 text-white/72">
+              <div className="flex items-center gap-2 text-white/70">
                 <Droplets size={11} />
-                <span className="text-[10px]">{t('humidity')}</span>
+                <span className="text-[10px] font-normal">{t('humidity')}</span>
               </div>
-              <div className="text-[1.45rem] font-medium leading-none">{current.humidity}%</div>
+              <div className="text-[1.45rem] font-normal leading-none">{current.humidity}%</div>
             </div>
 
             <div className="space-y-0.5 pl-0.5">
-              <div className="flex items-center gap-2 text-white/72">
+              <div className="flex items-center gap-2 text-white/70">
                 <Wind size={11} />
-                <span className="text-[10px]">{t('wind_speed')}</span>
+                <span className="text-[10px] font-normal">{t('wind_speed')}</span>
               </div>
-              <div className="text-[1.45rem] font-medium leading-none">{current.windScale}</div>
+              <div className="text-[1.45rem] font-normal leading-none">{current.windScale}</div>
             </div>
 
             <div className="space-y-0.5 border-r border-white/10 pr-2 pt-0.5">
-              <div className="flex items-center gap-2 text-white/72">
+              <div className="flex items-center gap-2 text-white/70">
                 <Thermometer size={11} />
-                <span className="text-[10px]">{t('feels_like')}</span>
+                <span className="text-[10px] font-normal">{t('feels_like')}</span>
               </div>
-              <div className="text-[1.45rem] font-medium leading-none">{current.feelsLike}°</div>
+              <div className="text-[1.45rem] font-normal leading-none">{current.feelsLike}°</div>
             </div>
 
             <div className="space-y-0.5 pl-0.5 pt-0.5">
-              <div className="flex items-center gap-2 text-white/72">
+              <div className="flex items-center gap-2 text-white/70">
                 <Cloud size={11} />
-                <span className="text-[10px]">{t('weather_cloud_cover')}</span>
+                <span className="text-[10px] font-normal">{t('weather_cloud_cover')}</span>
               </div>
-              <div className="text-[1.45rem] font-medium leading-none">{current.cloud || '0'}%</div>
+              <div className="text-[1.45rem] font-normal leading-none">{current.cloud || '0'}%</div>
             </div>
           </div>
         </div>

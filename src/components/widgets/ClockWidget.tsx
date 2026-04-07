@@ -57,7 +57,7 @@ function GlassClock({
   const iconGlyphSize = isCompact ? 9 : 11;
   const headerTextClass = isCompact
     ? 'text-[0.56rem] tracking-[0.02em]'
-    : 'text-[0.64rem] tracking-[0.04em]';
+    : 'text-[0.64rem] tracking-[0.03em]';
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-[linear-gradient(180deg,rgba(248,250,252,0.98)_0%,rgba(241,245,249,0.94)_100%)]">
@@ -70,7 +70,7 @@ function GlassClock({
             >
               <AccentIcon size={iconGlyphSize} strokeWidth={2.1} />
             </span>
-            <span className={`truncate font-medium text-slate-500/90 ${headerTextClass}`}>
+            <span className={`truncate font-normal text-slate-500/88 ${headerTextClass}`}>
               {headerText}
             </span>
           </div>

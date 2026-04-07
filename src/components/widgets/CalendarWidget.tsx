@@ -154,8 +154,8 @@ export default function CalendarWidget({ widget }: CalendarWidgetProps) {
       <div className="flex h-full flex-col overflow-hidden bg-white p-4 font-sans">
         <div className="mb-2 flex items-center justify-between">
           <div className="min-w-0">
-            <h3 className="truncate font-sans text-sm font-bold text-gray-800">{monthLabel}</h3>
-            <p className="mt-0.5 font-sans text-[10px] uppercase tracking-[0.2em] text-gray-400">
+            <h3 className="text-ui-title truncate font-sans text-gray-800">{monthLabel}</h3>
+            <p className="text-ui-eyebrow mt-0.5 font-sans text-gray-400">
               {t('calendar')}
             </p>
           </div>
@@ -163,7 +163,7 @@ export default function CalendarWidget({ widget }: CalendarWidgetProps) {
             <button
               type="button"
               onClick={goToCurrentWeek}
-              className="rounded-md px-2 py-1 font-sans text-[10px] font-semibold uppercase tracking-wide text-blue-600 transition-colors hover:bg-blue-50"
+              className="rounded-md px-2 py-1 font-sans text-[10px] font-medium uppercase tracking-wide text-blue-600 transition-colors hover:bg-blue-50"
             >
               {t('today')}
             </button>
@@ -201,7 +201,7 @@ export default function CalendarWidget({ widget }: CalendarWidgetProps) {
                 className="flex min-w-0 flex-col items-center justify-center rounded-lg py-1 text-center font-sans transition-colors hover:bg-gray-50"
               >
                 <span
-                  className={`font-sans text-[10px] font-medium uppercase tracking-[0.16em] ${
+                  className={`font-sans text-[10px] font-normal uppercase tracking-[0.16em] ${
                     sameAsToday ? 'text-blue-500' : isWeekend ? 'text-gray-400' : 'text-gray-500'
                   }`}
                 >
@@ -229,7 +229,7 @@ export default function CalendarWidget({ widget }: CalendarWidgetProps) {
           })}
         </div>
 
-        <div className="mt-2 flex items-center justify-between border-t border-gray-100 pt-2 text-[10px] text-gray-400">
+        <div className="mt-2 flex items-center justify-between border-t border-gray-100 pt-2 text-ui-muted text-gray-400">
           <span className="font-sans">
             {weekDates[0].getDate()} - {weekDates[6].getDate()}
           </span>
@@ -243,17 +243,17 @@ export default function CalendarWidget({ widget }: CalendarWidgetProps) {
     <div className="flex h-full flex-col overflow-hidden bg-white p-4 font-sans">
       <div className="flex items-center justify-between mb-2">
         <div className="min-w-0">
-          <h3 className="truncate text-sm font-bold text-gray-800">
+          <h3 className="text-ui-title truncate text-gray-800">
             {monthLabel}
           </h3>
-          <p className="mt-0.5 text-[10px] uppercase tracking-[0.2em] text-gray-400">
+          <p className="text-ui-eyebrow mt-0.5 text-gray-400">
             {t('calendar')}
           </p>
         </div>
         <div className="flex items-center space-x-1">
           <button
             onClick={goToToday}
-            className="rounded-md px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-blue-600 transition-colors hover:bg-blue-50"
+            className="rounded-md px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-blue-600 transition-colors hover:bg-blue-50"
           >
             {t('today')}
           </button>
@@ -274,7 +274,7 @@ export default function CalendarWidget({ widget }: CalendarWidgetProps) {
 
       <div className="grid grid-cols-7 gap-1 text-center mb-1">
         {weekDays.map((day) => (
-          <div key={day} className="font-sans text-[10px] font-medium uppercase text-gray-400">
+          <div key={day} className="font-sans text-[10px] font-normal uppercase text-gray-400">
             {day}
           </div>
         ))}
@@ -310,7 +310,7 @@ export default function CalendarWidget({ widget }: CalendarWidgetProps) {
                 {day}
               </span>
               {lunarLabel ? (
-                <span className={`mt-1 px-0.5 text-[9px] leading-none ${today ? 'text-white/80' : 'text-gray-300'}`}>
+                <span className={`mt-1 px-0.5 text-[9px] font-normal leading-none ${today ? 'text-white/80' : 'text-gray-300'}`}>
                   {lunarLabel}
                 </span>
               ) : null}
@@ -318,7 +318,7 @@ export default function CalendarWidget({ widget }: CalendarWidgetProps) {
           );
         })}
       </div>
-      <div className="mt-2 flex items-center justify-between border-t border-gray-100 pt-2 text-[10px] text-gray-400">
+      <div className="mt-2 flex items-center justify-between border-t border-gray-100 pt-2 text-ui-muted text-gray-400">
         <span>{t('today')}: {todayLabel}</span>
         <span>{isCurrentMonth ? t('calendar_current_month') : t('calendar_other_month')}</span>
       </div>
