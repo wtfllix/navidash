@@ -91,13 +91,55 @@ This is the simplest way to run NaviDash without configuring a local Node.js env
     cd navidash
     ```
 
-2.  **Start the container**
+2.  **Prepare a data directory outside the repository**
+    ```bash
+    sudo mkdir -p /opt/navidash-data
+    ```
+
+    The default `docker-compose.yml` mounts persistent data to `/opt/navidash-data`. This is recommended over using `./data` inside the git working tree, which is easier to lose during redeploys, repo replacement, or workspace cleanup.
+
+    If you prefer a different path, set it before starting:
+    ```bash
+    export NAVIDASH_DATA_DIR=/your/data/path
+    ```
+
+3.  **Start the container**
     ```bash
     docker-compose up -d
     ```
 
-3.  **Access the app**
+4.  **Access the app**
     Open your browser and visit `http://localhost:3000` to start using it.
+
+### 🔄 Upgrade Guide
+
+If you deploy with Docker, update with:
+
+1.  **Pull the latest code**
+    ```bash
+    git pull
+    ```
+
+2.  **Pull the latest image**
+    ```bash
+    docker-compose pull
+    ```
+
+3.  **Restart the container**
+    ```bash
+    docker-compose up -d
+    ```
+
+    *Your data will remain safe as long as it is mounted outside the repository directory, using the default `/opt/navidash-data` or your own `NAVIDASH_DATA_DIR`.*
+
+4.  **If you previously stored data in `./data` inside the repo**
+    migrate it before your next redeploy:
+    ```bash
+    docker-compose down
+    sudo mkdir -p /opt/navidash-data
+    sudo cp -a ./data/. /opt/navidash-data/
+    docker-compose up -d
+    ```
 
 ### 🛠️ Local Development
 

@@ -55,12 +55,24 @@
     cd navidash
     ```
 
-2.  **启动容器**
+2.  **准备数据目录（推荐放在仓库外）**
+    ```bash
+    sudo mkdir -p /opt/navidash-data
+    ```
+
+    `docker-compose.yml` 默认会把数据挂载到 `/opt/navidash-data`。不建议继续使用仓库内的 `./data` 目录，否则在重新部署、替换仓库目录或误删工作区时更容易丢失数据。
+
+    如果你想自定义数据目录，也可以在启动前指定环境变量：
+    ```bash
+    export NAVIDASH_DATA_DIR=/your/data/path
+    ```
+
+3.  **启动容器**
     ```bash
     docker-compose up -d
     ```
 
-3.  **访问应用**
+4.  **访问应用**
     打开浏览器访问 `http://localhost:3000` 即可开始使用。
 
 ### 🔄 更新指南 (Upgrade)
@@ -82,7 +94,16 @@
     docker-compose up -d
     ```
 
-    *不用担心，升级过程不会删除您挂载在 `./data` 目录下的任何数据。*
+    *只要你将数据目录挂载到仓库外位置（默认 `/opt/navidash-data`），升级过程不会删除你的数据。*
+
+4.  **如果你之前把数据放在仓库内的 `./data`**
+    可以先停掉容器，再迁移数据：
+    ```bash
+    docker-compose down
+    sudo mkdir -p /opt/navidash-data
+    sudo cp -a ./data/. /opt/navidash-data/
+    docker-compose up -d
+    ```
 
 ### 🛠️ 本地开发
 

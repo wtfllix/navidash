@@ -8,8 +8,8 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      # Persist data to local ./data directory
-      - ./data:/app/data
+      # Persist data outside the git working tree to avoid accidental loss during redeploys
+      - ${NAVIDASH_DATA_DIR:-/opt/navidash-data}:/app/data
     environment:
       - NODE_ENV=production
       - DEMO_MODE=false
