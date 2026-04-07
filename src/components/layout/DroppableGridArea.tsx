@@ -6,7 +6,9 @@ import { useWidgetStore } from '@/store/useWidgetStore';
 import { useSidebarStore } from '@/store/useSidebarStore';
 import { v4 as uuidv4 } from 'uuid';
 import { canPlaceWidget } from '@/lib/layoutEngine';
-import { buildPlacementResult, WidgetDropDetail, WidgetDropPreviewDetail } from '@/lib/widgetPlacement';
+import { buildPlacementResult, WidgetCreatedDetail, WidgetDropDetail, WidgetDropPreviewDetail } from '@/lib/widgetPlacement';
+import { useTranslations } from 'next-intl';
+import { widgetMeta, widgetTypesRequiringSetup } from '@/components/widgets/registry';
 
 interface DroppableGridAreaProps {
   containerRef: React.RefObject<HTMLDivElement>;
@@ -50,6 +52,7 @@ export default function DroppableGridArea({
 }: DroppableGridAreaProps) {
   const { widgets, addWidgetWithLayout } = useWidgetStore();
   const { close: closeSidebar } = useSidebarStore();
+  const t = useTranslations('Widgets');
   const [dropIndicator, setDropIndicator] = useState<DropIndicatorState | null>(null);
   const dropIndicatorRef = useRef<HTMLDivElement>(null);
   const dropIndicatorRefLatest = useRef(dropIndicator);
@@ -117,6 +120,10 @@ export default function DroppableGridArea({
   const dndContext = useDndContext();
   const { active } = dndContext;
   const isDragging = !!active;
+  const activeMeta = useMemo(() => {
+    const activeType = active?.data.current?.type;
+    return widgetMeta.find((item) => item.type === activeType);
+  }, [active]);
 
   // 可放置区域配置
   const { setNodeRef } = useDroppable({
@@ -263,6 +270,14 @@ export default function DroppableGridArea({
 
       // 原子操作：添加新组件并更新现有组件位置
       addWidgetWithLayout(placement.newWidget, placement.positionUpdates);
+      window.dispatchEvent(
+        new CustomEvent<WidgetCreatedDetail>('widget-created', {
+          detail: {
+            widgetId: placement.newWidget.id,
+            shouldOpenSettings: widgetTypesRequiringSetup.includes(placement.newWidget.type),
+          },
+        })
+      );
       closeSidebar();
       // 焦点切换到主面板，便于继续键盘/交互操作
       requestAnimationFrame(() => {
@@ -307,13 +322,7 @@ export default function DroppableGridArea({
       {dropIndicator?.visible && (
         <div
           ref={dropIndicatorRef}
-          className={`
-            absolute z-20 pointer-events-none border-2 rounded-lg transition-all duration-200
-            ${dropIndicator.isValid 
-              ? 'border-blue-500 bg-blue-100/30' 
-              : 'border-orange-500 bg-orange-100/40'
-            }
-          `}
+          className="absolute z-20 pointer-events-none transition-all duration-150"
           style={{
             left: `${dropIndicator.x * (cellDimensions.cellWidth + margin[0])}px`,
             top: `${dropIndicator.y * (rowHeight + margin[1])}px`,
@@ -321,11 +330,70 @@ export default function DroppableGridArea({
             height: `${dropIndicator.h * rowHeight + (dropIndicator.h - 1) * margin[1]}px`,
           }}
         >
+          <div
+            className={`
+              relative h-full w-full overflow-hidden rounded-[22px] border shadow-[0_18px_45px_rgba(15,23,42,0.14)] ring-4 backdrop-blur-sm
+              ${dropIndicator.isValid
+                ? 'border-blue-300/80 bg-white/82 ring-blue-100/80'
+                : 'border-orange-300/90 bg-white/84 ring-orange-100/90'
+              }
+            `}
+          >
+            <div
+              className={`
+                absolute inset-0
+                ${dropIndicator.isValid
+                  ? 'bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.16),transparent_45%)]'
+                  : 'bg-[radial-gradient(circle_at_top_left,rgba(249,115,22,0.18),transparent_48%)]'
+                }
+              `}
+            />
+            <div className="absolute inset-x-0 top-0 h-14 bg-gradient-to-b from-white/90 to-transparent" />
+            <div className="relative flex h-full flex-col justify-between p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-400">
+                    {t('widget_preview')}
+                  </div>
+                  <div className="mt-1 truncate text-sm font-semibold text-slate-900">
+                    {activeMeta ? t(activeMeta.titleKey as never) : t('add_widget_title')}
+                  </div>
+                </div>
+                <div className="rounded-full bg-white/90 px-2 py-1 text-[10px] font-medium text-slate-500 shadow-sm ring-1 ring-slate-200/80">
+                  {dropIndicator.w} × {dropIndicator.h}
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="rounded-2xl border border-white/80 bg-white/88 px-3 py-3 shadow-sm">
+                  <div className="flex items-center gap-2">
+                    {activeMeta && (
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-slate-50 ring-1 ring-slate-200/80">
+                        <activeMeta.Icon size={18} className={activeMeta.iconClassName} />
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <div className="h-2.5 w-2/3 rounded-full bg-slate-200/90" />
+                      <div className="h-2 w-1/2 rounded-full bg-slate-100" />
+                    </div>
+                  </div>
+                </div>
+
+                {(dropIndicator.h > 1 || dropIndicator.w > 1) && (
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="h-12 rounded-2xl bg-white/62 ring-1 ring-white/80" />
+                    <div className="h-12 rounded-2xl bg-white/50 ring-1 ring-white/70" />
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
           {/* 推动提示 */}
           {!dropIndicator.isValid && dropIndicator.willPushWidgets.length > 0 && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-xs font-medium text-orange-700 bg-white/90 px-2 py-1 rounded shadow-sm">
-                将推动 {dropIndicator.willPushWidgets.length} 个组件
+            <div className="absolute bottom-3 right-3">
+              <span className="rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-medium text-orange-700 shadow-sm ring-1 ring-orange-100">
+                {t('push_widgets_hint', { count: dropIndicator.willPushWidgets.length })}
               </span>
             </div>
           )}

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getWidgets, saveWidgets, getWidgetsLastModified } from '@/lib/server/storage';
-import { WidgetsArraySchema } from '@/lib/schemas';
-import { z, ZodError } from 'zod';
+import { normalizeWidgets, WidgetsArraySchema } from '@/lib/schemas';
+import { ZodError } from 'zod';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,12 +11,13 @@ export const dynamic = 'force-dynamic';
  * @returns {Promise<NextResponse>} 小组件列表 JSON
  */
 export async function GET() {
-  const widgets = await getWidgets();
+  const widgets = normalizeWidgets(await getWidgets());
   const lastModified = await getWidgetsLastModified();
 
   return NextResponse.json(widgets, {
     headers: {
       'X-Data-Version': lastModified.toString(),
+      'Cache-Control': 'no-store',
     },
   });
 }
@@ -37,8 +38,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, version: lastModified });
   } catch (error) {
     if (error instanceof ZodError) {
-      console.error('Validation error:', JSON.stringify(error.errors, null, 2));
-      return NextResponse.json({ error: error.errors }, { status: 400 });
+      console.error('Validation error:', JSON.stringify(error.flatten(), null, 2));
+      return NextResponse.json({ error: error.flatten() }, { status: 400 });
     }
     console.error('Server error:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

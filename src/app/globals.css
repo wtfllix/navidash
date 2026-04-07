@@ -26,6 +26,99 @@
 }
 
 @layer utilities {
+  .font-sf {
+    font-family:
+      'SF Pro Display',
+      'SF Pro Text',
+      'SF Pro',
+      -apple-system,
+      BlinkMacSystemFont,
+      'Helvetica Neue',
+      Helvetica,
+      Arial,
+      sans-serif;
+  }
+
+  @keyframes weather-float {
+    0%,
+    100% {
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+    50% {
+      transform: translate3d(0, 6px, 0) scale(1.03);
+    }
+  }
+
+  @keyframes weather-drift {
+    0%,
+    100% {
+      transform: translate3d(0, 0, 0);
+      opacity: 0.14;
+    }
+    50% {
+      transform: translate3d(10px, -4px, 0);
+      opacity: 0.22;
+    }
+  }
+
+  @keyframes weather-rain {
+    0% {
+      transform: translate3d(-10px, -16px, 0);
+      opacity: 0;
+    }
+    25% {
+      opacity: 0.16;
+    }
+    100% {
+      transform: translate3d(12px, 18px, 0);
+      opacity: 0;
+    }
+  }
+
+  @keyframes weather-glow {
+    0%,
+    100% {
+      transform: scale(0.98);
+      opacity: 0.18;
+    }
+    50% {
+      transform: scale(1.05);
+      opacity: 0.28;
+    }
+  }
+
+  @keyframes weather-twinkle {
+    0%,
+    100% {
+      opacity: 0.12;
+      transform: translate3d(0, 0, 0);
+    }
+    50% {
+      opacity: 0.2;
+      transform: translate3d(-4px, 3px, 0);
+    }
+  }
+
+  .weather-ambient-float {
+    animation: weather-float 11s ease-in-out infinite;
+  }
+
+  .weather-ambient-drift {
+    animation: weather-drift 14s ease-in-out infinite;
+  }
+
+  .weather-ambient-rain {
+    animation: weather-rain 2.8s linear infinite;
+  }
+
+  .weather-ambient-glow {
+    animation: weather-glow 8s ease-in-out infinite;
+  }
+
+  .weather-ambient-twinkle {
+    animation: weather-twinkle 7s ease-in-out infinite;
+  }
+
   .custom-scrollbar::-webkit-scrollbar {
     width: 4px;
     height: 4px;
@@ -41,6 +134,34 @@
     background: #94a3b8; /* slate-400 */
   }
 
+  .memo-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+  }
+
+  .memo-scrollbar::-webkit-scrollbar {
+    width: 3px;
+  }
+
+  .memo-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .memo-scrollbar::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 9999px;
+  }
+
+  .memo-scrollbar:hover {
+    scrollbar-color: rgba(113, 63, 18, 0.28) transparent;
+  }
+
+  .memo-scrollbar:hover::-webkit-scrollbar-thumb,
+  .memo-scrollbar:focus::-webkit-scrollbar-thumb,
+  .memo-scrollbar:focus-visible::-webkit-scrollbar-thumb {
+    background: rgba(113, 63, 18, 0.28);
+  }
+
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
@@ -48,5 +169,14 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+}
 
+@media (prefers-reduced-motion: reduce) {
+  .weather-ambient-float,
+  .weather-ambient-drift,
+  .weather-ambient-rain,
+  .weather-ambient-glow,
+  .weather-ambient-twinkle {
+    animation: none !important;
+  }
 }

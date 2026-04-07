@@ -1,4 +1,4 @@
-import { Widget, WidgetConfig, WidgetType } from '@/types';
+import { Widget, WidgetConfigByType, WidgetType, WidgetOfType } from '@/types';
 import { calculateLayoutWithNewWidget, canPlaceWidget } from '@/lib/layoutEngine';
 
 export interface WidgetDropDetail {
@@ -14,19 +14,24 @@ export interface WidgetDropPreviewDetail {
   updates: Array<{ id: string; position: { x: number; y: number } }>;
 }
 
-export interface PlacementRequest {
+export interface WidgetCreatedDetail {
+  widgetId: string;
+  shouldOpenSettings: boolean;
+}
+
+export interface PlacementRequest<T extends WidgetType = WidgetType> {
   widgets: Widget[];
-  widgetType: WidgetType;
+  widgetType: T;
   widgetId: string;
   defaultSize: { w: number; h: number };
   cols: number;
   preferredPosition?: { x: number; y: number };
-  config?: WidgetConfig;
+  config?: WidgetConfigByType<T>;
   maxScanRows?: number;
 }
 
-export interface PlacementResult {
-  newWidget: Widget;
+export interface PlacementResult<T extends WidgetType = WidgetType> {
+  newWidget: WidgetOfType<T>;
   positionUpdates: Array<{ id: string; position: { x: number; y: number } }>;
   movedWidgetIds: string[];
 }
@@ -41,6 +46,10 @@ export interface MoveRequest {
 export interface MoveResult {
   widgets: Widget[];
   movedWidgetIds: string[];
+}
+
+function uniqueIds(ids: string[]) {
+  return Array.from(new Set(ids));
 }
 
 function clampPreferredPosition(
@@ -75,7 +84,9 @@ function findFirstAvailablePosition(
   return { x: 0, y: maxY };
 }
 
-export function buildPlacementResult(request: PlacementRequest): PlacementResult {
+export function buildPlacementResult<T extends WidgetType>(
+  request: PlacementRequest<T>
+): PlacementResult<T> {
   const {
     widgets,
     widgetType,
@@ -91,13 +102,13 @@ export function buildPlacementResult(request: PlacementRequest): PlacementResult
     ? clampPreferredPosition(preferredPosition, defaultSize, cols)
     : findFirstAvailablePosition(widgets, defaultSize, cols, maxScanRows);
 
-  const newWidget: Widget = {
+  const newWidget = {
     id: widgetId,
     type: widgetType,
     size: defaultSize,
     position: basePosition,
-    config,
-  };
+    config: (config ?? {}) as WidgetConfigByType<T>,
+  } as WidgetOfType<T>;
 
   const layoutResult = calculateLayoutWithNewWidget(widgets, newWidget, cols);
 
@@ -118,7 +129,7 @@ export function buildPlacementResult(request: PlacementRequest): PlacementResult
   return {
     newWidget,
     positionUpdates,
-    movedWidgetIds: layoutResult.movedWidgetIds,
+    movedWidgetIds: uniqueIds(layoutResult.movedWidgetIds),
   };
 }
 
@@ -160,6 +171,6 @@ export function buildMoveResult(request: MoveRequest): MoveResult {
 
   return {
     widgets: widgets.map((widget) => movedMap.get(widget.id) ?? widget),
-    movedWidgetIds,
+    movedWidgetIds: uniqueIds(movedWidgetIds),
   };
 }

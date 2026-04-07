@@ -1,10 +1,19 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Search, Settings, Pencil, Check, Plus, PanelLeft } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  Check,
+  PanelLeft,
+  Pencil,
+  Plus,
+  Search,
+  Settings,
+  Sparkles,
+} from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { cn } from '@/lib/utils';
 import { useUIStore } from '@/store/useUIStore';
 import { useSidebarStore } from '@/store/useSidebarStore';
-import { useTranslations } from 'next-intl';
 
 const ENGINES = [
   { name: 'Google', url: 'https://www.google.com/search?q=', icon: 'G' },
@@ -13,19 +22,16 @@ const ENGINES = [
   { name: 'GitHub', url: 'https://github.com/search?q=', icon: 'Gh' },
 ];
 
-
 export default function Header() {
   const t = useTranslations('Header');
   const [isSearchDropdownOpen, setIsSearchDropdownOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [engine, setEngine] = useState(ENGINES[0]);
   const inputRef = useRef<HTMLInputElement>(null);
-  
+
   const { isEditing, toggleEditing, openWidgetPicker, openSettings } = useUIStore();
-  const { toggle: toggleSidebar, isOpen: isSidebarOpen } = useSidebarStore();
+  const { isOpen: isSidebarOpen, toggle: toggleSidebar } = useSidebarStore();
 
-
-  // Handle keyboard shortcuts (Ctrl+K)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
@@ -33,17 +39,17 @@ export default function Header() {
         inputRef.current?.focus();
       }
     };
+
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (query.trim()) {
-      window.open(`${engine.url}${encodeURIComponent(query)}`, '_blank');
-      setQuery('');
-    }
+    if (!query.trim()) return;
+
+    window.open(`${engine.url}${encodeURIComponent(query)}`, '_blank');
+    setQuery('');
   };
 
   const handleInputKeyDown = (e: React.KeyboardEvent) => {
@@ -54,114 +60,149 @@ export default function Header() {
   };
 
   return (
-    <header className="h-16 flex items-center gap-3 px-4 bg-white/80 backdrop-blur-md border-b border-gray-200/50 sticky top-0 z-10 transition-all">
-      {/* 小组件商店侧边栏 toggle */}
-      <button
-        onClick={toggleSidebar}
-        title={t('bookmarks')}
-        aria-label={t('bookmarks')}
-        aria-expanded={isSidebarOpen}
-        className={`p-2 rounded-lg transition-all duration-200 border shrink-0 ${
-          isSidebarOpen
-            ? 'bg-blue-50 text-blue-600 border-blue-200 shadow-sm'
-            : 'text-gray-500 border-transparent hover:bg-gray-100 hover:text-gray-900'
-        }`}
-      >
-        <PanelLeft size={20} />
-      </button>
+    <header className="sticky top-0 z-10 border-b border-slate-200/70 bg-white/82 px-4 py-3 backdrop-blur-xl transition-all">
+      <div className="flex items-center gap-3">
+        <div className="hidden items-center gap-2 md:flex">
+          <div className="flex items-center gap-2 rounded-2xl bg-slate-900 px-3 py-2 text-white shadow-sm">
+            <Sparkles size={15} />
+            <span className="text-sm font-semibold tracking-tight">NaviDash</span>
+          </div>
+        </div>
 
-      <div className="flex-1 max-w-2xl mx-auto w-full relative z-30">
-        <form onSubmit={handleSearch} role="search" className="relative flex items-center bg-gray-100/50 hover:bg-gray-100 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:shadow-sm rounded-xl transition-all duration-200 border border-transparent focus-within:border-blue-500/30">
-           <div className="relative shrink-0">
-             <button
-               type="button"
-               onClick={() => setIsSearchDropdownOpen(!isSearchDropdownOpen)}
-               className="flex items-center justify-center w-12 h-10 rounded-l-xl border-r border-gray-200/50 hover:bg-gray-200/50 transition-colors font-medium text-gray-500 text-sm"
-               aria-expanded={isSearchDropdownOpen}
-               aria-haspopup="listbox"
-               aria-label="Select search engine"
-             >
-               {engine.icon}
-             </button>
-             
-             {isSearchDropdownOpen && (
-               <>
-               <div className="fixed inset-0 z-10" onClick={() => setIsSearchDropdownOpen(false)} />
-               <div className="absolute top-full left-0 mt-1 w-32 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-20" role="listbox">
-                 {ENGINES.map((eng) => (
-                   <button
-                     key={eng.name}
-                     type="button"
-                     onClick={() => {
-                       setEngine(eng);
-                       setIsSearchDropdownOpen(false);
-                     }}
-                     className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center justify-between"
-                     role="option"
-                     aria-selected={engine.name === eng.name}
-                   >
-                     <span>{eng.name}</span>
-                     {engine.name === eng.name && <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />}
-                   </button>
-                 ))}
-               </div>
-               </>
-             )}
-           </div>
-
-          <input
-            ref={inputRef}
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={handleInputKeyDown}
-            placeholder={t('search_placeholder', { engine: engine.name }) + ' (Ctrl+K)'}
-            className="w-full pl-4 pr-10 py-2.5 bg-transparent rounded-r-xl text-sm focus:outline-none h-10 placeholder-gray-400 text-gray-700"
-            aria-label="Search query"
-          />
-          <button type="submit" className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-blue-500 transition-colors" aria-label="Search">
-             <Search size={18} />
-          </button>
-        </form>
-
-      </div>
-
-      <div className="flex items-center space-x-2 ml-4">
-        {/* Add Widget Button */}
-        {isEditing && (
-          <button
-            onClick={openWidgetPicker}
-            title={t('add_widget')}
-            aria-label={t('add_widget')}
-            className="p-2 rounded-lg transition-all duration-200 text-blue-600 bg-blue-50 border border-blue-200 hover:bg-blue-100 shadow-sm"
-          >
-            <Plus size={20} />
-          </button>
-        )}
-
-        {/* Edit Mode Toggle */}
         <button
-          onClick={toggleEditing}
-          title={isEditing ? t('done') : t('customize')}
-          aria-label={isEditing ? t('done') : t('customize')}
-          className={`p-2 rounded-lg transition-all duration-200 border ${
-            isEditing 
-              ? 'bg-blue-50 text-blue-600 border-blue-200 shadow-sm' 
-              : 'text-gray-500 border-transparent hover:bg-gray-100 hover:text-gray-900'
-          }`}
+          onClick={toggleSidebar}
+          title={isSidebarOpen ? t('close_widget_store') : t('open_widget_store')}
+          aria-label={isSidebarOpen ? t('close_widget_store') : t('open_widget_store')}
+          aria-expanded={isSidebarOpen}
+          className={cn(
+            'shrink-0 rounded-2xl border px-3 py-2 text-sm font-medium transition-all duration-200',
+            isSidebarOpen
+              ? 'border-transparent bg-slate-900 text-white shadow-sm'
+              : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900'
+          )}
         >
-          {isEditing ? <Check size={20} /> : <Pencil size={20} />}
+          <span className="flex items-center gap-2">
+            <PanelLeft size={18} />
+            <span className="hidden sm:inline">{t('widget_store')}</span>
+          </span>
         </button>
 
-        {/* Settings Menu */}
-        <div className="relative">
-          <button 
+        <div className="relative z-30 mx-auto w-full max-w-3xl flex-1">
+          <form
+            onSubmit={handleSearch}
+            role="search"
+            className="relative flex items-center rounded-2xl border border-slate-200 bg-slate-100/75 shadow-sm transition-all duration-200 hover:bg-slate-100 focus-within:border-slate-300 focus-within:bg-white focus-within:ring-4 focus-within:ring-[rgba(var(--primary-color),0.12)]"
+          >
+            <div className="relative shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsSearchDropdownOpen((prev) => !prev)}
+                className="flex h-11 w-14 items-center justify-center rounded-l-2xl border-r border-slate-200 bg-white/70 text-sm font-semibold text-slate-500 transition-colors hover:bg-white hover:text-slate-700"
+                aria-expanded={isSearchDropdownOpen}
+                aria-haspopup="listbox"
+                aria-label={t('search_engine')}
+              >
+                {engine.icon}
+              </button>
+
+              {isSearchDropdownOpen && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setIsSearchDropdownOpen(false)} />
+                  <div
+                    className="absolute left-0 top-full z-20 mt-2 w-40 overflow-hidden rounded-2xl border border-slate-200 bg-white py-1 shadow-xl shadow-slate-900/8"
+                    role="listbox"
+                  >
+                    {ENGINES.map((eng) => (
+                      <button
+                        key={eng.name}
+                        type="button"
+                        onClick={() => {
+                          setEngine(eng);
+                          setIsSearchDropdownOpen(false);
+                        }}
+                        className="flex w-full items-center justify-between px-4 py-2.5 text-left text-sm text-slate-700 transition-colors hover:bg-slate-50"
+                        role="option"
+                        aria-selected={engine.name === eng.name}
+                      >
+                        <span>{eng.name}</span>
+                        {engine.name === eng.name && (
+                          <span className="h-1.5 w-1.5 rounded-full bg-[rgb(var(--primary-color))]" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+
+            <input
+              ref={inputRef}
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={handleInputKeyDown}
+              placeholder={t('search_placeholder', { engine: engine.name })}
+              className="h-11 w-full bg-transparent px-4 pr-24 text-sm text-slate-700 outline-none placeholder:text-slate-400"
+              aria-label={t('search_query')}
+            />
+
+            <div className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-2">
+              <span className="hidden rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-medium text-slate-400 md:inline-flex">
+                Ctrl+K
+              </span>
+              <button
+                type="submit"
+                className="rounded-xl p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+                aria-label={t('search_action')}
+              >
+                <Search size={18} />
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div className="ml-2 flex shrink-0 items-center gap-2">
+          {isEditing && (
+            <button
+              onClick={openWidgetPicker}
+              title={t('add_widget')}
+              aria-label={t('add_widget')}
+              className="rounded-2xl border border-[rgba(var(--primary-color),0.18)] bg-[rgba(var(--primary-color),0.08)] px-3 py-2 text-sm font-medium text-[rgb(var(--primary-color))] transition-colors hover:bg-[rgba(var(--primary-color),0.12)]"
+            >
+              <span className="flex items-center gap-2">
+                <Plus size={18} />
+                <span className="hidden md:inline">{t('add_widget')}</span>
+              </span>
+            </button>
+          )}
+
+          <button
+            onClick={toggleEditing}
+            title={isEditing ? t('done') : t('customize')}
+            aria-label={isEditing ? t('done') : t('customize')}
+            className={cn(
+              'rounded-2xl border px-3 py-2 text-sm font-medium transition-all duration-200',
+              isEditing
+                ? 'border-transparent bg-slate-900 text-white shadow-sm'
+                : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900'
+            )}
+          >
+            <span className="flex items-center gap-2">
+              {isEditing ? <Check size={18} /> : <Pencil size={18} />}
+              <span className="hidden md:inline">{isEditing ? t('done') : t('customize')}</span>
+            </span>
+          </button>
+
+          <button
             onClick={openSettings}
             title={t('settings')}
             aria-label={t('settings')}
-            className="p-2 rounded-lg transition-all duration-200 border border-transparent text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+            className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
           >
-            <Settings size={20} />
+            <span className="flex items-center gap-2">
+              <Settings size={18} />
+              <span className="hidden lg:inline">{t('settings')}</span>
+            </span>
           </button>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import { buildPlacementResult } from '@/lib/widgetPlacement';
+import { buildMoveResult, buildPlacementResult } from '@/lib/widgetPlacement';
 import { Widget } from '@/types';
 
 describe('widgetPlacement', () => {
@@ -193,5 +193,71 @@ describe('widgetPlacement', () => {
     });
 
     expect(result.newWidget.position).toEqual({ x: 2, y: 0 });
+  });
+
+  it('moves an existing widget and reflows conflicts when dragging within the grid', () => {
+    const widgets: Widget[] = [
+      {
+        id: 'w1',
+        type: 'clock',
+        size: { w: 2, h: 1 },
+        position: { x: 0, y: 0 },
+        config: {},
+      },
+      {
+        id: 'w2',
+        type: 'weather',
+        size: { w: 2, h: 1 },
+        position: { x: 0, y: 1 },
+        config: {},
+      },
+    ];
+
+    const result = buildMoveResult({
+      widgets,
+      widgetId: 'w2',
+      cols: 4,
+      preferredPosition: { x: 0, y: 0 },
+    });
+
+    expect(result.widgets).toEqual([
+      {
+        id: 'w1',
+        type: 'clock',
+        size: { w: 2, h: 1 },
+        position: { x: 0, y: 1 },
+        config: {},
+      },
+      {
+        id: 'w2',
+        type: 'weather',
+        size: { w: 2, h: 1 },
+        position: { x: 0, y: 0 },
+        config: {},
+      },
+    ]);
+    expect(result.movedWidgetIds).toEqual(expect.arrayContaining(['w1', 'w2']));
+  });
+
+  it('returns the original layout when moving an unknown widget', () => {
+    const widgets: Widget[] = [
+      {
+        id: 'w1',
+        type: 'clock',
+        size: { w: 2, h: 1 },
+        position: { x: 0, y: 0 },
+        config: {},
+      },
+    ];
+
+    const result = buildMoveResult({
+      widgets,
+      widgetId: 'missing',
+      cols: 4,
+      preferredPosition: { x: 1, y: 1 },
+    });
+
+    expect(result.widgets).toEqual(widgets);
+    expect(result.movedWidgetIds).toEqual([]);
   });
 });

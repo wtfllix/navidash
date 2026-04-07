@@ -1,17 +1,14 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { createJSONStorage, persist } from 'zustand/middleware';
+import { DEFAULT_SETTINGS, Settings } from '@/types';
+import {
+  createDefaultSettings,
+  normalizeSettings,
+  SettingsSchema,
+  SettingsStorePersistedStateSchema,
+} from '@/lib/schemas';
 
-interface SettingsState {
-  backgroundImage: string;
-  backgroundBlur: number;
-  backgroundOpacity: number;
-  backgroundSize: string;
-  backgroundRepeat: string;
-  themeColor: string;
-  customFavicon: string;
-  customTitle: string;
-  language: string;
-
+interface SettingsState extends Settings {
   setBackgroundImage: (url: string) => void;
   setBackgroundBlur: (blur: number) => void;
   setBackgroundOpacity: (opacity: number) => void;
@@ -21,153 +18,182 @@ interface SettingsState {
   setCustomFavicon: (url: string) => void;
   setCustomTitle: (title: string) => void;
   setLanguage: (lang: string) => void;
+  setWeatherApiKey: (value: string) => void;
+  setWeatherCity: (value: string) => void;
+  setWeatherLat: (value: number | undefined) => void;
+  setWeatherLon: (value: number | undefined) => void;
+  setWeatherSub: (value: string) => void;
+  setWeatherCustomHost: (value: string) => void;
+  setWeatherAuthType: (value: 'param' | 'bearer') => void;
+  isSavingSettings: boolean;
+  hasFetchedSettings: boolean;
   resetSettings: () => void;
-  fetchSettings: () => Promise<void>;
+  fetchSettings: (force?: boolean) => Promise<void>;
   dataVersion?: number;
 }
 
-/**
- * saveToServer
- * 将设置数据持久化到服务器
- */
+const persistKey = 'settings-storage';
+
+function extractSettings(state: Settings): Settings {
+  return {
+    backgroundImage: state.backgroundImage,
+    backgroundBlur: state.backgroundBlur,
+    backgroundOpacity: state.backgroundOpacity,
+    backgroundSize: state.backgroundSize,
+    backgroundRepeat: state.backgroundRepeat,
+    themeColor: state.themeColor,
+    customFavicon: state.customFavicon,
+    customTitle: state.customTitle,
+    language: state.language,
+    weatherApiKey: state.weatherApiKey,
+    weatherCity: state.weatherCity,
+    weatherLat: state.weatherLat,
+    weatherLon: state.weatherLon,
+    weatherSub: state.weatherSub,
+    weatherCustomHost: state.weatherCustomHost,
+    weatherAuthType: state.weatherAuthType,
+  };
+}
+
+function parseServerVersion(value: unknown): number | undefined {
+  const version = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(version) && version >= 0 ? version : undefined;
+}
+
 let saveTimeout: NodeJS.Timeout | null = null;
 
-const saveToServer = (settings: SettingsState) => {
+const saveToServer = (settings: Settings) => {
   if (saveTimeout) {
     clearTimeout(saveTimeout);
   }
 
+  useSettingsStore.setState({ isSavingSettings: true });
+  const payload = SettingsSchema.parse(settings);
+
   saveTimeout = setTimeout(async () => {
     try {
-      // Extract only data properties
-      const {
-        backgroundImage,
-        backgroundBlur,
-        backgroundOpacity,
-        backgroundSize,
-        backgroundRepeat,
-        themeColor,
-        customFavicon,
-        customTitle,
-        language
-      } = settings;
-
-      const payload = {
-        backgroundImage,
-        backgroundBlur,
-        backgroundOpacity,
-        backgroundSize,
-        backgroundRepeat,
-        themeColor,
-        customFavicon,
-        customTitle,
-        language
-      };
-
       const res = await fetch('/api/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
+
+      if (!res.ok) {
+        throw new Error(`Failed to save settings: ${res.status}`);
+      }
+
       const data = await res.json();
-      if (data.version) {
-        useSettingsStore.setState({ dataVersion: data.version });
+      const version = parseServerVersion(data?.version);
+
+      if (version !== undefined) {
+        useSettingsStore.setState({ dataVersion: version });
       }
     } catch (error) {
       console.error('Failed to save settings:', error);
     } finally {
+      useSettingsStore.setState({ isSavingSettings: false });
       saveTimeout = null;
     }
-  }, 1000); // 1秒防抖
+  }, 1000);
 };
 
 export const useSettingsStore = create<SettingsState>()(
   persist(
-    (set, get) => ({
-      backgroundImage: 'radial-gradient(#d1d5db 2px, transparent 2px)',
-      backgroundBlur: 0,
-      backgroundOpacity: 0,
-      backgroundSize: '24px 24px',
-      backgroundRepeat: 'repeat',
-      themeColor: '#3b82f6', // blue-500
-      customFavicon: '/favicon.svg',
-      customTitle: 'Navidash',
-      language: 'en',
+    (set, get) => {
+      const updateSettings = (patch: Partial<Settings>) =>
+        set((state) => {
+          const nextSettings = normalizeSettings({
+            ...extractSettings(state),
+            ...patch,
+          });
 
-      fetchSettings: async () => {
-        try {
-          const res = await fetch(`/api/settings?t=${Date.now()}`);
-          if (res.ok) {
-            const serverVersion = Number(res.headers.get('X-Data-Version')) || 0;
-            const currentVersion = get().dataVersion || 0;
-
-            if (serverVersion !== currentVersion) {
-              const data = await res.json();
-              // Only update if we received valid data
-              if (data && Object.keys(data).length > 0) {
-                set({ ...data, dataVersion: serverVersion });
-              }
-            }
+          if (state.hasFetchedSettings) {
+            saveToServer(nextSettings);
           }
-        } catch (error) {
-          console.error('Failed to fetch settings:', error);
-        }
-      },
 
-      setBackgroundImage: (url) => {
-        set({ backgroundImage: url });
-        saveToServer(get());
-      },
-      setBackgroundBlur: (blur) => {
-        set({ backgroundBlur: blur });
-        saveToServer(get());
-      },
-      setBackgroundOpacity: (opacity) => {
-        set({ backgroundOpacity: opacity });
-        saveToServer(get());
-      },
-      setBackgroundSize: (size) => {
-        set({ backgroundSize: size });
-        saveToServer(get());
-      },
-      setBackgroundRepeat: (repeat) => {
-        set({ backgroundRepeat: repeat });
-        saveToServer(get());
-      },
-      setThemeColor: (color) => {
-        set({ themeColor: color });
-        saveToServer(get());
-      },
-      setCustomFavicon: (url) => {
-        set({ customFavicon: url });
-        saveToServer(get());
-      },
-      setCustomTitle: (title) => {
-        set({ customTitle: title });
-        saveToServer(get());
-      },
-      setLanguage: (lang) => {
-        set({ language: lang });
-        saveToServer(get());
-      },
-      resetSettings: () => {
-        const defaults = {
-          backgroundImage: 'radial-gradient(#d1d5db 2px, transparent 2px)',
-          backgroundBlur: 0,
-          backgroundOpacity: 0,
-          backgroundSize: '24px 24px',
-          backgroundRepeat: 'repeat',
-          themeColor: '#3b82f6',
-          customFavicon: '/favicon.svg',
-          customTitle: 'Navidash',
-          language: 'en'
-        };
-        set(defaults);
-        saveToServer(get());
-      }
-    }),
+          return {
+            ...nextSettings,
+            hasFetchedSettings: state.hasFetchedSettings,
+          };
+        });
+
+      return {
+        ...DEFAULT_SETTINGS,
+        isSavingSettings: false,
+        hasFetchedSettings: false,
+        fetchSettings: async (force = false) => {
+          try {
+            if (get().isSavingSettings) {
+              return;
+            }
+
+            const res = await fetch(`/api/settings?t=${Date.now()}`, {
+              cache: 'no-store',
+            });
+
+            if (!res.ok) {
+              throw new Error(`Failed to fetch settings: ${res.status}`);
+            }
+
+            const serverVersion = parseServerVersion(res.headers.get('X-Data-Version')) ?? 0;
+            const currentVersion = get().dataVersion ?? 0;
+
+            if (force || serverVersion !== currentVersion) {
+              const data = await res.json();
+              const settings = normalizeSettings(data);
+              set({ ...settings, dataVersion: serverVersion, hasFetchedSettings: true });
+            } else {
+              set({ hasFetchedSettings: true });
+            }
+          } catch (error) {
+            console.error('Failed to fetch settings:', error);
+          }
+        },
+        setBackgroundImage: (backgroundImage) => updateSettings({ backgroundImage }),
+        setBackgroundBlur: (backgroundBlur) => updateSettings({ backgroundBlur }),
+        setBackgroundOpacity: (backgroundOpacity) => updateSettings({ backgroundOpacity }),
+        setBackgroundSize: (backgroundSize) => updateSettings({ backgroundSize }),
+        setBackgroundRepeat: (backgroundRepeat) => updateSettings({ backgroundRepeat }),
+        setThemeColor: (themeColor) => updateSettings({ themeColor }),
+        setCustomFavicon: (customFavicon) => updateSettings({ customFavicon }),
+        setCustomTitle: (customTitle) => updateSettings({ customTitle }),
+        setLanguage: (language) => updateSettings({ language }),
+        setWeatherApiKey: (weatherApiKey) => updateSettings({ weatherApiKey }),
+        setWeatherCity: (weatherCity) => updateSettings({ weatherCity }),
+        setWeatherLat: (weatherLat) => updateSettings({ weatherLat }),
+        setWeatherLon: (weatherLon) => updateSettings({ weatherLon }),
+        setWeatherSub: (weatherSub) => updateSettings({ weatherSub }),
+        setWeatherCustomHost: (weatherCustomHost) => updateSettings({ weatherCustomHost }),
+        setWeatherAuthType: (weatherAuthType) => updateSettings({ weatherAuthType }),
+        resetSettings: () => {
+          const defaults = createDefaultSettings();
+          set({ ...defaults, isSavingSettings: false, hasFetchedSettings: true });
+          saveToServer(defaults);
+        },
+      };
+    },
     {
-      name: 'settings-storage',
+      name: persistKey,
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        ...extractSettings(state),
+        dataVersion: state.dataVersion,
+      }),
+      merge: (persistedState, currentState) => {
+        const parsed = SettingsStorePersistedStateSchema.safeParse(persistedState);
+
+        if (!parsed.success) {
+          return currentState;
+        }
+
+        return {
+          ...currentState,
+          ...normalizeSettings(parsed.data, extractSettings(currentState)),
+          isSavingSettings: currentState.isSavingSettings,
+          hasFetchedSettings: currentState.hasFetchedSettings,
+          dataVersion: parsed.data.dataVersion,
+        };
+      },
     }
   )
 );

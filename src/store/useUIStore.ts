@@ -8,6 +8,8 @@ interface UIState {
   isEditing: boolean; // 是否处于编辑模式（控制拖拽和编辑按钮显示）
   toggleEditing: () => void;
   setEditing: (isEditing: boolean) => void;
+  currentCanvasCols: number;
+  setCurrentCanvasCols: (cols: number) => void;
   isWidgetPickerOpen: boolean; // 小组件选择器模态框状态
   openWidgetPicker: () => void;
   closeWidgetPicker: () => void;
@@ -26,6 +28,8 @@ export const useUIStore = create<UIState>((set) => ({
   isEditing: false,
   toggleEditing: () => set((state) => ({ isEditing: !state.isEditing })),
   setEditing: (isEditing) => set({ isEditing }),
+  currentCanvasCols: 8,
+  setCurrentCanvasCols: (currentCanvasCols) => set({ currentCanvasCols }),
   isWidgetPickerOpen: false,
   openWidgetPicker: () => set({ isWidgetPickerOpen: true }),
   closeWidgetPicker: () => set({ isWidgetPickerOpen: false }),

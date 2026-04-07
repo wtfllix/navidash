@@ -18,6 +18,8 @@ import {
 import { Coordinates } from '@dnd-kit/utilities';
 import { WidgetDropDetail } from '@/lib/widgetPlacement';
 import { useSidebarStore } from '@/store/useSidebarStore';
+import { widgetMeta } from '@/components/widgets/registry';
+import { useTranslations } from 'next-intl';
 
 // 拖拽数据的类型定义
 export interface DragData {
@@ -42,6 +44,37 @@ const DragDropContext = createContext<DragDropContextType>({
 
 interface DragDropProviderProps {
   children: ReactNode;
+}
+
+function StoreDragOverlay({ dragData }: { dragData: DragData }) {
+  const t = useTranslations('Widgets');
+  const meta = widgetMeta.find((item) => item.type === dragData.type);
+  const width = dragData.defaultSize.w * 118 + (dragData.defaultSize.w - 1) * 8;
+  const height = dragData.defaultSize.h * 102 + (dragData.defaultSize.h - 1) * 8;
+
+  return (
+    <div
+      className="relative overflow-hidden rounded-[24px] border border-white/70 bg-white/55 shadow-[0_22px_50px_rgba(15,23,42,0.16)] backdrop-blur-2xl"
+      style={{ width: `${width}px`, height: `${height}px` }}
+    >
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.8),transparent_55%)]" />
+      <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(var(--primary-color),0.08),transparent_42%,rgba(255,255,255,0.35))]" />
+      <div className="relative flex h-full items-start justify-between p-6">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="truncate text-2xl font-semibold tracking-tight text-slate-900">
+              {meta ? t(meta.titleKey as never) : dragData.type}
+            </div>
+          </div>
+        </div>
+        {meta && (
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[24px] bg-white/32 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)] ring-1 ring-white/45">
+            <meta.Icon size={32} className={meta.iconClassName} />
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 function getClientFromEvent(event: Event | undefined): { x: number; y: number } | null {
@@ -222,21 +255,7 @@ export default function DragDropProvider({ children }: DragDropProviderProps) {
         {/* 拖拽覆盖层 */}
         <DragOverlay dropAnimation={null}>
           {activeDragData && (
-            <div className="p-3 bg-white border border-blue-300 rounded-xl shadow-lg flex items-center space-x-3 opacity-90 will-change-transform">
-              <div className="p-2 bg-blue-50 rounded-lg">
-                <div className="w-6 h-6 flex items-center justify-center text-blue-600 font-bold">
-                  {activeDragData.type.charAt(0).toUpperCase()}
-                </div>
-              </div>
-              <div>
-                <div className="font-semibold text-sm text-gray-800">
-                  {activeDragData.titleKey}
-                </div>
-                <div className="text-xs text-gray-500">
-                  {activeDragData.descKey}
-                </div>
-              </div>
-            </div>
+            <StoreDragOverlay dragData={activeDragData} />
           )}
         </DragOverlay>
       </DndContext>

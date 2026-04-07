@@ -14,10 +14,20 @@ export type WidgetType =
   | 'photo-frame'
   | 'date';
 
+export interface WidgetSize {
+  w: number;
+  h: number;
+}
+
+export interface WidgetPosition {
+  x: number;
+  y: number;
+}
+
 // ─── per-Widget config 接口 ───────────────────────────────────────────────────
 
 export interface ClockWidgetConfig {
-  clockStyle?: 'digital' | 'analog' | 'flip' | 'apple';
+  clockStyle?: 'glass' | 'minimal' | 'bento' | 'digital' | 'analog' | 'flip' | 'apple';
 }
 
 export interface WeatherWidgetConfig {
@@ -25,9 +35,19 @@ export interface WeatherWidgetConfig {
   city?: string;
   lat?: number;
   lon?: number;
-  weatherSub?: string;         // 订阅级别，如 'free' | 'standard' 等
+  weatherSub?: string;
   weatherCustomHost?: string;
   weatherAuthType?: 'param' | 'bearer';
+}
+
+export interface WeatherSettingsConfig {
+  weatherApiKey: string;
+  weatherCity: string;
+  weatherLat?: number;
+  weatherLon?: number;
+  weatherSub: string;
+  weatherCustomHost: string;
+  weatherAuthType: 'param' | 'bearer';
 }
 
 export interface DateWidgetConfig {
@@ -41,10 +61,13 @@ export interface QuickLinkWidgetConfig {
 }
 
 export interface PhotoWidgetConfig {
+  images?: string[];
   imageUrl?: string;
+  autoplay?: boolean;
+  interval?: number;
+  shuffle?: boolean;
 }
 
-// ── Links Collection ──
 export interface LinkItem {
   id: string;
   title: string;
@@ -60,19 +83,25 @@ export interface LinksWidgetConfig {
 
 export interface MemoWidgetConfig {
   content?: string;
-  bgColor?: string;    // Tailwind 背景色类名，如 'bg-yellow-200'
-  textColor?: string;  // Tailwind 文字色类名，如 'text-yellow-900'
+  bgColor?: string;
+  textColor?: string;
+}
+
+export interface TodoItem {
+  id: string;
+  text: string;
+  completed: boolean;
 }
 
 export interface TodoWidgetConfig {
-  todos?: Array<{ id: string; text: string; completed: boolean }>;
+  todos?: TodoItem[];
 }
+
+export type EmptyWidgetConfig = Record<string, never>;
 
 /**
  * WidgetConfig
- * 所有 Widget config 字段的 Partial 交集。
- * 保证：已知字段有类型约束，未知字段不允许随意赋值。
- * 访问任意字段（如 config.apiKey）无需类型转换，且 IDE 有自动补全。
+ * 用于编辑表单和通用更新场景的宽松配置类型。
  */
 export type WidgetConfig =
   Partial<ClockWidgetConfig> &
@@ -85,23 +114,55 @@ export type WidgetConfig =
   Partial<LinksWidgetConfig>;
 
 /**
- * Widget Interface
- * 定义桌面小组件结构
+ * WidgetConfigMap
+ * 每种 widget type 对应其唯一 config 结构。
  */
-export interface Widget {
-  id: string;                        // 唯一标识符
-  type: WidgetType;                  // 组件类型
-  size: { w: number; h: number };    // 组件尺寸（Grid Layout 单位）
-  position: { x: number; y: number }; // 组件位置（Grid Layout 坐标）
-  config: WidgetConfig;              // 组件专属配置
+export interface WidgetConfigMap {
+  weather: WeatherWidgetConfig;
+  clock: ClockWidgetConfig;
+  rss: EmptyWidgetConfig;
+  monitor: EmptyWidgetConfig;
+  'quick-link': QuickLinkWidgetConfig;
+  links: LinksWidgetConfig;
+  calendar: EmptyWidgetConfig;
+  memo: MemoWidgetConfig;
+  todo: TodoWidgetConfig;
+  'photo-frame': PhotoWidgetConfig;
+  date: DateWidgetConfig;
 }
+
+export type WidgetConfigByType<T extends WidgetType> = WidgetConfigMap[T];
+
+interface BaseWidget<T extends WidgetType> {
+  id: string;
+  type: T;
+  size: WidgetSize;
+  position: WidgetPosition;
+  config: WidgetConfigByType<T>;
+}
+
+/**
+ * Widget
+ * 通过 discriminated union 将 type 与 config 绑定。
+ */
+export type Widget = {
+  [T in WidgetType]: BaseWidget<T>;
+}[WidgetType];
+
+export type WidgetOfType<T extends WidgetType> = Extract<Widget, { type: T }>;
+
+export type WidgetLayout = Omit<Widget, 'config'>;
+
+export type WidgetConfigEntry = {
+  [T in WidgetType]: {
+    id: string;
+    type: T;
+    config: WidgetConfigByType<T>;
+  };
+}[WidgetType];
 
 // ─── Settings 接口 ────────────────────────────────────────────────────────────
 
-/**
- * Settings
- * 与 useSettingsStore 中的数据字段保持同步
- */
 export interface Settings {
   backgroundImage: string;
   backgroundBlur: number;
@@ -112,4 +173,30 @@ export interface Settings {
   customFavicon: string;
   customTitle: string;
   language: string;
+  weatherApiKey: string;
+  weatherCity: string;
+  weatherLat?: number;
+  weatherLon?: number;
+  weatherSub: string;
+  weatherCustomHost: string;
+  weatherAuthType: 'param' | 'bearer';
 }
+
+export const DEFAULT_SETTINGS: Settings = {
+  backgroundImage: 'radial-gradient(#d1d5db 2px, transparent 2px)',
+  backgroundBlur: 0,
+  backgroundOpacity: 0,
+  backgroundSize: '24px 24px',
+  backgroundRepeat: 'repeat',
+  themeColor: '#3b82f6',
+  customFavicon: '/favicon.svg',
+  customTitle: 'Navidash',
+  language: 'en',
+  weatherApiKey: '',
+  weatherCity: 'Beijing',
+  weatherLat: 39.9042,
+  weatherLon: 116.4074,
+  weatherSub: 'free',
+  weatherCustomHost: '',
+  weatherAuthType: 'param',
+};

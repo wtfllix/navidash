@@ -1,272 +1,19 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import Modal from '@/components/ui/Modal';
-import { Widget, LinkItem, WidgetConfig, ClockWidgetConfig, DateWidgetConfig, WeatherWidgetConfig } from '@/types';
+import { Widget, WidgetConfig, WidgetSize } from '@/types';
 import { useWidgetStore } from '@/store/useWidgetStore';
-import { useTranslations, useLocale } from 'next-intl';
-import { v4 as uuidv4 } from 'uuid';
-import { Trash2, Edit2, Check, X, Plus, ExternalLink } from 'lucide-react';
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const getLinkDomain = (url: string) => {
-  try {
-    return new URL(url.startsWith('http') ? url : `https://${url}`).hostname.replace(/^www\./, '');
-  } catch {
-    return url;
-  }
-};
-
-const getFaviconUrl = (url: string) => {
-  try {
-    const domain = new URL(url.startsWith('http') ? url : `https://${url}`).hostname;
-    return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
-  } catch {
-    return null;
-  }
-};
-
-// ─── LinksConfigEditor ────────────────────────────────────────────────────────
-
-function LinksConfigEditor({
-  config,
-  setConfig,
-}: {
-  config: WidgetConfig;
-  setConfig: (c: WidgetConfig) => void;
-}) {
-  const t = useTranslations('Widgets');
-  const links: LinkItem[] = config.links || [];
-
-  // 新增链接表单
-  const [showAdd, setShowAdd] = useState(false);
-  const [newTitle, setNewTitle] = useState('');
-  const [newUrl, setNewUrl] = useState('');
-
-  // 编辑链接
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editTitle, setEditTitle] = useState('');
-  const [editUrl, setEditUrl] = useState('');
-
-  // 批量导入
-  const [showBulk, setShowBulk] = useState(false);
-  const [bulkText, setBulkText] = useState('');
-
-  const updateLinks = (next: LinkItem[]) => setConfig({ ...config, links: next });
-
-  const handleAdd = () => {
-    const url = newUrl.trim();
-    if (!url) return;
-    const title = newTitle.trim() || getLinkDomain(url);
-    updateLinks([...links, { id: uuidv4(), title, url }]);
-    setNewTitle('');
-    setNewUrl('');
-    setShowAdd(false);
-  };
-
-  const handleDelete = (id: string) => updateLinks(links.filter((l) => l.id !== id));
-
-  const startEdit = (link: LinkItem) => {
-    setEditingId(link.id);
-    setEditTitle(link.title);
-    setEditUrl(link.url);
-  };
-
-  const handleSaveEdit = () => {
-    updateLinks(links.map((l) => (l.id === editingId ? { ...l, title: editTitle, url: editUrl } : l)));
-    setEditingId(null);
-  };
-
-  const handleBulkImport = () => {
-    const newLinks: LinkItem[] = bulkText
-      .split('\n')
-      .map((line) => line.trim())
-      .filter(Boolean)
-      .map((line) => {
-        const pipeIdx = line.indexOf('|');
-        if (pipeIdx > -1) {
-          const title = line.slice(0, pipeIdx).trim();
-          const url = line.slice(pipeIdx + 1).trim();
-          return { id: uuidv4(), title: title || getLinkDomain(url), url };
-        }
-        return { id: uuidv4(), title: getLinkDomain(line), url: line };
-      });
-    updateLinks([...links, ...newLinks]);
-    setBulkText('');
-    setShowBulk(false);
-  };
-
-  return (
-    <div className="space-y-4">
-      {/* 分组标题 */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">{t('links_group_title')}</label>
-        <input
-          type="text"
-          value={config.title || ''}
-          onChange={(e) => setConfig({ ...config, title: e.target.value })}
-          placeholder={t('links_group_title_placeholder')}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
-        />
-      </div>
-
-      {/* 图标大小 & 显示标签 */}
-      <div className="flex gap-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">{t('links_icon_size')}</label>
-          <div className="flex gap-1">
-            {(['sm', 'md', 'lg'] as const).map((s) => (
-              <button
-                key={s}
-                onClick={() => setConfig({ ...config, iconSize: s })}
-                className={`px-3 py-1.5 rounded-md border text-xs transition-colors ${
-                  (config.iconSize ?? 'md') === s
-                    ? 'bg-blue-600 text-white border-blue-600'
-                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                }`}
-              >
-                {t(`links_size_${s}` as any)}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">{t('links_show_labels')}</label>
-          <button
-            onClick={() => setConfig({ ...config, showLabels: !(config.showLabels ?? true) })}
-            className={`px-3 py-1.5 rounded-md border text-xs transition-colors ${
-              (config.showLabels ?? true)
-                ? 'bg-blue-600 text-white border-blue-600'
-                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-            }`}
-          >
-            {(config.showLabels ?? true) ? t('links_labels_on') : t('links_labels_off')}
-          </button>
-        </div>
-      </div>
-
-      {/* 链接列表 */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">{t('links_list')}</label>
-        <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
-          {links.length === 0 && (
-            <p className="text-xs text-gray-400 py-2 text-center">{t('links_empty')}</p>
-          )}
-          {links.map((link) =>
-            editingId === link.id ? (
-              /* 内联编辑行 */
-              <div key={link.id} className="flex gap-1 items-center">
-                <input
-                  value={editTitle}
-                  onChange={(e) => setEditTitle(e.target.value)}
-                  className="flex-1 px-2 py-1 text-xs border border-blue-400 rounded focus:outline-none"
-                  placeholder={t('placeholder_title')}
-                />
-                <input
-                  value={editUrl}
-                  onChange={(e) => setEditUrl(e.target.value)}
-                  className="flex-[2] px-2 py-1 text-xs border border-blue-400 rounded focus:outline-none"
-                  placeholder="https://..."
-                />
-                <button onClick={handleSaveEdit} className="p-1 text-green-600 hover:bg-green-50 rounded">
-                  <Check size={14} />
-                </button>
-                <button onClick={() => setEditingId(null)} className="p-1 text-gray-400 hover:bg-gray-100 rounded">
-                  <X size={14} />
-                </button>
-              </div>
-            ) : (
-              /* 普通行 */
-              <div key={link.id} className="flex items-center gap-2 py-1 px-2 rounded-lg hover:bg-gray-50 group">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={getFaviconUrl(link.url) || ''}
-                  alt=""
-                  className="w-4 h-4 object-contain shrink-0"
-                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                />
-                <span className="flex-1 text-sm truncate">{link.title}</span>
-                <span className="text-xs text-gray-400 truncate max-w-[8rem]">{getLinkDomain(link.url)}</span>
-                <div className="opacity-0 group-hover:opacity-100 flex gap-1 transition-opacity shrink-0">
-                  <button onClick={() => startEdit(link)} className="p-1 hover:bg-gray-200 rounded text-gray-500">
-                    <Edit2 size={12} />
-                  </button>
-                  <button onClick={() => handleDelete(link.id)} className="p-1 hover:bg-red-100 rounded text-gray-400 hover:text-red-500">
-                    <Trash2 size={12} />
-                  </button>
-                </div>
-              </div>
-            )
-          )}
-        </div>
-
-        {/* 新增链接表单 */}
-        {showAdd ? (
-          <div className="mt-2 flex gap-1 items-center">
-            <input
-              autoFocus
-              value={newTitle}
-              onChange={(e) => setNewTitle(e.target.value)}
-              placeholder={t('placeholder_title')}
-              className="w-24 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-400"
-            />
-            <input
-              value={newUrl}
-              onChange={(e) => setNewUrl(e.target.value)}
-              placeholder="https://..."
-              onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
-              className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-400"
-            />
-            <button onClick={handleAdd} className="p-1 text-green-600 hover:bg-green-50 rounded">
-              <Check size={14} />
-            </button>
-            <button onClick={() => setShowAdd(false)} className="p-1 text-gray-400 hover:bg-gray-100 rounded">
-              <X size={14} />
-            </button>
-          </div>
-        ) : (
-          <button
-            onClick={() => setShowAdd(true)}
-            className="mt-2 flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium"
-          >
-            <Plus size={13} /> {t('links_add')}
-          </button>
-        )}
-      </div>
-
-      {/* 批量导入 */}
-      <div className="border-t border-gray-100 pt-3">
-        <button
-          onClick={() => setShowBulk(!showBulk)}
-          className="text-xs text-gray-500 hover:text-gray-700 font-medium flex items-center gap-1"
-        >
-          <ExternalLink size={12} />
-          {t('links_bulk_import')}
-        </button>
-        {showBulk && (
-          <div className="mt-2 space-y-2">
-            <p className="text-xs text-gray-400">{t('links_bulk_hint')}</p>
-            <textarea
-              value={bulkText}
-              onChange={(e) => setBulkText(e.target.value)}
-              placeholder={t('links_bulk_placeholder')}
-              rows={4}
-              className="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-blue-400 font-mono resize-none"
-            />
-            <button
-              onClick={handleBulkImport}
-              disabled={!bulkText.trim()}
-              className="px-3 py-1.5 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              {t('links_bulk_import_btn')}
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
+import { useTranslations } from 'next-intl';
+import { SelectInput } from './editors/FormControls';
+import {
+  getAllowedSizePresets,
+  getDefaultAllowedSize,
+  getSizePresetKey,
+  SIZE_PRESETS,
+} from './editors/shared';
+import { widgetConfigEditors } from './editors/registry';
+import { ConfigUpdate, EditableWidgetType } from './editors/types';
 
 interface WidgetSettingsModalProps {
   widget: Widget | null;
@@ -274,420 +21,111 @@ interface WidgetSettingsModalProps {
   onClose: () => void;
 }
 
-export default function WidgetSettingsModal({ widget, isOpen, onClose }: WidgetSettingsModalProps) {
-  const { updateWidget } = useWidgetStore();
-  const [size, setSize] = useState({ w: 1, h: 1 });
+function applyConfigUpdate(current: WidgetConfig, update: ConfigUpdate<WidgetConfig>) {
+  return typeof update === 'function' ? update(current) : update;
+}
+
+export default function WidgetSettingsModal({
+  widget,
+  isOpen,
+  onClose,
+}: WidgetSettingsModalProps) {
+  const { updateWidget, saveWidgetConfigs } = useWidgetStore();
+  const [size, setSize] = useState<WidgetSize>({ w: 1, h: 1 });
   const [config, setConfig] = useState<WidgetConfig>({});
-  const [citySearch, setCitySearch] = useState('');
-  const [showCityList, setShowCityList] = useState(false);
-  const tWidgets = useTranslations('Widgets');
-  const locale = useLocale();
+  const t = useTranslations('Widgets');
 
   useEffect(() => {
-    if (widget) {
-      setSize(widget.size);
-      setConfig(widget.config || {});
-    }
+    if (!widget) return;
+    const presetKey = getSizePresetKey(widget.size);
+    const allowedPresets = getAllowedSizePresets(widget.type);
+    const isAllowed = presetKey ? allowedPresets.some((preset) => preset.key === presetKey) : false;
+    setSize(isAllowed ? widget.size : getDefaultAllowedSize(widget.type));
+    setConfig(widget.config || {});
   }, [widget]);
 
   if (!widget) return null;
 
-  // Preset Cities Data (Expanded)
-  const PRESET_CITIES = [
-    // China - Tier 1
-    { name: 'Beijing', lat: 39.9042, lon: 116.4074 },
-    { name: 'Shanghai', lat: 31.2304, lon: 121.4737 },
-    { name: 'Guangzhou', lat: 23.1291, lon: 113.2644 },
-    { name: 'Shenzhen', lat: 22.5431, lon: 114.0579 },
-    // China - Major
-    { name: 'Chengdu', lat: 30.5728, lon: 104.0668 },
-    { name: 'Hangzhou', lat: 30.2741, lon: 120.1551 },
-    { name: 'Wuhan', lat: 30.5928, lon: 114.3055 },
-    { name: 'Xi\'an', lat: 34.3416, lon: 108.9398 },
-    { name: 'Chongqing', lat: 29.5630, lon: 106.5516 },
-    { name: 'Nanjing', lat: 32.0603, lon: 118.7969 },
-    { name: 'Tianjin', lat: 39.0842, lon: 117.2009 },
-    { name: 'Suzhou', lat: 31.2989, lon: 120.5853 },
-    { name: 'Hong Kong', lat: 22.3193, lon: 114.1694 },
-    { name: 'Taipei', lat: 25.0330, lon: 121.5654 },
-    { name: 'Macau', lat: 22.1987, lon: 113.5439 },
-    { name: 'Qingdao', lat: 36.0671, lon: 120.3826 },
-    { name: 'Xiamen', lat: 24.4798, lon: 118.0894 },
-    { name: 'Changsha', lat: 28.2282, lon: 112.9388 },
-    { name: 'Kunming', lat: 24.8801, lon: 102.8329 },
-    { name: 'Sanya', lat: 18.2528, lon: 109.5120 },
-    // Asia
-    { name: 'Tokyo', lat: 35.6762, lon: 139.6503 },
-    { name: 'Osaka', lat: 34.6937, lon: 135.5023 },
-    { name: 'Seoul', lat: 37.5665, lon: 126.9780 },
-    { name: 'Singapore', lat: 1.3521, lon: 103.8198 },
-    { name: 'Bangkok', lat: 13.7563, lon: 100.5018 },
-    { name: 'Dubai', lat: 25.2048, lon: 55.2708 },
-    // North America
-    { name: 'New York', lat: 40.7128, lon: -74.0060 },
-    { name: 'Los Angeles', lat: 34.0522, lon: -118.2437 },
-    { name: 'San Francisco', lat: 37.7749, lon: -122.4194 },
-    { name: 'Chicago', lat: 41.8781, lon: -87.6298 },
-    { name: 'Toronto', lat: 43.6532, lon: -79.3832 },
-    { name: 'Vancouver', lat: 49.2827, lon: -123.1207 },
-    // Europe
-    { name: 'London', lat: 51.5074, lon: -0.1278 },
-    { name: 'Paris', lat: 48.8566, lon: 2.3522 },
-    { name: 'Berlin', lat: 52.5200, lon: 13.4050 },
-    { name: 'Moscow', lat: 55.7558, lon: 37.6173 },
-    { name: 'Madrid', lat: 40.4168, lon: -3.7038 },
-    { name: 'Rome', lat: 41.9028, lon: 12.4964 },
-    // Oceania
-    { name: 'Sydney', lat: -33.8688, lon: 151.2093 },
-    { name: 'Melbourne', lat: -37.8136, lon: 144.9631 },
-  ];
+  const initialPresetKey = getSizePresetKey(widget.size);
+  const initialSize =
+    initialPresetKey &&
+    getAllowedSizePresets(widget.type).some((preset) => preset.key === initialPresetKey)
+      ? widget.size
+      : getDefaultAllowedSize(widget.type);
+  const initialConfig = widget.config || {};
+  const isDirty =
+    JSON.stringify(size) !== JSON.stringify(initialSize) ||
+    JSON.stringify(config) !== JSON.stringify(initialConfig);
 
-  const filteredCities = PRESET_CITIES.filter(c => 
-    c.name.toLowerCase().includes(citySearch.toLowerCase())
-  );
+  const handleConfigChange = (update: ConfigUpdate<WidgetConfig>) => {
+    setConfig((current) => applyConfigUpdate(current, update));
+  };
 
-  const handleSave = () => {
-    let finalConfig = { ...config };
-    
-    // If city name matches a preset, ensure coordinates match (auto-fix coordinates)
-    if (widget.type === 'weather' && finalConfig.city) {
-      const matchedCity = PRESET_CITIES.find(c => c.name.toLowerCase() === finalConfig.city!.toLowerCase());
-      if (matchedCity) {
-         finalConfig.lat = matchedCity.lat;
-         finalConfig.lon = matchedCity.lon;
-         finalConfig.city = matchedCity.name; // Normalize casing
-      }
+  const handleSave = async () => {
+    if (!isDirty) {
+      onClose();
+      return;
     }
 
-    updateWidget(widget.id, { size, config: finalConfig });
+    updateWidget(widget.id, { size, config });
+    await saveWidgetConfigs();
     onClose();
   };
 
-  const selectCity = (city: typeof PRESET_CITIES[0]) => {
-    setConfig({
-      ...config,
-      city: city.name,
-      lat: city.lat,
-      lon: city.lon
-    });
-    setCitySearch('');
-    setShowCityList(false);
-  };
-
-  const COLOR_OPTIONS = [
-    { color: '#ef4444', label: 'Red' },
-    { color: '#3b82f6', label: 'Blue' },
-    { color: '#22c55e', label: 'Green' },
-    { color: '#f97316', label: 'Orange' },
-    { color: '#a855f7', label: 'Purple' },
-    { color: '#1f2937', label: 'Black' },
-  ];
-
-  const renderConfigFields = () => {
-    switch (widget.type) {
-      case 'clock':
-        return (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">{tWidgets('clock_style')}</label>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { id: 'digital', label: tWidgets('style_digital') },
-                { id: 'analog', label: tWidgets('style_analog') },
-                { id: 'flip', label: tWidgets('style_flip') },
-                { id: 'apple', label: tWidgets('style_apple') },
-              ].map((style) => (
-                <button
-                  key={style.id}
-                  onClick={() => {
-                    const newConfig = { ...config, clockStyle: style.id as ClockWidgetConfig['clockStyle'] };
-                     setConfig(newConfig);
-                     if (style.id === 'flip') {
-                       setSize({ w: 2, h: 1 });
-                     }
-                   }}
-                  className={`px-3 py-2 rounded-md border text-sm transition-colors ${
-                    (config.clockStyle === style.id || (!config.clockStyle && style.id === 'digital'))
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                  }`}
-                >
-                  {style.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        );
-      case 'date':
-        return (
-          <div className="space-y-4">
-             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {tWidgets('date_style')}
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { id: 'classic', label: tWidgets('style_classic') },
-                    { id: 'minimal', label: tWidgets('style_minimal') },
-                    { id: 'glass', label: tWidgets('style_glass') },
-                    { id: 'bauhaus', label: tWidgets('style_bauhaus') },
-                  ].map((style) => (
-                    <button
-                      key={style.id}
-                      onClick={() => setConfig({ ...config, style: style.id as DateWidgetConfig['style'] })}
-                      className={`px-3 py-2 rounded-md border text-sm transition-colors ${
-                        (config.style === style.id || (!config.style && style.id === 'classic'))
-                          ? 'bg-blue-600 text-white border-blue-600'
-                          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                      }`}
-                    >
-                      {style.label}
-                    </button>
-                  ))}
-                </div>
-             </div>
-             
-             <div>
-               <label className="block text-sm font-medium text-gray-700 mb-1">
-                 {tWidgets('theme_color')}
-               </label>
-               <div className="flex flex-wrap gap-2">
-                 {COLOR_OPTIONS.map((option) => (
-                    <button
-                      key={option.color}
-                      onClick={() => setConfig({ ...config, color: config.color === option.color ? undefined : option.color })}
-                      className={`w-8 h-8 rounded-full border-2 transition-transform hover:scale-110 ${
-                        config.color === option.color ? 'border-gray-900 scale-110' : 'border-transparent'
-                      }`}
-                      style={{ backgroundColor: option.color }}
-                      aria-label={`Select color ${option.label}`}
-                      title={option.label}
-                    />
-                 ))}
-               </div>
-               <p className="text-xs text-gray-500 mt-1">
-                 Leave unselected for daily random colors.
-               </p>
-             </div>
-          </div>
-        );
-      case 'weather':
-        return (
-          <>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{tWidgets('api_key')}</label>
-              <input
-                type="text"
-                value={config.apiKey || ''}
-                onChange={(e) => setConfig({ ...config, apiKey: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-                placeholder={tWidgets('api_key_placeholder')}
-                aria-label={tWidgets('api_key')}
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                {tWidgets.rich('api_requirement', {
-                  link: (chunks: React.ReactNode) => (
-                    <a 
-                      href="https://console.qweather.com/" 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="text-blue-500 hover:underline"
-                    >
-                      {chunks}
-                    </a>
-                  )
-                })}
-              </p>
-            </div>
-            <div className="mt-3">
-              <label className="block text-sm font-medium text-gray-700 mb-1">{tWidgets('sub_custom')}</label>
-              <input
-                type="text"
-                value={config.weatherCustomHost || ''}
-                onChange={(e) => setConfig({ ...config, weatherCustomHost: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-                placeholder={tWidgets('custom_host_placeholder')}
-              />
-            </div>
-
-            <div className="mt-3">
-              <label className="block text-sm font-medium text-gray-700 mb-1">{tWidgets('auth_type')}</label>
-              <select
-                value={config.weatherAuthType || 'param'}
-                onChange={(e) => setConfig({ ...config, weatherAuthType: e.target.value as WeatherWidgetConfig['weatherAuthType'] })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-              >
-                <option value="param">{tWidgets('auth_param')}</option>
-                <option value="bearer">{tWidgets('auth_bearer')}</option>
-              </select>
-            </div>
-
-            <div className="mt-3 relative">
-              <label className="block text-sm font-medium text-gray-700 mb-1">{tWidgets('city_name')}</label>
-              
-              <div className="relative">
-                <input
-                  type="text"
-                  value={showCityList ? citySearch : (config.city || '')}
-                  onChange={(e) => {
-                    setCitySearch(e.target.value);
-                    if (!showCityList) setShowCityList(true);
-                  }}
-                  onFocus={() => {
-                    setCitySearch('');
-                    setShowCityList(true);
-                  }}
-                  onBlur={() => setTimeout(() => setShowCityList(false), 200)} // Delay to allow click
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-                  placeholder={tWidgets('quick_select_city') || 'Search City...'}
-                  autoComplete="off"
-                />
-                
-                {showCityList && (
-                  <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                    {filteredCities.length > 0 ? (
-                      filteredCities.map((c) => (
-                        <button
-                          key={c.name}
-                          onClick={() => selectCity(c)}
-                          className="w-full text-left px-4 py-2 text-sm hover:bg-blue-50 text-gray-700 transition-colors"
-                        >
-                          <span className="font-medium">{c.name}</span>
-                          {/* <span className="text-xs text-gray-400 ml-2">({c.lat}, {c.lon})</span> */}
-                        </button>
-                      ))
-                    ) : (
-                      <div className="px-4 py-3 text-sm text-gray-500 text-center">
-                        No cities found
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-             <div className="grid grid-cols-2 gap-4 mt-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{tWidgets('latitude')}</label>
-                  <input
-                    type="number"
-                    value={config.lat || ''}
-                    onChange={(e) => setConfig({ ...config, lat: parseFloat(e.target.value) })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-                    aria-label={tWidgets('latitude')}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{tWidgets('longitude')}</label>
-                  <input
-                    type="number"
-                    value={config.lon || ''}
-                    onChange={(e) => setConfig({ ...config, lon: parseFloat(e.target.value) })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-                    aria-label={tWidgets('longitude')}
-                  />
-                </div>
-             </div>
-             <p className="text-xs text-gray-500 mt-2">
-               {tWidgets('find_coords')} <a href="https://www.latlong.net/" target="_blank" className="text-blue-500 underline">latlong.net</a>
-             </p>
-          </>
-        );
-      case 'quick-link':
-        return (
-          <>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{tWidgets('widget_title')}</label>
-              <input
-                type="text"
-                value={config.title || ''}
-                onChange={(e) => setConfig({ ...config, title: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-                aria-label={tWidgets('widget_title')}
-              />
-            </div>
-            <div className="mt-3">
-              <label className="block text-sm font-medium text-gray-700 mb-1">{tWidgets('widget_url')}</label>
-              <input
-                type="text"
-                value={config.url || ''}
-                onChange={(e) => setConfig({ ...config, url: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-                placeholder="https://..."
-                aria-label={tWidgets('widget_url')}
-              />
-            </div>
-          </>
-        );
-      case 'photo-frame':
-        return (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{tWidgets('image_url')}</label>
-            <input
-              type="text"
-              value={config.imageUrl || ''}
-              onChange={(e) => setConfig({ ...config, imageUrl: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-              placeholder="https://..."
-              aria-label={tWidgets('image_url')}
-            />
-          </div>
-        );
-      case 'links':
-        return <LinksConfigEditor config={config} setConfig={setConfig} />;
-      default:
-        return <p className="text-sm text-gray-500">{tWidgets('no_config')}</p>;
+  const renderEditor = () => {
+    if (widget.type === 'clock') {
+      const ClockEditor = widgetConfigEditors.clock;
+      return <ClockEditor config={config as never} setConfig={handleConfigChange as never} setSize={setSize} />;
     }
+
+    if (widget.type === 'weather') {
+      return <p className="text-sm text-gray-500">{t('weather_settings_moved')}</p>;
+    }
+
+    const GenericEditor = widgetConfigEditors[widget.type as Exclude<EditableWidgetType, 'clock'>];
+    return GenericEditor ? (
+      <GenericEditor config={config as never} setConfig={handleConfigChange as never} />
+    ) : (
+      <p className="text-sm text-gray-500">{t('no_config')}</p>
+    );
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={tWidgets('title_edit', { type: widget.type })}>
+    <Modal isOpen={isOpen} onClose={onClose} title={t('title_edit', { type: widget.type })}>
       <div className="space-y-6">
-        {/* Size Config */}
         <div>
-          <h4 className="text-sm font-medium text-gray-900 mb-3">{tWidgets('size')}</h4>
-          <div className="flex items-center space-x-4">
-             <div className="flex-1">
-                <label className="text-xs text-gray-500 block mb-1">{tWidgets('width_cols')}</label>
-                <select 
-                  value={size.w}
-                  onChange={(e) => setSize({ ...size, w: parseInt(e.target.value) })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-                >
-                  <option value={1}>{tWidgets('size_small')}</option>
-                  <option value={2}>{tWidgets('size_medium')}</option>
-                  <option value={3}>{tWidgets('size_large_3')}</option>
-                  <option value={4}>{tWidgets('size_large_4')}</option>
-                  <option value={6}>{tWidgets('size_xl_6')}</option>
-                  <option value={8}>{tWidgets('size_full_8')}</option>
-                </select>
-             </div>
-             <div className="flex-1">
-                <label className="text-xs text-gray-500 block mb-1">{tWidgets('height_rows')}</label>
-                <select 
-                  value={size.h}
-                  onChange={(e) => setSize({ ...size, h: parseInt(e.target.value) })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-                >
-                  <option value={1}>{tWidgets('size_standard')}</option>
-                  <option value={2}>{tWidgets('size_tall')}</option>
-                  <option value={3}>{tWidgets('size_extra_tall')}</option>
-                  <option value={4}>{tWidgets('size_max_tall')}</option>
-                </select>
-             </div>
-          </div>
+          <h4 className="text-sm font-medium text-gray-900 mb-3">{t('size')}</h4>
+          <label className="text-xs text-gray-500 block mb-1">{t('size')}</label>
+          <SelectInput
+            value={getSizePresetKey(size) ?? getAllowedSizePresets(widget.type)[0].key}
+            onChange={(e) => {
+              const preset = SIZE_PRESETS[e.target.value as keyof typeof SIZE_PRESETS];
+              setSize({ w: preset.w, h: preset.h });
+            }}
+          >
+            {getAllowedSizePresets(widget.type).map((preset) => (
+              <option key={preset.key} value={preset.key}>
+                {t(preset.labelKey)}
+              </option>
+            ))}
+          </SelectInput>
         </div>
 
-        {/* Specific Config */}
         <div className="pt-4 border-t border-gray-100">
-           <h4 className="text-sm font-medium text-gray-900 mb-3">{tWidgets('configuration')}</h4>
-           {renderConfigFields()}
+          <h4 className="text-sm font-medium text-gray-900 mb-3">{t('configuration')}</h4>
+          {renderEditor()}
         </div>
 
         <div className="flex justify-end pt-4">
+          <div className="mr-auto flex items-center text-xs text-gray-400">
+            {isDirty ? t('widget_unsaved') : t('widget_saved')}
+          </div>
           <button
             onClick={handleSave}
-            className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm shadow-blue-500/30"
+            disabled={!isDirty}
+            className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm shadow-blue-500/30 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {tWidgets('save_changes')}
+            {t('save_changes')}
           </button>
         </div>
       </div>

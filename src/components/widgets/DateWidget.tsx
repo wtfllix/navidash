@@ -1,218 +1,365 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { Widget } from '@/types';
+import React, { useEffect, useMemo, useState } from 'react';
+import { WidgetOfType } from '@/types';
 import { useLocale } from 'next-intl';
 
-// Define a palette of high-quality colors for the random mode
 const RANDOM_PALETTE = [
-  '#ef4444', // Red
-  '#f97316', // Orange
-  '#f59e0b', // Amber
-  '#84cc16', // Lime
-  '#22c55e', // Green
-  '#10b981', // Emerald
-  '#06b6d4', // Cyan
-  '#3b82f6', // Blue
-  '#6366f1', // Indigo
-  '#8b5cf6', // Violet
-  '#d946ef', // Fuchsia
-  '#f43f5e', // Rose
-  '#1f2937', // Gray
+  '#ef4444',
+  '#f97316',
+  '#f59e0b',
+  '#84cc16',
+  '#22c55e',
+  '#10b981',
+  '#06b6d4',
+  '#3b82f6',
+  '#6366f1',
+  '#8b5cf6',
+  '#d946ef',
+  '#f43f5e',
+  '#1f2937',
 ];
 
-const DateWidget = React.memo(({ widget }: { widget: Widget }) => {
-  const [date, setDate] = useState(new Date());
-  const locale = useLocale();
+const SOLAR_TERMS = [
+  { month: 1, day: 5, zh: '小寒', en: 'Minor Cold' },
+  { month: 1, day: 20, zh: '大寒', en: 'Major Cold' },
+  { month: 2, day: 4, zh: '立春', en: 'Start of Spring' },
+  { month: 2, day: 19, zh: '雨水', en: 'Rain Water' },
+  { month: 3, day: 6, zh: '惊蛰', en: 'Awakening of Insects' },
+  { month: 3, day: 21, zh: '春分', en: 'Spring Equinox' },
+  { month: 4, day: 5, zh: '清明', en: 'Pure Brightness' },
+  { month: 4, day: 20, zh: '谷雨', en: 'Grain Rain' },
+  { month: 5, day: 5, zh: '立夏', en: 'Start of Summer' },
+  { month: 5, day: 21, zh: '小满', en: 'Grain Full' },
+  { month: 6, day: 6, zh: '芒种', en: 'Grain in Ear' },
+  { month: 6, day: 21, zh: '夏至', en: 'Summer Solstice' },
+  { month: 7, day: 7, zh: '小暑', en: 'Minor Heat' },
+  { month: 7, day: 23, zh: '大暑', en: 'Major Heat' },
+  { month: 8, day: 8, zh: '立秋', en: 'Start of Autumn' },
+  { month: 8, day: 23, zh: '处暑', en: 'End of Heat' },
+  { month: 9, day: 8, zh: '白露', en: 'White Dew' },
+  { month: 9, day: 23, zh: '秋分', en: 'Autumn Equinox' },
+  { month: 10, day: 8, zh: '寒露', en: 'Cold Dew' },
+  { month: 10, day: 23, zh: '霜降', en: 'Frost Descent' },
+  { month: 11, day: 7, zh: '立冬', en: 'Start of Winter' },
+  { month: 11, day: 22, zh: '小雪', en: 'Minor Snow' },
+  { month: 12, day: 7, zh: '大雪', en: 'Major Snow' },
+  { month: 12, day: 22, zh: '冬至', en: 'Winter Solstice' },
+] as const;
 
-  useEffect(() => {
-    // Check for date change every minute
-    const timer = setInterval(() => {
-      const now = new Date();
-      if (now.getDate() !== date.getDate()) {
-        setDate(now);
-      }
-    }, 60000);
-    return () => clearInterval(timer);
-  }, [date]);
+const FIXED_HOLIDAYS = [
+  { month: 1, day: 1, zh: '元旦', en: 'New Year' },
+  { month: 2, day: 14, zh: '情人节', en: 'Valentine\'s Day' },
+  { month: 3, day: 8, zh: '妇女节', en: 'Women\'s Day' },
+  { month: 5, day: 1, zh: '劳动节', en: 'Labor Day' },
+  { month: 6, day: 1, zh: '儿童节', en: 'Children\'s Day' },
+  { month: 10, day: 1, zh: '国庆节', en: 'National Day' },
+  { month: 12, day: 24, zh: '平安夜', en: 'Christmas Eve' },
+  { month: 12, day: 25, zh: '圣诞节', en: 'Christmas' },
+] as const;
 
+function startOfLocalDay(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function getHoliday(date: Date, isZh: boolean) {
+  const month = date.getMonth() + 1;
   const day = date.getDate();
-  const month = useMemo(() => date.toLocaleDateString(locale, { month: 'short' }).toUpperCase(), [date, locale]);
-  const monthLong = useMemo(() => date.toLocaleDateString(locale, { month: 'long' }), [date, locale]);
-  const weekday = useMemo(() => date.toLocaleDateString(locale, { weekday: 'long' }), [date, locale]);
-  const weekdayShort = useMemo(() => date.toLocaleDateString(locale, { weekday: 'short' }).toUpperCase(), [date, locale]);
+  const match = FIXED_HOLIDAYS.find((item) => item.month === month && item.day === day);
+  return match ? (isZh ? match.zh : match.en) : null;
+}
+
+function getSolarTerm(date: Date, isZh: boolean) {
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  const match = SOLAR_TERMS.find((item) => item.month === month && item.day === day);
+  return match ? (isZh ? match.zh : match.en) : null;
+}
+
+function getUpcomingSolarTerm(date: Date, isZh: boolean) {
+  const today = startOfLocalDay(date).getTime();
   const year = date.getFullYear();
 
-  // Determine theme color: Configured > Random by Day > Default
+  const candidates = [year, year + 1]
+    .flatMap((candidateYear) =>
+      SOLAR_TERMS.map((item) => ({
+        label: isZh ? item.zh : item.en,
+        date: new Date(candidateYear, item.month - 1, item.day),
+      }))
+    )
+    .filter((item) => startOfLocalDay(item.date).getTime() >= today)
+    .sort((a, b) => a.date.getTime() - b.date.getTime());
+
+  const next = candidates[0];
+  if (!next) return null;
+
+  const diffDays = Math.round(
+    (startOfLocalDay(next.date).getTime() - today) / (1000 * 60 * 60 * 24)
+  );
+
+  return {
+    label: next.label,
+    diffDays,
+  };
+}
+
+const DateWidget = React.memo(({ widget }: { widget: WidgetOfType<'date'> }) => {
+  const [date, setDate] = useState(() => new Date());
+  const locale = useLocale();
+  const isZh = locale.startsWith('zh');
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setDate(new Date());
+    }, 60000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const day = date.getDate();
+  const paddedDay = day.toString().padStart(2, '0');
+  const dayLabel = String(day);
+  const month = useMemo(
+    () => new Intl.DateTimeFormat('en-US', { month: 'short' }).format(date).toUpperCase(),
+    [date]
+  );
+  const monthLabel = isZh ? `${date.getMonth() + 1}月` : month;
+  const weekdayShort = useMemo(
+    () => date.toLocaleDateString(locale, { weekday: 'short' }),
+    [date, locale]
+  );
+  const year = date.getFullYear();
+
+  const start = new Date(date.getFullYear(), 0, 0);
+  const diff =
+    date.getTime() -
+    start.getTime() +
+    (start.getTimezoneOffset() - date.getTimezoneOffset()) * 60 * 1000;
+  const oneDay = 1000 * 60 * 60 * 24;
+  const dayOfYear = Math.floor(diff / oneDay);
+
   const themeColor = useMemo(() => {
     if (widget.config?.color) {
       return widget.config.color;
     }
-    // Generate a pseudo-random index based on the day of the year to ensure consistency across renders/refreshes for the same day
-    const start = new Date(date.getFullYear(), 0, 0);
-    const diff = (date.getTime() - start.getTime()) + ((start.getTimezoneOffset() - date.getTimezoneOffset()) * 60 * 1000);
-    const oneDay = 1000 * 60 * 60 * 24;
-    const dayOfYear = Math.floor(diff / oneDay);
-    
-    // Use the day of year to pick a color
+
     return RANDOM_PALETTE[dayOfYear % RANDOM_PALETTE.length];
-  }, [widget.config?.color, date]);
+  }, [widget.config?.color, dayOfYear]);
 
-  // Size helpers
   const { w, h } = widget.size || { w: 1, h: 1 };
-  const isSmall = w === 1 && h === 1;
-  const isWide = w >= 2;
-  const isLarge = w >= 2 && h >= 2;
+  const isCompact = w === 1 && h === 1;
+  const isWideDateCard = w >= 2 && h === 1;
+  const holidayLabel = useMemo(() => getHoliday(date, isZh), [date, isZh]);
+  const solarTermLabel = useMemo(() => getSolarTerm(date, isZh), [date, isZh]);
+  const upcomingSolarTerm = useMemo(() => getUpcomingSolarTerm(date, isZh), [date, isZh]);
+  const primaryNote = holidayLabel ?? solarTermLabel;
+  const dateDisplay = `${year}.${String(date.getMonth() + 1).padStart(2, '0')}.${paddedDay}`;
+  const upcomingText = upcomingSolarTerm
+    ? isZh
+      ? `${upcomingSolarTerm.label} · ${upcomingSolarTerm.diffDays === 0 ? '今天' : `${upcomingSolarTerm.diffDays} 天后`}`
+      : `${upcomingSolarTerm.label} · ${upcomingSolarTerm.diffDays === 0 ? 'Today' : `In ${upcomingSolarTerm.diffDays}d`}`
+    : null;
+  const fallbackUpcomingTitle = isZh ? '下一节气' : 'Next';
+  const fallbackUpcomingValue = upcomingText ?? (isZh ? '今天没有特别安排' : 'Nothing special today');
+  const countdownTitle = upcomingSolarTerm?.label ?? fallbackUpcomingTitle;
+  const countdownValue = upcomingSolarTerm
+    ? isZh
+      ? upcomingSolarTerm.diffDays === 0
+        ? '今天'
+        : `${upcomingSolarTerm.diffDays}天后`
+      : upcomingSolarTerm.diffDays === 0
+        ? 'Today'
+        : `In ${upcomingSolarTerm.diffDays}d`
+    : fallbackUpcomingValue;
 
-  // Style Variants
-  const renderClassic = () => (
-    <div className="flex flex-col h-full w-full bg-white relative overflow-hidden group select-none shadow-sm rounded-xl font-serif">
-       {/* Header Section */}
-       <div 
-         className={`${isSmall ? 'h-[25%]' : 'h-[20%]'} w-full flex items-center justify-center relative overflow-hidden`}
-         style={{ backgroundColor: themeColor }}
-       >
-         <div className="absolute inset-0 bg-black/5"></div>
-         <span className={`text-white font-bold tracking-widest ${isSmall ? 'text-xs' : 'text-sm'} z-10 drop-shadow-sm uppercase`}>
-           {month}
-         </span>
-       </div>
+  if (isWideDateCard) {
+    return (
+      <div className="relative flex h-full w-full overflow-hidden bg-[#fafaf8] text-slate-800 shadow-[0_4px_12px_rgba(15,23,42,0.03)]">
+        <div className="absolute inset-0 rounded-[inherit] shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]" />
+        <div className="absolute inset-0 rounded-[inherit] ring-1 ring-black/[0.03]" />
 
-       {/* Body Section */}
-       <div className="flex-1 flex flex-col items-center justify-center bg-white relative">
-         <span 
-           className={`${isSmall ? 'text-6xl' : 'text-8xl'} font-black leading-none tracking-tighter mb-1`}
-           style={{ color: '#1f2937' }}
-         >
-           {day}
-         </span>
-         
-         <span className={`${isSmall ? 'text-xs' : 'text-sm'} font-semibold text-gray-400 uppercase tracking-wide`}>
-           {weekday}
-         </span>
-
-         <span className="absolute bottom-1.5 right-2 text-[10px] text-gray-300 font-medium opacity-0 group-hover:opacity-100 transition-opacity font-sans">
-           {year}
-         </span>
-       </div>
-    </div>
-  );
-
-  const renderMinimal = () => (
-    <div className="flex flex-col h-full w-full bg-white relative overflow-hidden select-none shadow-sm rounded-xl p-3 font-outfit">
-       <div className="flex-1 flex flex-row items-center justify-between">
-          <span 
-            className={`${isSmall ? 'text-6xl' : 'text-8xl'} font-bold leading-none tracking-tighter`}
-            style={{ color: '#1f2937' }}
-          >
-            {day}
-          </span>
-          <div className="flex flex-col items-end justify-center space-y-1 h-full pt-1">
-            <span 
-              className={`${isSmall ? 'text-xs' : 'text-sm'} font-bold text-gray-900 uppercase tracking-wider`} 
-              style={{ writingMode: 'vertical-rl' }}
-            >
-              {monthLong}
-            </span>
-             <span 
-               className={`${isSmall ? 'text-[10px]' : 'text-xs'} font-medium text-gray-400 uppercase tracking-wide`} 
-               style={{ writingMode: 'vertical-rl' }}
-             >
-              {weekdayShort}
-            </span>
+        <div className="grid h-full w-full grid-cols-[1.58fr_0.92fr]">
+          <div className="flex h-full flex-col border-r border-black/[0.03] px-5 py-4">
+            <div className="flex items-center justify-between gap-2.5">
+              <div className="flex items-center gap-1.5">
+                <span
+                  className="h-px w-3 shrink-0 rounded-full"
+                  style={{ backgroundColor: `${themeColor}55` }}
+                />
+                <div
+                  className="text-[0.6rem] font-medium uppercase tracking-[0.16em]"
+                  style={{ color: `${themeColor}aa` }}
+                >
+                  {monthLabel}
+                </div>
+              </div>
+              <div className="text-[0.6rem] font-medium tracking-[0.01em] text-[#55606a]">
+                {weekdayShort}
+              </div>
+            </div>
+            <div className="flex min-h-0 flex-1 items-center justify-center">
+              <div className="flex flex-col items-center">
+                <div
+                  className="text-[4.35rem] font-semibold text-[#2d3338]"
+                  style={{
+                    fontFamily: 'var(--font-slabo)',
+                    lineHeight: 0.84,
+                    letterSpacing: '-0.055em',
+                    fontVariantNumeric: 'lining-nums tabular-nums',
+                  }}
+                >
+                  {dayLabel}
+                </div>
+              </div>
+            </div>
           </div>
-       </div>
-       <span className="absolute top-2 right-3 text-[10px] text-gray-300 font-bold">
-         {year}
-       </span>
-    </div>
-  );
 
-  const renderGlass = () => (
-    <div 
-      className="flex flex-col h-full w-full relative overflow-hidden select-none shadow-sm rounded-xl font-outfit"
-      style={{ 
-        background: `linear-gradient(135deg, ${themeColor}80 0%, ${themeColor} 100%)`
-      }}
-    >
-      {/* Glass Overlay */}
-      <div className="absolute inset-0 backdrop-blur-sm bg-white/10"></div>
-      
-      {/* Decorative Circles */}
-      <div className="absolute -top-10 -left-10 w-32 h-32 bg-white/20 rounded-full blur-xl"></div>
-      <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-black/10 rounded-full blur-xl"></div>
+          <div className="flex min-h-0 h-full flex-col px-4 py-4">
+            <div className="space-y-1">
+              <div className="text-[0.58rem] font-medium uppercase tracking-[0.18em] text-[#98a0a8]">
+                {isZh ? '日期' : 'Date'}
+              </div>
+              <div className="text-[0.9rem] font-medium text-[#39424a]">
+                {dateDisplay}
+              </div>
+            </div>
 
-      <div className="relative z-10 flex flex-col h-full p-3 text-white">
-        <div className="flex justify-between items-start">
-           <span className={`${isSmall ? 'text-sm' : 'text-lg'} font-bold uppercase tracking-widest opacity-90 font-serif`}>{month}</span>
-           <span className="text-xs font-medium opacity-60">{year}</span>
+            <div className="mt-3.5 space-y-1">
+              <div className="text-[0.58rem] font-medium uppercase tracking-[0.18em] text-[#98a0a8]">
+                {isZh ? '今日' : 'Today'}
+              </div>
+              <div className="line-clamp-1 text-[0.96rem] font-semibold text-[#2f3437]">
+                {primaryNote ?? (isZh ? '无节日' : 'No Holiday')}
+              </div>
+            </div>
+
+            <div className="mt-3.5 space-y-1">
+              <div className="text-[0.58rem] font-medium tracking-[0.02em] text-[#98a0a8]">
+                {countdownTitle}
+              </div>
+              <div className="line-clamp-1 text-[0.76rem] font-medium text-[#6d7680]">
+                {countdownValue}
+              </div>
+            </div>
+          </div>
         </div>
-        
-        <div className="flex-1 flex items-center justify-center">
-           <span className={`${isSmall ? 'text-6xl' : 'text-8xl'} font-bold tracking-tighter drop-shadow-lg font-serif`}>
-             {day}
-           </span>
+      </div>
+    );
+  }
+
+  if (isCompact) {
+    return (
+      <div className="relative flex h-full w-full flex-col overflow-hidden bg-[#fafaf8] text-slate-800 shadow-[0_4px_12px_rgba(15,23,42,0.03)]">
+        <div className="absolute inset-0 rounded-[inherit] shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]" />
+        <div className="absolute inset-0 rounded-[inherit] ring-1 ring-black/[0.03]" />
+        <div className="flex h-full flex-col px-4 py-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span
+                className="h-px w-4 shrink-0 rounded-full"
+                style={{ backgroundColor: `${themeColor}55` }}
+              />
+              <div
+                className="text-[0.64rem] font-medium uppercase tracking-[0.2em]"
+                style={{ color: `${themeColor}aa` }}
+              >
+                {monthLabel}
+              </div>
+            </div>
+            <div className="text-[0.64rem] font-medium tracking-[0.02em] text-[#55606a]">
+              {weekdayShort}
+            </div>
+          </div>
+          <div className="flex min-h-0 flex-1 items-center justify-center">
+            <div className="flex flex-col items-center">
+              <div
+                className="text-[4.05rem] font-semibold text-[#2d3338]"
+                style={{
+                  fontFamily: 'var(--font-slabo)',
+                  lineHeight: 0.84,
+                  letterSpacing: '-0.06em',
+                  fontVariantNumeric: 'lining-nums tabular-nums',
+                }}
+              >
+                {dayLabel}
+              </div>
+            </div>
+          </div>
         </div>
-        
-        <div className="text-center">
-           <span className={`${isSmall ? 'text-[10px]' : 'text-sm'} font-medium uppercase tracking-wide opacity-80 bg-black/10 px-2 py-0.5 rounded-full backdrop-blur-md`}>
-             {weekday}
-           </span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative flex h-full w-full overflow-hidden bg-[#fafaf8] text-slate-800 shadow-[0_4px_12px_rgba(15,23,42,0.03)]">
+      <div className="absolute inset-0 rounded-[inherit] shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]" />
+      <div className="absolute inset-0 rounded-[inherit] ring-1 ring-black/[0.03]" />
+      <div className="grid h-full w-full grid-cols-[1.55fr_0.95fr]">
+        <div className="flex h-full flex-col border-r border-black/[0.03] px-5 py-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span
+                className="h-px w-4 shrink-0 rounded-full"
+                style={{ backgroundColor: `${themeColor}55` }}
+              />
+              <div
+                className="text-[0.64rem] font-medium uppercase tracking-[0.2em]"
+                style={{ color: `${themeColor}aa` }}
+              >
+                {monthLabel}
+              </div>
+            </div>
+            <div className="text-[0.64rem] font-medium tracking-[0.02em] text-[#55606a]">
+              {weekdayShort}
+            </div>
+          </div>
+          <div className="flex min-h-0 flex-1 items-center justify-center">
+            <div className="flex flex-col items-center">
+              <div
+                className="text-[5rem] font-semibold text-[#2d3338]"
+                style={{
+                  fontFamily: 'var(--font-slabo)',
+                  lineHeight: 0.84,
+                  letterSpacing: '-0.06em',
+                  fontVariantNumeric: 'lining-nums tabular-nums',
+                }}
+              >
+                {dayLabel}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex min-h-0 h-full flex-col px-4 py-4">
+          <div className="space-y-1">
+            <div className="text-[0.58rem] font-medium uppercase tracking-[0.18em] text-[#98a0a8]">
+              {isZh ? '日期' : 'Date'}
+            </div>
+            <div className="text-[0.92rem] font-medium text-[#39424a]">
+              {dateDisplay}
+            </div>
+          </div>
+
+          <div className="mt-4 space-y-1">
+            <div className="text-[0.58rem] font-medium uppercase tracking-[0.18em] text-[#98a0a8]">
+              {isZh ? '今日' : 'Today'}
+            </div>
+            <div className="line-clamp-1 text-[0.98rem] font-semibold text-[#2f3437]">
+              {primaryNote ?? (isZh ? '无节日' : 'No Holiday')}
+            </div>
+          </div>
+
+          <div className="mt-4 space-y-1">
+            <div className="text-[0.58rem] font-medium tracking-[0.02em] text-[#98a0a8]">
+              {countdownTitle}
+            </div>
+            <div className="line-clamp-1 text-[0.76rem] font-medium text-[#6d7680]">
+              {countdownValue}
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
-
-  const renderBauhaus = () => (
-    <div className="flex h-full w-full bg-white relative overflow-hidden select-none shadow-sm rounded-xl font-bebas">
-       {/* Left Section: Color Block */}
-       <div 
-         className="w-1/3 h-full flex items-center justify-center relative"
-         style={{ backgroundColor: themeColor }}
-       >
-         <span 
-           className={`${isSmall ? 'text-xl' : 'text-3xl'} font-bold text-white tracking-widest`}
-           style={{ writingMode: 'vertical-rl' }}
-         >
-           {month}
-         </span>
-         {/* Decorative Circle */}
-         <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-4 h-4 bg-white/20 rounded-full"></div>
-       </div>
-
-       {/* Right Section: Dark or White */}
-       <div className="w-2/3 h-full bg-[#1a1a1a] flex flex-col items-center justify-center relative">
-         <span className={`${isSmall ? 'text-6xl' : 'text-8xl'} font-bold text-white leading-none tracking-wider`}>
-           {day}
-         </span>
-         <span 
-            className={`absolute bottom-2 right-2 ${isSmall ? 'text-[10px]' : 'text-xs'} font-bold uppercase tracking-wider font-sans`}
-            style={{ color: themeColor }}
-         >
-           {weekdayShort}
-         </span>
-         
-         {/* Decorative Triangle */}
-         <div 
-           className="absolute top-0 right-0 w-0 h-0 border-l-transparent"
-           style={{ 
-             borderTopColor: themeColor,
-             borderLeftWidth: isSmall ? '30px' : '40px',
-             borderTopWidth: isSmall ? '30px' : '40px'
-           }}
-         ></div>
-       </div>
-    </div>
-  );
-
-  const style = widget.config?.style || 'classic';
-
-  switch (style) {
-    case 'minimal': return renderMinimal();
-    case 'glass': return renderGlass();
-    case 'bauhaus': return renderBauhaus();
-    default: return renderClassic();
-  }
 });
 
 DateWidget.displayName = 'DateWidget';

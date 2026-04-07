@@ -10,12 +10,12 @@ export default function DataSyncer() {
 
   useEffect(() => {
     // Initial fetch
-    const fetchAll = () => {
+    const fetchAll = (forceSettings = false) => {
       fetchWidgets();
-      fetchSettings();
+      fetchSettings(forceSettings);
     };
 
-    fetchAll();
+    fetchAll(true);
 
     // Polling logic
     let interval: NodeJS.Timeout | null = null;
@@ -38,7 +38,7 @@ export default function DataSyncer() {
       if (document.hidden) {
         stopPolling();
       } else {
-        fetchAll(); // Immediate fetch on resume
+        fetchAll(true); // Immediate fetch on resume
         startPolling();
       }
     };

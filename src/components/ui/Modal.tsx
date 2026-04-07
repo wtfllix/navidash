@@ -8,9 +8,19 @@ interface ModalProps {
   title: string;
   children: React.ReactNode;
   className?: string;
+  bodyClassName?: string;
+  headerClassName?: string;
 }
 
-export default function Modal({ isOpen, onClose, title, children, className }: ModalProps) {
+export default function Modal({
+  isOpen,
+  onClose,
+  title,
+  children,
+  className,
+  bodyClassName,
+  headerClassName,
+}: ModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -36,11 +46,16 @@ export default function Modal({ isOpen, onClose, title, children, className }: M
       <div 
         ref={modalRef}
         className={cn(
-          "bg-white rounded-xl shadow-xl w-full max-w-md flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200",
+          'bg-white rounded-xl shadow-xl w-full max-w-md flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200',
           className
         )}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
+        <div
+          className={cn(
+            'flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0',
+            headerClassName
+          )}
+        >
           <h3 className="font-semibold text-lg text-gray-800">{title}</h3>
           <button 
             onClick={onClose}
@@ -49,7 +64,7 @@ export default function Modal({ isOpen, onClose, title, children, className }: M
             <X size={20} />
           </button>
         </div>
-        <div className="p-6 overflow-y-auto">
+        <div className={cn('p-6 overflow-y-auto', bodyClassName)}>
           {children}
         </div>
       </div>

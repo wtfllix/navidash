@@ -1,13 +1,26 @@
-import React, { useRef, useState, useTransition } from 'react';
+'use client';
+
+import React, { useEffect, useMemo, useRef, useState, useTransition } from 'react';
+import {
+  AlertTriangle,
+  Check,
+  CloudSun,
+  Download,
+  FileJson,
+  Globe,
+  Palette,
+  RefreshCw,
+  Save,
+  Upload,
+} from 'lucide-react';
+import { useLocale, useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
-import Modal from '@/components/ui/Modal';
-import { useWidgetStore } from '@/store/useWidgetStore';
-import { useToastStore } from '@/store/useToastStore';
-import { useSettingsStore } from '@/store/useSettingsStore';
-import { Download, Upload, RefreshCw, AlertTriangle, FileJson, Globe, Palette, Image as ImageIcon, Save } from 'lucide-react';
-import { Widget } from '@/types';
-import { useTranslations, useLocale } from 'next-intl';
 import { usePathname, useRouter } from '@/navigation';
+import Modal from '@/components/ui/Modal';
+import { useSettingsStore } from '@/store/useSettingsStore';
+import { useToastStore } from '@/store/useToastStore';
+import { useWidgetStore } from '@/store/useWidgetStore';
+import { PRESET_CITIES, parseOptionalNumber, trimToUndefined } from '@/components/widgets/editors/shared';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -16,32 +29,137 @@ interface SettingsModalProps {
 
 export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const {
-    backgroundImage, setBackgroundImage,
-    backgroundBlur, setBackgroundBlur,
-    backgroundOpacity, setBackgroundOpacity,
-    backgroundSize, setBackgroundSize,
-    backgroundRepeat, setBackgroundRepeat,
-    themeColor, setThemeColor,
-    customFavicon, setCustomFavicon,
-    customTitle, setCustomTitle,
+    backgroundImage,
+    setBackgroundImage,
+    backgroundBlur,
+    setBackgroundBlur,
+    backgroundOpacity,
+    setBackgroundOpacity,
+    backgroundSize,
+    setBackgroundSize,
+    backgroundRepeat,
+    setBackgroundRepeat,
+    themeColor,
+    setThemeColor,
+    customFavicon,
+    setCustomFavicon,
+    customTitle,
+    setCustomTitle,
     setLanguage,
-    resetSettings
+    weatherApiKey,
+    setWeatherApiKey,
+    weatherCity,
+    setWeatherCity,
+    weatherLat,
+    setWeatherLat,
+    weatherLon,
+    setWeatherLon,
+    weatherSub,
+    setWeatherSub,
+    weatherCustomHost,
+    setWeatherCustomHost,
+    weatherAuthType,
+    setWeatherAuthType,
+    fetchSettings,
   } = useSettingsStore();
   const { widgets, setWidgets } = useWidgetStore();
   const { addToast } = useToastStore();
 
-  // Internationalization
   const t = useTranslations('SettingsModal');
   const tGeneral = useTranslations('General');
+  const tWidgets = useTranslations('Widgets');
   const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isResetting, setIsResetting] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
+  const [isSavingSettingsNow, setIsSavingSettingsNow] = useState(false);
+  const [citySearch, setCitySearch] = useState(weatherCity);
+  const [showCityList, setShowCityList] = useState(false);
+  const [activeSection, setActiveSection] = useState<'appearance' | 'language' | 'weather' | 'data'>(
+    'appearance'
+  );
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+
+  const faviconPreview = customFavicon.trim() || '/favicon.svg';
+
+  const backgroundPresets = [
+    {
+      id: 'dots',
+      label: t('preset_dots'),
+      value: 'radial-gradient(#d1d5db 2px, transparent 2px)',
+      size: '24px 24px',
+      repeat: 'repeat',
+    },
+    {
+      id: 'grid',
+      label: t('preset_grid'),
+      value:
+        'linear-gradient(rgba(148,163,184,0.18) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,0.18) 1px, transparent 1px)',
+      size: '32px 32px',
+      repeat: 'repeat',
+    },
+    {
+      id: 'glow',
+      label: t('preset_glow'),
+      value:
+        'radial-gradient(circle at top left, rgba(59,130,246,0.22), transparent 35%), radial-gradient(circle at bottom right, rgba(16,185,129,0.18), transparent 28%), linear-gradient(180deg, rgba(248,250,252,0.9) 0%, rgba(241,245,249,0.9) 100%)',
+      size: 'cover',
+      repeat: 'no-repeat',
+    },
+    {
+      id: 'none',
+      label: t('preset_none'),
+      value: 'linear-gradient(rgba(255,255,255,0.92), rgba(255,255,255,0.92))',
+      size: 'cover',
+      repeat: 'no-repeat',
+    },
+  ];
+
+  const COLOR_OPTIONS = [
+    { label: 'Blue', color: '#3b82f6' },
+    { label: 'Teal', color: '#0f766e' },
+    { label: 'Amber', color: '#f59e0b' },
+    { label: 'Orange', color: '#f97316' },
+    { label: 'Green', color: '#22c55e' },
+    { label: 'Rose', color: '#f43f5e' },
+    { label: 'Red', color: '#ef4444' },
+    { label: 'Slate', color: '#64748b' },
+  ];
+
+  const applyBackgroundPreset = (value: string, size: string, repeat: string) => {
+    setBackgroundImage(value);
+    setBackgroundSize(size);
+    setBackgroundRepeat(repeat);
+  };
+
+  useEffect(() => {
+    if (!showCityList) {
+      setCitySearch(weatherCity);
+    }
+  }, [weatherCity, showCityList]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    fetchSettings(true);
+  }, [fetchSettings, isOpen]);
+
+  const filteredCities = useMemo(
+    () =>
+      PRESET_CITIES.filter((city) =>
+        city.name.toLowerCase().includes((citySearch || weatherCity).toLowerCase())
+      ).slice(0, 16),
+    [citySearch, weatherCity]
+  );
+
+  const applyWeatherCityPreset = (name: string, lat: number, lon: number) => {
+    setWeatherCity(name);
+    setWeatherLat(lat);
+    setWeatherLon(lon);
+    setCitySearch(name);
+    setShowCityList(false);
+  };
 
   const handleLanguageChange = (newLocale: string) => {
     setLanguage(newLocale);
@@ -51,7 +169,6 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     });
   };
 
-  // Helper to trigger download
   const handleExport = () => {
     const data = {
       widgets,
@@ -63,20 +180,27 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         backgroundBlur,
         backgroundOpacity,
         backgroundSize,
-        backgroundRepeat
+        backgroundRepeat,
+        weatherApiKey,
+        weatherCity,
+        weatherLat,
+        weatherLon,
+        weatherSub,
+        weatherCustomHost,
+        weatherAuthType,
       },
       exportDate: new Date().toISOString(),
-      version: '1.0'
+      version: '1.0',
     };
 
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `navidash-backup-${new Date().toISOString().slice(0, 10)}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `navidash-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
     URL.revokeObjectURL(url);
 
     addToast(t('backup_exported'), 'success');
@@ -101,15 +225,11 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         }
 
         if (data.settings) {
-          if (typeof data.settings.themeColor === 'string') {
-            setThemeColor(data.settings.themeColor);
-          }
+          if (typeof data.settings.themeColor === 'string') setThemeColor(data.settings.themeColor);
           if (typeof data.settings.customFavicon === 'string') {
             setCustomFavicon(data.settings.customFavicon);
           }
-          if (typeof data.settings.customTitle === 'string') {
-            setCustomTitle(data.settings.customTitle);
-          }
+          if (typeof data.settings.customTitle === 'string') setCustomTitle(data.settings.customTitle);
           if (typeof data.settings.backgroundImage === 'string') {
             setBackgroundImage(data.settings.backgroundImage);
           }
@@ -125,6 +245,27 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           if (typeof data.settings.backgroundRepeat === 'string') {
             setBackgroundRepeat(data.settings.backgroundRepeat);
           }
+          if (typeof data.settings.weatherApiKey === 'string') {
+            setWeatherApiKey(data.settings.weatherApiKey);
+          }
+          if (typeof data.settings.weatherCity === 'string') {
+            setWeatherCity(data.settings.weatherCity);
+          }
+          if (typeof data.settings.weatherLat === 'number') {
+            setWeatherLat(data.settings.weatherLat);
+          }
+          if (typeof data.settings.weatherLon === 'number') {
+            setWeatherLon(data.settings.weatherLon);
+          }
+          if (typeof data.settings.weatherSub === 'string') {
+            setWeatherSub(data.settings.weatherSub);
+          }
+          if (typeof data.settings.weatherCustomHost === 'string') {
+            setWeatherCustomHost(data.settings.weatherCustomHost);
+          }
+          if (data.settings.weatherAuthType === 'param' || data.settings.weatherAuthType === 'bearer') {
+            setWeatherAuthType(data.settings.weatherAuthType);
+          }
         }
 
         addToast(t('config_restored'), 'success');
@@ -134,6 +275,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         addToast(t('import_failed'), 'error');
       }
     };
+
     reader.readAsText(file);
     e.target.value = '';
   };
@@ -143,12 +285,14 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       setIsResetting(true);
       return;
     }
+
     localStorage.clear();
     window.location.reload();
   };
 
-  const handleSync = async () => {
-    setIsSyncing(true);
+  const handleSaveAndClose = async () => {
+    setIsSavingSettingsNow(true);
+
     try {
       const settings = {
         themeColor,
@@ -159,330 +303,660 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         backgroundOpacity,
         backgroundSize,
         backgroundRepeat,
-        language: locale
+        language: locale,
+        weatherApiKey,
+        weatherCity,
+        weatherLat,
+        weatherLon,
+        weatherSub,
+        weatherCustomHost,
+        weatherAuthType,
       };
 
-      // Execute all sync requests in parallel
-      await Promise.all([
-        // 1. Sync Settings
-        fetch('/api/settings', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(settings),
-        }).then(res => {
-          if (!res.ok) throw new Error('Failed to sync settings');
-          return res;
-        }),
+      const res = await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings),
+      });
 
-        // 2. Sync Widgets
-        fetch('/api/widgets', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(widgets),
-        }).then(res => {
-          if (!res.ok) throw new Error('Failed to sync widgets');
-          return res;
-        })
-      ]);
+      if (!res.ok) {
+        throw new Error('Failed to save settings');
+      }
 
-      addToast(t('sync_success') || 'All data synced successfully', 'success');
+      addToast(t('settings_saved'), 'success');
+      onClose();
     } catch (error) {
-      console.error('Sync failed:', error);
-      addToast(t('sync_error') || 'Sync failed', 'error');
+      console.error('Save settings failed:', error);
+      addToast(t('sync_error'), 'error');
     } finally {
-      setIsSyncing(false);
+      setIsSavingSettingsNow(false);
     }
   };
 
-  const COLOR_OPTIONS = [
-    { label: 'Blue', color: '#3b82f6' },
-    { label: 'Purple', color: '#a855f7' },
-    { label: 'Pink', color: '#ec4899' },
-    { label: 'Orange', color: '#f97316' },
-    { label: 'Green', color: '#22c55e' },
-    { label: 'Red', color: '#ef4444' },
-    { label: 'Slate', color: '#64748b' },
+  const sections = [
+    { id: 'appearance' as const, label: t('appearance'), icon: Palette },
+    { id: 'language' as const, label: t('language'), icon: Globe },
+    { id: 'weather' as const, label: t('weather_settings'), icon: CloudSun },
+    { id: 'data' as const, label: t('data_tools'), icon: FileJson },
   ];
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={t('title')}>
-      <div className="space-y-6">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={t('title')}
+      className="max-h-none h-[calc(100vh-12px)] max-w-[min(1680px,calc(100vw-12px))] overflow-hidden rounded-[24px] border border-slate-200/80 shadow-2xl shadow-slate-900/10"
+      headerClassName="border-b border-slate-200/80 bg-white/90 backdrop-blur-xl px-6 py-4"
+      bodyClassName="p-0 overflow-hidden"
+    >
+      <div className="flex h-full min-h-0 flex-col bg-white">
+        <div className="border-b border-slate-200/80 bg-slate-50/70 px-4 py-3">
+          <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap gap-2">
+              {sections.map((section) => {
+                const Icon = section.icon;
+                const selected = activeSection === section.id;
 
-        {/* Appearance Settings */}
-        <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-          <h3 className="text-sm font-semibold text-gray-900 mb-2 flex items-center">
-            <Palette size={16} className="mr-2" />
-            {t('appearance') || '外观设置'}
-          </h3>
-          <p className="text-sm text-gray-500 mb-4">
-            {t('appearance_desc') || '自定义主区域的背景风格。'}
-          </p>
-
-          <div className="space-y-6">
-            {/* Theme Color */}
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-gray-700 block">
-                {t('theme_color') || '主题色'}
-              </label>
-              <div className="flex flex-wrap gap-3">
-                {COLOR_OPTIONS.map((option) => (
+                return (
                   <button
-                    key={option.color}
-                    onClick={() => setThemeColor(option.color)}
+                    key={section.id}
+                    type="button"
+                    onClick={() => setActiveSection(section.id)}
                     className={cn(
-                      "w-6 h-6 rounded-full transition-transform hover:scale-110 focus:outline-none ring-2 ring-offset-1",
-                      themeColor === option.color ? "ring-gray-400 scale-110" : "ring-transparent"
+                      'inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm transition-colors',
+                      selected
+                        ? 'border-slate-900 bg-slate-900 text-white'
+                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-100'
                     )}
-                    style={{ backgroundColor: option.color }}
-                    title={option.label}
-                  />
-                ))}
-                <div className="relative group w-6 h-6">
-                  <input
-                    type="color"
-                    value={themeColor}
-                    onChange={(e) => setThemeColor(e.target.value)}
-                    className="w-full h-full rounded-full overflow-hidden border-0 p-0 cursor-pointer opacity-0 absolute inset-0 z-10"
-                  />
-                  <div className="w-full h-full rounded-full bg-gradient-to-br from-gray-100 to-gray-300 border border-gray-200 flex items-center justify-center text-[10px] text-gray-500 group-hover:bg-gray-200 transition-colors">
-                    +
+                  >
+                    <Icon size={15} />
+                    {section.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-500">
+                <Check size={14} />
+                {t('autosave_status')}
+            </div>
+          </div>
+          <div className="mx-auto mt-2 max-w-6xl">
+            <p className="text-xs leading-5 text-slate-500">{t('subtitle')}</p>
+          </div>
+        </div>
+
+        <div className="min-h-0 overflow-y-auto">
+          <div className="mx-auto flex max-w-6xl flex-col gap-4 p-4">
+            {activeSection === 'appearance' && (
+              <div className="rounded-3xl border border-slate-200 bg-slate-50/80 p-4 lg:p-5">
+                <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-slate-900">
+                  <Palette size={16} />
+                  <span>{t('appearance')}</span>
+                </div>
+
+                <div className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
+                  <div className="space-y-5">
+                    <div>
+                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                        {t('theme_color')}
+                      </label>
+                      <div className="flex flex-wrap gap-3">
+                        {COLOR_OPTIONS.map((option) => (
+                          <button
+                            key={option.color}
+                            type="button"
+                            onClick={() => setThemeColor(option.color)}
+                            className={cn(
+                              'h-8 w-8 rounded-full ring-2 ring-offset-2 ring-offset-white transition-transform hover:scale-110 focus:outline-none',
+                              themeColor === option.color ? 'scale-110 ring-slate-400' : 'ring-transparent'
+                            )}
+                            style={{ backgroundColor: option.color }}
+                            title={option.label}
+                            aria-label={option.label}
+                          />
+                        ))}
+                        <div className="group relative h-8 w-8">
+                          <input
+                            type="color"
+                            value={themeColor}
+                            onChange={(e) => setThemeColor(e.target.value)}
+                            className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
+                            aria-label={t('custom_color')}
+                          />
+                          <div className="flex h-full w-full items-center justify-center rounded-full border border-slate-200 bg-gradient-to-br from-slate-100 to-slate-300 text-[10px] text-slate-500 transition-colors group-hover:bg-slate-200">
+                            +
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid gap-4 lg:grid-cols-2">
+                      <div>
+                        <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                          {t('website_title')}
+                        </label>
+                        <input
+                          type="text"
+                          value={customTitle}
+                          onChange={(e) => setCustomTitle(e.target.value)}
+                          placeholder="Navidash"
+                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition-all focus:border-slate-300 focus:ring-4 focus:ring-[rgba(var(--primary-color),0.12)]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                          {t('custom_favicon')}
+                        </label>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={customFavicon}
+                            onChange={(e) => setCustomFavicon(e.target.value)}
+                            placeholder="/favicon.svg"
+                            className="min-w-0 flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition-all focus:border-slate-300 focus:ring-4 focus:ring-[rgba(var(--primary-color),0.12)]"
+                          />
+                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white p-2 shadow-sm">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={faviconPreview}
+                              alt="favicon preview"
+                              className="h-full w-full object-contain"
+                              onError={(e) => {
+                                e.currentTarget.src = '/favicon.svg';
+                              }}
+                            />
+                          </div>
+                        </div>
+                        <p className="mt-2 text-xs text-slate-400">{t('favicon_desc')}</p>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                        {t('image_url')}
+                      </label>
+                      <input
+                        type="text"
+                        value={backgroundImage}
+                        onChange={(e) => {
+                          setBackgroundImage(e.target.value);
+                          setBackgroundSize('cover');
+                          setBackgroundRepeat('no-repeat');
+                        }}
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition-all focus:border-slate-300 focus:ring-4 focus:ring-[rgba(var(--primary-color),0.12)]"
+                        placeholder="https://example.com/image.jpg"
+                      />
+                      <p className="mt-2 text-xs text-slate-400">{t('image_url_desc')}</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-5">
+                    <div>
+                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                        {t('background_presets')}
+                      </label>
+                      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
+                        {backgroundPresets.map((preset) => {
+                          const selected =
+                            backgroundImage === preset.value &&
+                            backgroundSize === preset.size &&
+                            backgroundRepeat === preset.repeat;
+
+                          return (
+                            <button
+                              key={preset.id}
+                              type="button"
+                              onClick={() =>
+                                applyBackgroundPreset(preset.value, preset.size, preset.repeat)
+                              }
+                              className={cn(
+                                'rounded-xl border px-3 py-2.5 text-left transition-colors',
+                                selected
+                                  ? 'border-slate-900 bg-slate-900 text-white'
+                                  : 'border-slate-200 bg-transparent text-slate-700 hover:border-slate-300 hover:bg-slate-100/70'
+                              )}
+                            >
+                              <span className="block text-sm font-medium">{preset.label}</span>
+                              <span
+                                className={cn(
+                                  'mt-1 block text-xs',
+                                  selected ? 'text-white/70' : 'text-slate-400'
+                                )}
+                              >
+                                {preset.size} / {preset.repeat}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-1">
+                      <div>
+                        <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                          {t('fill_mode')}
+                        </label>
+                        <div className="grid grid-cols-3 gap-2">
+                          {['cover', 'contain', 'auto'].map((value) => (
+                            <button
+                              key={value}
+                              type="button"
+                              onClick={() => setBackgroundSize(value)}
+                              className={cn(
+                                'rounded-2xl border px-3 py-2 text-sm transition-colors',
+                                backgroundSize === value
+                                  ? 'border-transparent bg-slate-900 text-white'
+                                  : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                              )}
+                            >
+                              {t(value)}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                          {t('repeat_mode')}
+                        </label>
+                        <div className="grid grid-cols-2 gap-2">
+                          {['no-repeat', 'repeat', 'repeat-x', 'repeat-y'].map((value) => (
+                            <button
+                              key={value}
+                              type="button"
+                              onClick={() => setBackgroundRepeat(value)}
+                              className={cn(
+                                'rounded-2xl border px-3 py-2 text-sm transition-colors',
+                                backgroundRepeat === value
+                                  ? 'border-transparent bg-slate-900 text-white'
+                                  : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                              )}
+                            >
+                              {t(value)}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-1">
+                      <div>
+                        <div className="mb-2 flex items-center justify-between">
+                          <label className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                            {t('blur')}
+                          </label>
+                          <span className="text-xs text-slate-500">{backgroundBlur}px</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0"
+                          max="20"
+                          step="1"
+                          value={backgroundBlur}
+                          onChange={(e) => setBackgroundBlur(Number(e.target.value))}
+                          className="w-full accent-[rgb(var(--primary-color))]"
+                        />
+                      </div>
+
+                      <div>
+                        <div className="mb-2 flex items-center justify-between">
+                          <label className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                            {t('opacity')}
+                          </label>
+                          <span className="text-xs text-slate-500">
+                            {Math.round(backgroundOpacity * 100)}%
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0"
+                          max="0.8"
+                          step="0.05"
+                          value={backgroundOpacity}
+                          onChange={(e) => setBackgroundOpacity(Number(e.target.value))}
+                          className="w-full accent-[rgb(var(--primary-color))]"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-
-            {/* Website Title */}
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-gray-700 block">
-                {t('website_title') || '网站标题'}
-              </label>
-              <input
-                type="text"
-                value={customTitle}
-                onChange={(e) => setCustomTitle(e.target.value)}
-                placeholder="Navidash"
-                className="w-full text-sm border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-              />
-            </div>
-
-            {/* Favicon */}
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-gray-700 block">
-                {t('custom_favicon') || '自定义 Favicon'}
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={customFavicon}
-                  onChange={(e) => setCustomFavicon(e.target.value)}
-                  placeholder="/favicon.svg"
-                  className="flex-1 text-sm border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                />
-                <div className="w-9 h-9 shrink-0 rounded border border-gray-200 bg-white flex items-center justify-center p-1.5">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={customFavicon} alt="icon" className="w-full h-full object-contain" onError={(e) => e.currentTarget.src = '/favicon.svg'} />
+            )}
+            {activeSection === 'language' && (
+              <div className="rounded-3xl border border-slate-200 bg-slate-50/80 p-4 lg:p-5">
+                <h3 className="mb-3 flex items-center text-sm font-semibold text-slate-900">
+                  <Globe size={16} className="mr-2" />
+                  {t('language')}
+                </h3>
+                <p className="mb-4 text-sm leading-6 text-slate-500">{t('language_desc')}</p>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { id: 'en', label: 'English', desc: t('language_en_desc') },
+                    { id: 'zh', label: '中文', desc: t('language_zh_desc') },
+                  ].map((item) => (
+                    <button
+                      key={item.id}
+                      disabled={isPending}
+                      onClick={() => handleLanguageChange(item.id)}
+                      className={cn(
+                        'inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition-colors',
+                        locale === item.id
+                          ? 'border-slate-900 bg-slate-900 text-white'
+                          : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50',
+                        isPending && 'cursor-not-allowed opacity-60'
+                      )}
+                      title={item.desc}
+                    >
+                      <span>{item.label}</span>
+                      {locale === item.id && <Check size={16} className="shrink-0" />}
+                    </button>
+                  ))}
                 </div>
               </div>
-              <p className="text-[10px] text-gray-400">
-                {t('favicon_desc') || '输入图片 URL 或使用默认的 /favicon.svg'}
-              </p>
-            </div>
+            )}
 
-            {/* Background Image */}
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-gray-700 block">
-                {t('image_url') || '背景图片链接'}
-              </label>
-              <input
-                type="text"
-                value={backgroundImage}
-                onChange={(e) => {
-                  setBackgroundImage(e.target.value);
-                  setBackgroundSize('cover');
-                  setBackgroundRepeat('no-repeat');
-                }}
-                className="w-full text-sm border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                placeholder="https://example.com/image.jpg"
-              />
-            </div>
+            {activeSection === 'weather' && (
+              <div className="rounded-3xl border border-slate-200 bg-slate-50/80 p-4 lg:p-5">
+                <h3 className="mb-3 flex items-center text-sm font-semibold text-slate-900">
+                  <CloudSun size={16} className="mr-2" />
+                  {t('weather_settings')}
+                </h3>
+                <p className="mb-5 text-sm leading-6 text-slate-500">{t('weather_settings_desc')}</p>
 
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <label className="text-xs font-medium text-gray-700">
-                  {t('blur') || '模糊程度'}
-                </label>
-                <span className="text-xs text-gray-500">{backgroundBlur}px</span>
+                <div className="space-y-5">
+                  <div className="grid gap-4 xl:grid-cols-3">
+                    <div>
+                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                        {tWidgets('api_key')}
+                      </label>
+                      <input
+                        type="text"
+                        value={weatherApiKey}
+                        onChange={(e) => setWeatherApiKey(e.target.value)}
+                        onBlur={(e) => setWeatherApiKey(trimToUndefined(e.target.value) ?? '')}
+                        placeholder={tWidgets('api_key_placeholder')}
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition-all focus:border-slate-300 focus:ring-4 focus:ring-[rgba(var(--primary-color),0.12)]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                        {tWidgets('sub_custom')}
+                      </label>
+                      <input
+                        type="text"
+                        value={weatherCustomHost}
+                        onChange={(e) => setWeatherCustomHost(e.target.value)}
+                        onBlur={(e) => setWeatherCustomHost(trimToUndefined(e.target.value) ?? '')}
+                        placeholder={tWidgets('custom_host_placeholder')}
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition-all focus:border-slate-300 focus:ring-4 focus:ring-[rgba(var(--primary-color),0.12)]"
+                      />
+                    </div>
+                  </div>
+                  <p className="-mt-1 text-xs text-slate-400">{t('weather_global_hint')}</p>
+
+                  <div className="grid gap-4 xl:grid-cols-[1.4fr_0.8fr]">
+                    <div>
+                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                        {tWidgets('city_name')}
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={showCityList ? citySearch : weatherCity}
+                          onChange={(e) => {
+                            const nextValue = e.target.value;
+                            setCitySearch(nextValue);
+                            setWeatherCity(nextValue);
+                            setShowCityList(true);
+                          }}
+                          onFocus={() => {
+                            setCitySearch(weatherCity);
+                            setShowCityList(true);
+                          }}
+                          onBlur={(e) => {
+                            window.setTimeout(() => {
+                              const normalized = trimToUndefined(e.target.value) ?? 'Beijing';
+                              const matched = PRESET_CITIES.find(
+                                (item) => item.name.toLowerCase() === normalized.toLowerCase()
+                              );
+                              setWeatherCity(matched?.name ?? normalized);
+                              if (matched) {
+                                setWeatherLat(matched.lat);
+                                setWeatherLon(matched.lon);
+                              }
+                              setShowCityList(false);
+                            }, 150);
+                          }}
+                          placeholder="Beijing"
+                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition-all focus:border-slate-300 focus:ring-4 focus:ring-[rgba(var(--primary-color),0.12)]"
+                        />
+
+                        {showCityList ? (
+                          <div className="absolute z-20 mt-2 max-h-64 w-full overflow-y-auto rounded-2xl border border-slate-200 bg-white p-1 shadow-xl shadow-slate-900/8">
+                            {filteredCities.length > 0 ? (
+                              filteredCities.map((item) => (
+                                <button
+                                  key={item.name}
+                                  type="button"
+                                  onMouseDown={(event) => event.preventDefault()}
+                                  onClick={() => applyWeatherCityPreset(item.name, item.lat, item.lon)}
+                                  className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm text-slate-700 transition-colors hover:bg-slate-50"
+                                >
+                                  <span className="font-medium">{item.name}</span>
+                                  <span className="text-xs text-slate-400">
+                                    {item.lat.toFixed(2)}, {item.lon.toFixed(2)}
+                                  </span>
+                                </button>
+                              ))
+                            ) : (
+                              <div className="px-3 py-3 text-sm text-slate-400">
+                                {tWidgets('no_city_matches')}
+                              </div>
+                            )}
+                          </div>
+                        ) : null}
+                      </div>
+
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {PRESET_CITIES.slice(0, 8).map((item) => (
+                          <button
+                            key={item.name}
+                            type="button"
+                            onClick={() => applyWeatherCityPreset(item.name, item.lat, item.lon)}
+                            className={cn(
+                              'rounded-full border px-3 py-1.5 text-xs transition-colors',
+                              weatherCity === item.name
+                                ? 'border-transparent bg-slate-900 text-white'
+                                : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                            )}
+                          >
+                            {item.name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                        {tWidgets('auth_type')}
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[
+                          { value: 'param', label: tWidgets('auth_param') },
+                          { value: 'bearer', label: tWidgets('auth_bearer') },
+                        ].map((option) => (
+                          <button
+                            key={option.value}
+                            type="button"
+                            onClick={() => setWeatherAuthType(option.value as 'param' | 'bearer')}
+                            className={cn(
+                              'rounded-2xl border px-3 py-3 text-sm transition-colors',
+                              weatherAuthType === option.value
+                                ? 'border-transparent bg-slate-900 text-white'
+                                : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                            )}
+                          >
+                            {option.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                    <div>
+                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                        {tWidgets('latitude')}
+                      </label>
+                      <input
+                        type="number"
+                        value={weatherLat ?? ''}
+                        onChange={(e) => setWeatherLat(parseOptionalNumber(e.target.value))}
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition-all focus:border-slate-300 focus:ring-4 focus:ring-[rgba(var(--primary-color),0.12)]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                        {tWidgets('longitude')}
+                      </label>
+                      <input
+                        type="number"
+                        value={weatherLon ?? ''}
+                        onChange={(e) => setWeatherLon(parseOptionalNumber(e.target.value))}
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition-all focus:border-slate-300 focus:ring-4 focus:ring-[rgba(var(--primary-color),0.12)]"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 xl:grid-cols-[0.8fr_1.2fr]">
+                    <div>
+                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                        {tWidgets('subscription_type')}
+                      </label>
+                      <div className="grid gap-2">
+                        {[
+                          { value: 'free', label: tWidgets('sub_free') },
+                          { value: 'standard', label: tWidgets('sub_standard') },
+                        ].map((option) => (
+                          <button
+                            key={option.value}
+                            type="button"
+                            onClick={() => setWeatherSub(option.value)}
+                            className={cn(
+                              'rounded-2xl border px-3 py-3 text-left text-sm transition-colors',
+                              weatherSub === option.value
+                                ? 'border-transparent bg-slate-900 text-white'
+                                : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                            )}
+                          >
+                            {option.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                        {tWidgets('quick_select_city')}
+                      </label>
+                      <p className="mt-2 text-xs text-slate-400">{tWidgets('weather_city_hint')}</p>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <input
-                type="range"
-                min="0"
-                max="20"
-                step="1"
-                value={backgroundBlur}
-                onChange={(e) => setBackgroundBlur(Number(e.target.value))}
-                className="w-full accent-blue-500"
-              />
-            </div>
+            )}
 
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <label className="text-xs font-medium text-gray-700">
-                  {t('opacity') || '遮罩浓度'}
-                </label>
-                <span className="text-xs text-gray-500">{Math.round(backgroundOpacity * 100)}%</span>
-              </div>
-              <input
-                type="range"
-                min="0"
-                max="0.8"
-                step="0.05"
-                value={backgroundOpacity}
-                onChange={(e) => setBackgroundOpacity(Number(e.target.value))}
-                className="w-full accent-blue-500"
-              />
-            </div>
-          </div>
-        </div>
+            {activeSection === 'data' && (
+              <>
+                <div className="rounded-3xl border border-slate-200 bg-slate-50/80 p-4 lg:p-5">
+                  <h3 className="mb-3 flex items-center text-sm font-semibold text-slate-900">
+                    <FileJson size={16} className="mr-2" />
+                    {t('data_tools')}
+                  </h3>
+                  <p className="mb-4 text-sm leading-6 text-slate-500">{t('data_tools_desc')}</p>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={handleExport}
+                      className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50"
+                    >
+                      <span>{t('export_config')}</span>
+                      <Download size={16} className="shrink-0" />
+                    </button>
 
-        {/* Language Section */}
-        <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-          <h3 className="text-sm font-semibold text-gray-900 mb-2 flex items-center">
-            <Globe size={16} className="mr-2" />
-            {t('language')}
-          </h3>
-          <p className="text-sm text-gray-500 mb-4">
-            {t('language_desc')}
-          </p>
-          <div className="flex space-x-2">
-            <button
-              disabled={isPending}
-              onClick={() => handleLanguageChange('en')}
-              className={cn(
-                "flex-1 py-2 px-4 rounded-lg border text-sm font-medium transition-colors",
-                locale === 'en'
-                  ? "bg-blue-50 border-blue-500 text-blue-700"
-                  : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50",
-                isPending && "opacity-50 cursor-not-allowed"
-              )}
-            >
-              English
-            </button>
-            <button
-              disabled={isPending}
-              onClick={() => handleLanguageChange('zh')}
-              className={cn(
-                "flex-1 py-2 px-4 rounded-lg border text-sm font-medium transition-colors",
-                locale === 'zh'
-                  ? "bg-blue-50 border-blue-500 text-blue-700"
-                  : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50",
-                isPending && "opacity-50 cursor-not-allowed"
-              )}
-            >
-              中文
-            </button>
-          </div>
-        </div>
+                    {!isDemoMode && (
+                      <>
+                        <input
+                          type="file"
+                          ref={fileInputRef}
+                          onChange={handleFileChange}
+                          accept=".json"
+                          className="hidden"
+                        />
+                        <button
+                          onClick={handleImportClick}
+                          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50"
+                        >
+                          <span>{t('import_config')}</span>
+                          <Upload size={16} className="shrink-0" />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
 
-        {/* Export Section */}
-        <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-          <h3 className="text-sm font-semibold text-gray-900 mb-2 flex items-center">
-            <Download size={16} className="mr-2" />
-            {t('export_config')}
-          </h3>
-          <p className="text-sm text-gray-500 mb-4">
-            {t('export_desc')}
-          </p>
-          <button
-            onClick={handleExport}
-            className="w-full flex items-center justify-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
-          >
-            <FileJson size={16} className="mr-2" />
-            {t('download_json')}
-          </button>
-        </div>
-
-        {/* Import Section */}
-        {!isDemoMode && (
-          <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-            <h3 className="text-sm font-semibold text-gray-900 mb-2 flex items-center">
-              <Upload size={16} className="mr-2" />
-              {t('import_config')}
-            </h3>
-            <p className="text-sm text-gray-500 mb-4">
-              {t('import_desc')}
-            </p>
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              accept=".json"
-              className="hidden"
-            />
-            <button
-              onClick={handleImportClick}
-              className="w-full flex items-center justify-center px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 hover:bg-blue-100 transition-colors shadow-sm"
-            >
-              <Upload size={16} className="mr-2" />
-              {t('select_file')}
-            </button>
-          </div>
-        )}
-
-        {/* Sync Section */}
-        {!isDemoMode && (
-          <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-            <h3 className="text-sm font-semibold text-gray-900 mb-2 flex items-center">
-              <Save size={16} className="mr-2" />
-              {t('sync_data')}
-            </h3>
-            <p className="text-sm text-gray-500 mb-4">
-              {t('sync_desc')}
-            </p>
-            <button
-              onClick={handleSync}
-              disabled={isSyncing}
-              className={cn(
-                "w-full flex items-center justify-center px-4 py-2 bg-green-50 border border-green-200 rounded-lg text-green-700 hover:bg-green-100 transition-colors shadow-sm",
-                isSyncing && "opacity-50 cursor-not-allowed"
-              )}
-            >
-              <Save size={16} className="mr-2" />
-              {isSyncing ? tGeneral('loading') : t('sync_now')}
-            </button>
-          </div>
-        )}
-
-        {/* Reset Section */}
-        {!isDemoMode && (
-          <div className="border-t border-gray-100 pt-6">
-            <button
-              onClick={handleReset}
-              className={cn(
-                "w-full flex items-center justify-center px-4 py-2 rounded-lg transition-colors border shadow-sm",
-                isResetting
-                  ? "bg-red-600 text-white border-red-600 hover:bg-red-700"
-                  : "bg-white text-red-600 border-red-200 hover:bg-red-50"
-              )}
-            >
-              {isResetting ? (
-                <>
-                  <AlertTriangle size={16} className="mr-2" />
-                  {t('confirm_reset')}
-                </>
-              ) : (
-                <>
-                  <RefreshCw size={16} className="mr-2" />
-                  {t('reset_defaults')}
-                </>
-              )}
-            </button>
-            {isResetting && (
-              <p className="text-xs text-center text-red-500 mt-2">
-                {t('reset_warning')}
-              </p>
+                {!isDemoMode && (
+                  <div className="rounded-3xl border border-red-200 bg-red-50/70 p-4 lg:p-5">
+                    <h3 className="mb-3 flex items-center text-sm font-semibold text-red-800">
+                      <AlertTriangle size={16} className="mr-2" />
+                      {t('danger_zone')}
+                    </h3>
+                    <p className="mb-4 text-sm leading-6 text-red-700/75">{t('danger_desc')}</p>
+                    <button
+                      onClick={handleReset}
+                      className={cn(
+                        'inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition-colors',
+                        isResetting
+                          ? 'border-red-600 bg-red-600 text-white hover:bg-red-700'
+                          : 'border-red-200 bg-white text-red-700 hover:border-red-300 hover:bg-red-50'
+                      )}
+                    >
+                      <span>{isResetting ? t('confirm_reset') : t('reset_defaults')}</span>
+                      {isResetting ? <AlertTriangle size={16} /> : <RefreshCw size={16} />}
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </div>
-        )}
+        </div>
+
+        <div className="border-t border-slate-200/80 bg-white/90 px-4 py-4 backdrop-blur-sm">
+          <div className="mx-auto flex max-w-6xl items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50"
+            >
+              {tGeneral('cancel')}
+            </button>
+            <button
+              type="button"
+              onClick={handleSaveAndClose}
+              disabled={isSavingSettingsNow}
+              className={cn(
+                'inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-slate-800',
+                isSavingSettingsNow && 'cursor-not-allowed opacity-60'
+              )}
+            >
+              <Save size={15} />
+              {isSavingSettingsNow ? tGeneral('loading') : t('save_settings')}
+            </button>
+          </div>
+        </div>
       </div>
     </Modal>
   );

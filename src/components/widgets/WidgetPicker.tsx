@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import Modal from '@/components/ui/Modal';
 import { useWidgetStore } from '@/store/useWidgetStore';
+import { useUIStore } from '@/store/useUIStore';
 import { v4 as uuidv4 } from 'uuid';
 import { useTranslations } from 'next-intl';
 import { widgetMeta, widgetCategories, WidgetCategory } from './registry';
-import { buildPlacementResult } from '@/lib/widgetPlacement';
+import { buildPlacementResult, WidgetCreatedDetail } from '@/lib/widgetPlacement';
+import { widgetTypesRequiringSetup } from './registry';
 
 interface WidgetPickerProps {
   isOpen: boolean;
@@ -18,6 +20,7 @@ interface WidgetPickerProps {
  */
 export default function WidgetPicker({ isOpen, onClose }: WidgetPickerProps) {
   const { widgets, addWidgetWithLayout } = useWidgetStore();
+  const currentCanvasCols = useUIStore((state) => state.currentCanvasCols);
   const t = useTranslations('Widgets');
   const [activeCategory, setActiveCategory] = useState<'all' | WidgetCategory>('all');
 
@@ -27,9 +30,17 @@ export default function WidgetPicker({ isOpen, onClose }: WidgetPickerProps) {
       widgetType: type as any,
       widgetId: uuidv4(),
       defaultSize,
-      cols: 8,
+      cols: currentCanvasCols,
     });
     addWidgetWithLayout(placement.newWidget, placement.positionUpdates);
+    window.dispatchEvent(
+      new CustomEvent<WidgetCreatedDetail>('widget-created', {
+        detail: {
+          widgetId: placement.newWidget.id,
+          shouldOpenSettings: widgetTypesRequiringSetup.includes(placement.newWidget.type),
+        },
+      })
+    );
     onClose();
   };
 

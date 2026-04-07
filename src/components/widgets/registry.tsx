@@ -41,18 +41,18 @@ import PhotoWidget from './PhotoWidget';
  * 组件注册表。
  * undefined 表示该类型尚未实现，渲染时显示 "Coming Soon"。
  */
-export const widgetComponentRegistry: Partial<
-  Record<WidgetType, React.ComponentType<{ widget: Widget }>>
-> = {
-  clock: ClockWidget,
-  weather: WeatherWidget,
-  date: DateWidget,
-  'quick-link': QuickLinkWidget,
-  links: LinksWidget,
-  todo: TodoWidget,
-  memo: MemoWidget,
-  calendar: CalendarWidget,
-  'photo-frame': PhotoWidget,
+type WidgetRenderer = React.ComponentType<{ widget: Widget }>;
+
+export const widgetComponentRegistry: Partial<Record<WidgetType, WidgetRenderer>> = {
+  clock: ClockWidget as WidgetRenderer,
+  weather: WeatherWidget as WidgetRenderer,
+  date: DateWidget as WidgetRenderer,
+  'quick-link': QuickLinkWidget as WidgetRenderer,
+  links: LinksWidget as WidgetRenderer,
+  todo: TodoWidget as WidgetRenderer,
+  memo: MemoWidget as WidgetRenderer,
+  calendar: CalendarWidget as WidgetRenderer,
+  'photo-frame': PhotoWidget as WidgetRenderer,
   // rss、monitor 尚未实现，不注册
 };
 
@@ -108,7 +108,7 @@ export const widgetMeta: WidgetMeta[] = [
     descKey: 'calendar_desc',
     Icon: Calendar,
     iconClassName: 'text-purple-500',
-    defaultSize: { w: 1, h: 2 },
+    defaultSize: { w: 2, h: 1 },
     category: 'productivity',
   },
   {
@@ -117,7 +117,7 @@ export const widgetMeta: WidgetMeta[] = [
     descKey: 'todo_desc',
     Icon: CheckSquare,
     iconClassName: 'text-indigo-500',
-    defaultSize: { w: 1, h: 2 },
+    defaultSize: { w: 2, h: 2 },
     category: 'productivity',
   },
   {
@@ -126,7 +126,7 @@ export const widgetMeta: WidgetMeta[] = [
     descKey: 'memo_desc',
     Icon: StickyNote,
     iconClassName: 'text-yellow-500',
-    defaultSize: { w: 1, h: 1 },
+    defaultSize: { w: 2, h: 2 },
     category: 'productivity',
   },
   // ── Custom ──
@@ -161,3 +161,9 @@ export const widgetMeta: WidgetMeta[] = [
 
 /** 所有可用分类 key */
 export const widgetCategories: WidgetCategory[] = ['system', 'productivity', 'custom'];
+
+export const widgetTypesRequiringSetup: WidgetType[] = [
+  'quick-link',
+  'photo-frame',
+  'links',
+];

@@ -13,10 +13,10 @@ import { Widget } from '@/types';
 /**
  * 布局中的组件（包含计算所需的额外信息）
  */
-interface LayoutWidget extends Widget {
+type LayoutWidget = Widget & {
   tempX?: number; // 临时位置（计算过程中使用）
   tempY?: number;
-}
+};
 
 /**
  * 矩形区域
@@ -117,13 +117,7 @@ export function findNewPosition(
  */
 export function calculateLayoutWithNewWidget(
   existingWidgets: Widget[],
-  newWidget: {
-    id: string;
-    type: string;
-    size: { w: number; h: number };
-    position: { x: number; y: number };
-    config: Record<string, any>;
-  },
+  newWidget: Widget,
   cols: number
 ): {
   widgets: Widget[];
@@ -149,7 +143,7 @@ export function calculateLayoutWithNewWidget(
   // 如果没有冲突，直接返回
   if (initialConflicts.length === 0) {
     return {
-      widgets: [...existingWidgets, newWidget as Widget],
+      widgets: [...existingWidgets, newWidget],
       movedWidgetIds: [],
     };
   }
@@ -271,14 +265,14 @@ export function calculateLayoutWithNewWidget(
       x: w.tempX!,
       y: w.tempY!,
     },
-  }));
+  }) as Widget);
 
   // 添加新组件
-  finalWidgets.push(newWidget as Widget);
+  finalWidgets.push(newWidget);
 
   return {
     widgets: finalWidgets,
-    movedWidgetIds,
+    movedWidgetIds: Array.from(new Set(movedWidgetIds)),
   };
 }
 
