@@ -2,10 +2,7 @@ version: '3'
 
 services:
   navidash:
-    # Use the local Dockerfile for building
-    # build: .
-    # Or use the pre-built image
-    image: ghcr.io/wtfllix/navidash:latest
+    build: .
     container_name: navidash
     restart: unless-stopped
     ports:
@@ -18,4 +15,3 @@ services:
       - DEMO_MODE=false
       - NEXT_PUBLIC_DEMO_MODE=false
       - DATA_DIR=/app/data
-
