@@ -17,7 +17,6 @@ import {
   Wind,
 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
-import { useSettingsStore } from '@/store/useSettingsStore';
 
 interface QWeatherNow {
   obsTime: string;
@@ -32,6 +31,22 @@ interface QWeatherNow {
 
 interface WeatherData {
   current: QWeatherNow;
+}
+
+function normalizeWeatherAuthType(value: string | undefined): 'apikey' | 'jwt' | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  if (value === 'apikey' || value === 'param') {
+    return 'apikey';
+  }
+
+  if (value === 'jwt' || value === 'bearer') {
+    return 'jwt';
+  }
+
+  return undefined;
 }
 
 const getWeatherIcon = (iconCode: string, size = 24, className = '') => {
@@ -145,24 +160,17 @@ const WeatherWidget = React.memo(({ widget }: { widget: WidgetOfType<'weather'> 
   const [error, setError] = useState(false);
   const t = useTranslations('Widgets');
   const locale = useLocale();
-  const {
-    weatherApiKey,
-    weatherCity,
-    weatherLat,
-    weatherLon,
-    weatherSub: globalWeatherSub,
-    weatherCustomHost: globalWeatherCustomHost,
-    weatherAuthType: globalWeatherAuthType,
-    hasFetchedSettings,
-  } = useSettingsStore();
-
-  const apiKey = weatherApiKey || widget.config?.apiKey;
-  const lat = weatherLat ?? widget.config?.lat ?? 39.9042;
-  const lon = weatherLon ?? widget.config?.lon ?? 116.4074;
-  const city = weatherCity || widget.config?.city || 'Beijing';
-  const weatherSub = globalWeatherSub || widget.config?.weatherSub || 'free';
-  const weatherCustomHost = globalWeatherCustomHost || widget.config?.weatherCustomHost;
-  const weatherAuthType = globalWeatherAuthType || widget.config?.weatherAuthType || 'param';
+  const apiKey = process.env.NEXT_PUBLIC_QWEATHER_API_KEY?.trim() ?? '';
+  const envWeatherHost = process.env.NEXT_PUBLIC_QWEATHER_API_HOST?.trim();
+  const envWeatherAuthType = normalizeWeatherAuthType(
+    process.env.NEXT_PUBLIC_QWEATHER_AUTH_TYPE?.trim()
+  );
+  const lat = widget.config?.lat ?? 39.9042;
+  const lon = widget.config?.lon ?? 116.4074;
+  const city = widget.config?.city || 'Beijing';
+  const weatherSub = widget.config?.weatherSub || 'free';
+  const weatherCustomHost = envWeatherHost || widget.config?.weatherCustomHost;
+  const weatherAuthType = envWeatherAuthType || widget.config?.weatherAuthType || 'apikey';
 
   useEffect(() => {
     const fetchWeather = async () => {
@@ -203,18 +211,18 @@ const WeatherWidget = React.memo(({ widget }: { widget: WidgetOfType<'weather'> 
         }
 
         const headers: HeadersInit = {};
-        if (weatherAuthType === 'bearer') {
+        if (weatherAuthType === 'jwt') {
           headers.Authorization = `Bearer ${apiKey}`;
+        }
+
+        if (weatherAuthType === 'apikey') {
+          headers['X-QW-Api-Key'] = apiKey;
         }
 
         const queryParams = new URLSearchParams({
           location,
           lang,
         });
-
-        if (weatherAuthType !== 'bearer') {
-          queryParams.append('key', apiKey);
-        }
 
         const nowUrl = `${baseUrl}/v7/weather/now?${queryParams.toString()}`;
         const nowRes = await fetch(nowUrl, { headers });
@@ -255,14 +263,6 @@ const WeatherWidget = React.memo(({ widget }: { widget: WidgetOfType<'weather'> 
   }, [apiKey, lat, lon, locale, weatherAuthType, weatherCustomHost, weatherSub]);
 
   const sizeKey = `${widget.size.w}x${widget.size.h}`;
-
-  if (!hasFetchedSettings) {
-    return (
-      <div className="flex h-full w-full items-center justify-center bg-white/70 backdrop-blur-sm">
-        <Loader2 className="animate-spin text-blue-500" />
-      </div>
-    );
-  }
 
   if (!apiKey) {
     return (

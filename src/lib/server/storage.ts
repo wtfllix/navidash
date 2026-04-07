@@ -5,6 +5,7 @@ import { z } from 'zod';
 import {
   mergeWidgets,
   normalizeSettings,
+  SettingsNormalizationSchema,
   SettingsSchema,
   splitWidgets,
   WidgetConfigsArraySchema,
@@ -14,6 +15,7 @@ import {
 import { Settings, Widget, WidgetConfigEntry, WidgetLayout } from '@/types';
 import { logger } from '@/lib/logger';
 
+const DATA_FILE_VERSION = 1;
 const DEFAULT_DIR = '/app/data';
 const CWD_DATA = path.join(process.cwd(), 'data');
 const DATA_DIR = process.env.DATA_DIR || (fsSync.existsSync(DEFAULT_DIR) ? DEFAULT_DIR : CWD_DATA);
@@ -43,10 +45,28 @@ async function ensureDataDir() {
   }
 }
 
+function createVersionedDataSchema(payloadSchema: z.ZodTypeAny) {
+  return z.object({
+    version: z.number().int().positive(),
+    data: payloadSchema,
+  });
+}
+
+function parseStoredJson(raw: unknown, payloadSchema: z.ZodTypeAny): unknown {
+  const versionedSchema = createVersionedDataSchema(payloadSchema);
+  const versionedResult = versionedSchema.safeParse(raw);
+
+  if (versionedResult.success) {
+    return versionedResult.data.data;
+  }
+
+  return payloadSchema.parse(raw);
+}
+
 async function readJsonFile(filePath: string, schema: z.ZodTypeAny): Promise<unknown | null> {
   try {
     const data = await fs.readFile(filePath, 'utf-8');
-    return schema.parse(JSON.parse(data));
+    return parseStoredJson(JSON.parse(data), schema);
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
       return null;
@@ -146,8 +166,14 @@ export async function saveWidgets(widgets: Widget[]): Promise<void> {
     await ensureDataDir();
     const parsedWidgets = WidgetsArraySchema.parse(widgets);
     const { layouts, configs } = splitWidgets(parsedWidgets);
-    await writeJsonFileAtomic(WIDGET_LAYOUTS_FILE, WidgetLayoutsArraySchema.parse(layouts));
-    await writeJsonFileAtomic(WIDGET_CONFIGS_FILE, WidgetConfigsArraySchema.parse(configs));
+    await writeJsonFileAtomic(WIDGET_LAYOUTS_FILE, {
+      version: DATA_FILE_VERSION,
+      data: WidgetLayoutsArraySchema.parse(layouts),
+    });
+    await writeJsonFileAtomic(WIDGET_CONFIGS_FILE, {
+      version: DATA_FILE_VERSION,
+      data: WidgetConfigsArraySchema.parse(configs),
+    });
     logger.info('Widgets saved successfully');
   } catch (error) {
     logger.error('Failed to save widgets', error);
@@ -202,7 +228,10 @@ export async function saveWidgetLayouts(layouts: WidgetLayout[]): Promise<void> 
   try {
     await ensureDataDir();
     const parsedLayouts = WidgetLayoutsArraySchema.parse(layouts);
-    await writeJsonFileAtomic(WIDGET_LAYOUTS_FILE, parsedLayouts);
+    await writeJsonFileAtomic(WIDGET_LAYOUTS_FILE, {
+      version: DATA_FILE_VERSION,
+      data: parsedLayouts,
+    });
     logger.info('Widget layouts saved successfully');
   } catch (error) {
     logger.error('Failed to save widget layouts', error);
@@ -219,7 +248,10 @@ export async function saveWidgetConfigs(configs: WidgetConfigEntry[]): Promise<v
   try {
     await ensureDataDir();
     const parsedConfigs = WidgetConfigsArraySchema.parse(configs);
-    await writeJsonFileAtomic(WIDGET_CONFIGS_FILE, parsedConfigs);
+    await writeJsonFileAtomic(WIDGET_CONFIGS_FILE, {
+      version: DATA_FILE_VERSION,
+      data: parsedConfigs,
+    });
     logger.info('Widget configs saved successfully');
   } catch (error) {
     logger.error('Failed to save widget configs', error);
@@ -240,18 +272,8 @@ export async function getSettings(): Promise<Settings | null> {
 
   try {
     await ensureDataDir();
-    try {
-      const data = await fs.readFile(SETTINGS_FILE, 'utf-8');
-      const parsed = JSON.parse(data);
-      return normalizeSettings(parsed);
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-        return null;
-      }
-
-      logger.error('Failed to read settings', error);
-      return null;
-    }
+    const settings = await readJsonFile(SETTINGS_FILE, SettingsNormalizationSchema);
+    return settings ? normalizeSettings(settings) : null;
   } catch (error) {
     logger.error('Failed to read settings', error);
     return null;
@@ -293,7 +315,10 @@ export async function saveSettings(settings: Settings): Promise<void> {
   try {
     await ensureDataDir();
     const parsedSettings = SettingsSchema.parse(settings);
-    await writeJsonFileAtomic(SETTINGS_FILE, parsedSettings);
+    await writeJsonFileAtomic(SETTINGS_FILE, {
+      version: DATA_FILE_VERSION,
+      data: parsedSettings,
+    });
     logger.info('Settings saved successfully');
   } catch (error) {
     logger.error('Failed to save settings', error);

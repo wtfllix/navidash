@@ -1,9 +1,8 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { WeatherWidgetConfig } from '@/types';
 import { useTranslations } from 'next-intl';
-import { FormField, SelectInput, TextInput } from './FormControls';
+import { FormField, TextInput } from './FormControls';
 import { parseOptionalNumber, PRESET_CITIES, trimToUndefined } from './shared';
 import { WidgetConfigEditorProps } from './types';
 
@@ -37,58 +36,6 @@ export default function WeatherConfigEditor({ config, setConfig }: WidgetConfigE
 
   return (
     <div className="space-y-4">
-      <FormField
-        label={t('api_key')}
-        hint={t.rich('api_requirement', {
-          link: (chunks: React.ReactNode) => (
-            <a
-              href="https://console.qweather.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-500 hover:underline"
-            >
-              {chunks}
-            </a>
-          ),
-        })}
-      >
-        <TextInput
-          type="text"
-          value={config.apiKey || ''}
-          onChange={(e) => setConfig((current) => ({ ...current, apiKey: e.target.value }))}
-          onBlur={(e) => setConfig((current) => ({ ...current, apiKey: trimToUndefined(e.target.value) }))}
-          placeholder={t('api_key_placeholder')}
-          aria-label={t('api_key')}
-        />
-      </FormField>
-
-      <FormField label={t('sub_custom')}>
-        <TextInput
-          type="text"
-          value={config.weatherCustomHost || ''}
-          onChange={(e) => setConfig((current) => ({ ...current, weatherCustomHost: e.target.value }))}
-          onBlur={(e) =>
-            setConfig((current) => ({ ...current, weatherCustomHost: trimToUndefined(e.target.value) }))
-          }
-          placeholder={t('custom_host_placeholder')}
-        />
-      </FormField>
-
-      <FormField label={t('auth_type')}>
-        <SelectInput
-          value={config.weatherAuthType || 'param'}
-          onChange={(e) =>
-            setConfig((current) => ({
-              ...current,
-              weatherAuthType: e.target.value as WeatherWidgetConfig['weatherAuthType'],
-            }))
-          }
-        >
-          <option value="param">{t('auth_param')}</option>
-          <option value="bearer">{t('auth_bearer')}</option>
-        </SelectInput>
-      </FormField>
-
       <FormField label={t('city_name')} hint={t('weather_city_hint')}>
         <div className="relative">
           <TextInput

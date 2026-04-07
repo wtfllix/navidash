@@ -335,7 +335,7 @@
     "clock_live": "Live clock",
     "clock_live_with_seconds": "Live clock with seconds",
     "weather_setup_title": "Add your weather key",
-    "weather_setup_hint": "Configure API Key and city to see live conditions here.",
+    "weather_setup_hint": "Set NEXT_PUBLIC_QWEATHER_API_KEY in your environment, then configure a city or coordinates on the widget.",
     "weather_cloud_cover": "Clouds",
     "weather_updated_at": "Updated {time}"
   }

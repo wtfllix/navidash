@@ -107,8 +107,21 @@ If you prefer to push to Docker Hub instead of GHCR:
 ## 4. Environment Variables
 
 - `NEXT_PUBLIC_DEMO_MODE`: Set to `true` to enable demo mode (read-only).
+- `NEXT_PUBLIC_QWEATHER_API_KEY`: API key used by weather widgets.
+- `NEXT_PUBLIC_QWEATHER_API_HOST`: Optional custom host for weather widgets. When set, it takes priority over the widget-level host field.
+- `NEXT_PUBLIC_QWEATHER_AUTH_TYPE`: Optional weather auth mode. Supported values: `apikey`, `jwt`. Legacy values `param` and `bearer` are still read for backward compatibility.
 - `PORT`: Port to run the server on (default: 3000).
 
 ## 5. Persistence
 
-The application stores data in `bookmarks.json` and `widgets.json`. In Docker, map the `/app/data` volume to persist these files.
+The application stores runtime data under `/app/data`:
+
+- `settings.json`: user settings, including weather-related preferences.
+- `widget-layouts.json`: widget size and position data.
+- `widget-configs.json`: widget-specific configuration data.
+
+New files are written with a versioned envelope so future migrations can be handled explicitly, while legacy raw JSON files are still readable for backward compatibility.
+
+`bookmarks.json` is a legacy sample file in the repository root and is not part of the current runtime persistence model.
+
+In Docker, map the `/app/data` volume to persist these files. Runtime data should still stay out of version control, but weather API keys now belong in environment variables instead of `settings.json`.

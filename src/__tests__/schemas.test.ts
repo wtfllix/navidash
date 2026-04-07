@@ -54,6 +54,25 @@ describe('Zod Schemas', () => {
     expect(result.success).toBe(true);
   });
 
+  it('should normalize links without a protocol', () => {
+    const result = WidgetSchema.safeParse({
+      id: 'w3-normalized',
+      type: 'links',
+      size: { w: 2, h: 1 },
+      position: { x: 0, y: 0 },
+      config: {
+        links: [{ id: 'l1', title: 'Baidu', url: 'www.baidu.com' }],
+      },
+    });
+
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+
+    expect((result.data.config as { links: Array<{ id: string; title: string; url: string }> }).links).toEqual([
+      { id: 'l1', title: 'Baidu', url: 'https://www.baidu.com' },
+    ]);
+  });
+
   it('should validate quick-link, memo, todo and photo-frame widgets', () => {
     const widgets = [
       {
@@ -180,6 +199,53 @@ describe('Zod Schemas', () => {
     expect(result.success).toBe(false);
   });
 
+  it('should normalize legacy weather auth types', () => {
+    const result = WidgetSchema.safeParse({
+      id: 'weather-legacy-auth',
+      type: 'weather',
+      size: { w: 2, h: 1 },
+      position: { x: 0, y: 0 },
+      config: {
+        city: 'Shanghai',
+        weatherAuthType: 'bearer',
+      },
+    });
+
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+
+    expect((result.data.config as { weatherAuthType?: 'apikey' | 'jwt' }).weatherAuthType).toBe(
+      'jwt'
+    );
+  });
+
+  it('should strip legacy weather api keys from widget config', () => {
+    const result = WidgetSchema.safeParse({
+      id: 'weather-legacy-key',
+      type: 'weather',
+      size: { w: 2, h: 1 },
+      position: { x: 0, y: 0 },
+      config: {
+        city: 'Shanghai',
+        lat: 31.2304,
+        lon: 121.4737,
+        apiKey: 'legacy-key',
+      },
+    });
+
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+
+    expect(result.data.config).toEqual({
+      city: 'Shanghai',
+      lat: 31.2304,
+      lon: 121.4737,
+      weatherAuthType: undefined,
+      weatherCustomHost: undefined,
+      weatherSub: undefined,
+    });
+  });
+
   it('should normalize legacy photo-frame config', () => {
     const result = WidgetSchema.safeParse({
       id: 'photo-legacy',
@@ -214,13 +280,6 @@ describe('Zod Schemas', () => {
       customFavicon: '/favicon.svg',
       customTitle: 'Navidash',
       language: 'en',
-      weatherApiKey: '',
-      weatherCity: 'Beijing',
-      weatherLat: 39.9042,
-      weatherLon: 116.4074,
-      weatherSub: 'free',
-      weatherCustomHost: '',
-      weatherAuthType: 'param',
     };
 
     const result = SettingsSchema.safeParse(settings);
@@ -231,14 +290,27 @@ describe('Zod Schemas', () => {
     const settings = normalizeSettings({
       themeColor: '#22c55e',
       customTitle: 'Custom Dash',
-      weatherCity: 'Shanghai',
+      language: 'zh',
     });
 
     expect(settings).toEqual({
       ...createDefaultSettings(),
       themeColor: '#22c55e',
       customTitle: 'Custom Dash',
+      language: 'zh',
+    });
+  });
+
+  it('should ignore legacy weather fields in settings payloads', () => {
+    const settings = normalizeSettings({
+      themeColor: '#22c55e',
+      weatherApiKey: 'legacy-key',
       weatherCity: 'Shanghai',
+    });
+
+    expect(settings).toEqual({
+      ...createDefaultSettings(),
+      themeColor: '#22c55e',
     });
   });
 

@@ -1,10 +1,9 @@
 'use client';
 
-import React, { useEffect, useMemo, useRef, useState, useTransition } from 'react';
+import React, { useRef, useState, useTransition } from 'react';
 import {
   AlertTriangle,
   Check,
-  CloudSun,
   Download,
   FileJson,
   Globe,
@@ -20,7 +19,6 @@ import Modal from '@/components/ui/Modal';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { useToastStore } from '@/store/useToastStore';
 import { useWidgetStore } from '@/store/useWidgetStore';
-import { PRESET_CITIES, parseOptionalNumber, trimToUndefined } from '@/components/widgets/editors/shared';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -46,20 +44,6 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     customTitle,
     setCustomTitle,
     setLanguage,
-    weatherApiKey,
-    setWeatherApiKey,
-    weatherCity,
-    setWeatherCity,
-    weatherLat,
-    setWeatherLat,
-    weatherLon,
-    setWeatherLon,
-    weatherSub,
-    setWeatherSub,
-    weatherCustomHost,
-    setWeatherCustomHost,
-    weatherAuthType,
-    setWeatherAuthType,
     fetchSettings,
   } = useSettingsStore();
   const { widgets, setWidgets } = useWidgetStore();
@@ -67,16 +51,13 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
   const t = useTranslations('SettingsModal');
   const tGeneral = useTranslations('General');
-  const tWidgets = useTranslations('Widgets');
   const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
   const [isResetting, setIsResetting] = useState(false);
   const [isSavingSettingsNow, setIsSavingSettingsNow] = useState(false);
-  const [citySearch, setCitySearch] = useState(weatherCity);
-  const [showCityList, setShowCityList] = useState(false);
-  const [activeSection, setActiveSection] = useState<'appearance' | 'language' | 'weather' | 'data'>(
+  const [activeSection, setActiveSection] = useState<'appearance' | 'language' | 'data'>(
     'appearance'
   );
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -134,33 +115,6 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     setBackgroundRepeat(repeat);
   };
 
-  useEffect(() => {
-    if (!showCityList) {
-      setCitySearch(weatherCity);
-    }
-  }, [weatherCity, showCityList]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    fetchSettings(true);
-  }, [fetchSettings, isOpen]);
-
-  const filteredCities = useMemo(
-    () =>
-      PRESET_CITIES.filter((city) =>
-        city.name.toLowerCase().includes((citySearch || weatherCity).toLowerCase())
-      ).slice(0, 16),
-    [citySearch, weatherCity]
-  );
-
-  const applyWeatherCityPreset = (name: string, lat: number, lon: number) => {
-    setWeatherCity(name);
-    setWeatherLat(lat);
-    setWeatherLon(lon);
-    setCitySearch(name);
-    setShowCityList(false);
-  };
-
   const handleLanguageChange = (newLocale: string) => {
     setLanguage(newLocale);
     startTransition(() => {
@@ -181,13 +135,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         backgroundOpacity,
         backgroundSize,
         backgroundRepeat,
-        weatherApiKey,
-        weatherCity,
-        weatherLat,
-        weatherLon,
-        weatherSub,
-        weatherCustomHost,
-        weatherAuthType,
+        language: locale,
       },
       exportDate: new Date().toISOString(),
       version: '1.0',
@@ -245,26 +193,8 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           if (typeof data.settings.backgroundRepeat === 'string') {
             setBackgroundRepeat(data.settings.backgroundRepeat);
           }
-          if (typeof data.settings.weatherApiKey === 'string') {
-            setWeatherApiKey(data.settings.weatherApiKey);
-          }
-          if (typeof data.settings.weatherCity === 'string') {
-            setWeatherCity(data.settings.weatherCity);
-          }
-          if (typeof data.settings.weatherLat === 'number') {
-            setWeatherLat(data.settings.weatherLat);
-          }
-          if (typeof data.settings.weatherLon === 'number') {
-            setWeatherLon(data.settings.weatherLon);
-          }
-          if (typeof data.settings.weatherSub === 'string') {
-            setWeatherSub(data.settings.weatherSub);
-          }
-          if (typeof data.settings.weatherCustomHost === 'string') {
-            setWeatherCustomHost(data.settings.weatherCustomHost);
-          }
-          if (data.settings.weatherAuthType === 'param' || data.settings.weatherAuthType === 'bearer') {
-            setWeatherAuthType(data.settings.weatherAuthType);
+          if (typeof data.settings.language === 'string') {
+            setLanguage(data.settings.language);
           }
         }
 
@@ -304,13 +234,6 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         backgroundSize,
         backgroundRepeat,
         language: locale,
-        weatherApiKey,
-        weatherCity,
-        weatherLat,
-        weatherLon,
-        weatherSub,
-        weatherCustomHost,
-        weatherAuthType,
       };
 
       const res = await fetch('/api/settings', {
@@ -336,9 +259,13 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const sections = [
     { id: 'appearance' as const, label: t('appearance'), icon: Palette },
     { id: 'language' as const, label: t('language'), icon: Globe },
-    { id: 'weather' as const, label: t('weather_settings'), icon: CloudSun },
     { id: 'data' as const, label: t('data_tools'), icon: FileJson },
   ];
+
+  React.useEffect(() => {
+    if (!isOpen) return;
+    fetchSettings(true);
+  }, [fetchSettings, isOpen]);
 
   return (
     <Modal
@@ -377,8 +304,8 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             </div>
 
             <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-500">
-                <Check size={14} />
-                {t('autosave_status')}
+              <Check size={14} />
+              {t('autosave_status')}
             </div>
           </div>
           <div className="mx-auto mt-2 max-w-6xl">
@@ -624,6 +551,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 </div>
               </div>
             )}
+
             {activeSection === 'language' && (
               <div className="rounded-3xl border border-slate-200 bg-slate-50/80 p-4 lg:p-5">
                 <h3 className="mb-3 flex items-center text-sm font-semibold text-slate-900">
@@ -653,219 +581,6 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                       {locale === item.id && <Check size={16} className="shrink-0" />}
                     </button>
                   ))}
-                </div>
-              </div>
-            )}
-
-            {activeSection === 'weather' && (
-              <div className="rounded-3xl border border-slate-200 bg-slate-50/80 p-4 lg:p-5">
-                <h3 className="mb-3 flex items-center text-sm font-semibold text-slate-900">
-                  <CloudSun size={16} className="mr-2" />
-                  {t('weather_settings')}
-                </h3>
-                <p className="mb-5 text-sm leading-6 text-slate-500">{t('weather_settings_desc')}</p>
-
-                <div className="space-y-5">
-                  <div className="grid gap-4 xl:grid-cols-3">
-                    <div>
-                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                        {tWidgets('api_key')}
-                      </label>
-                      <input
-                        type="text"
-                        value={weatherApiKey}
-                        onChange={(e) => setWeatherApiKey(e.target.value)}
-                        onBlur={(e) => setWeatherApiKey(trimToUndefined(e.target.value) ?? '')}
-                        placeholder={tWidgets('api_key_placeholder')}
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition-all focus:border-slate-300 focus:ring-4 focus:ring-[rgba(var(--primary-color),0.12)]"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                        {tWidgets('sub_custom')}
-                      </label>
-                      <input
-                        type="text"
-                        value={weatherCustomHost}
-                        onChange={(e) => setWeatherCustomHost(e.target.value)}
-                        onBlur={(e) => setWeatherCustomHost(trimToUndefined(e.target.value) ?? '')}
-                        placeholder={tWidgets('custom_host_placeholder')}
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition-all focus:border-slate-300 focus:ring-4 focus:ring-[rgba(var(--primary-color),0.12)]"
-                      />
-                    </div>
-                  </div>
-                  <p className="-mt-1 text-xs text-slate-400">{t('weather_global_hint')}</p>
-
-                  <div className="grid gap-4 xl:grid-cols-[1.4fr_0.8fr]">
-                    <div>
-                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                        {tWidgets('city_name')}
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="text"
-                          value={showCityList ? citySearch : weatherCity}
-                          onChange={(e) => {
-                            const nextValue = e.target.value;
-                            setCitySearch(nextValue);
-                            setWeatherCity(nextValue);
-                            setShowCityList(true);
-                          }}
-                          onFocus={() => {
-                            setCitySearch(weatherCity);
-                            setShowCityList(true);
-                          }}
-                          onBlur={(e) => {
-                            window.setTimeout(() => {
-                              const normalized = trimToUndefined(e.target.value) ?? 'Beijing';
-                              const matched = PRESET_CITIES.find(
-                                (item) => item.name.toLowerCase() === normalized.toLowerCase()
-                              );
-                              setWeatherCity(matched?.name ?? normalized);
-                              if (matched) {
-                                setWeatherLat(matched.lat);
-                                setWeatherLon(matched.lon);
-                              }
-                              setShowCityList(false);
-                            }, 150);
-                          }}
-                          placeholder="Beijing"
-                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition-all focus:border-slate-300 focus:ring-4 focus:ring-[rgba(var(--primary-color),0.12)]"
-                        />
-
-                        {showCityList ? (
-                          <div className="absolute z-20 mt-2 max-h-64 w-full overflow-y-auto rounded-2xl border border-slate-200 bg-white p-1 shadow-xl shadow-slate-900/8">
-                            {filteredCities.length > 0 ? (
-                              filteredCities.map((item) => (
-                                <button
-                                  key={item.name}
-                                  type="button"
-                                  onMouseDown={(event) => event.preventDefault()}
-                                  onClick={() => applyWeatherCityPreset(item.name, item.lat, item.lon)}
-                                  className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm text-slate-700 transition-colors hover:bg-slate-50"
-                                >
-                                  <span className="font-medium">{item.name}</span>
-                                  <span className="text-xs text-slate-400">
-                                    {item.lat.toFixed(2)}, {item.lon.toFixed(2)}
-                                  </span>
-                                </button>
-                              ))
-                            ) : (
-                              <div className="px-3 py-3 text-sm text-slate-400">
-                                {tWidgets('no_city_matches')}
-                              </div>
-                            )}
-                          </div>
-                        ) : null}
-                      </div>
-
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {PRESET_CITIES.slice(0, 8).map((item) => (
-                          <button
-                            key={item.name}
-                            type="button"
-                            onClick={() => applyWeatherCityPreset(item.name, item.lat, item.lon)}
-                            className={cn(
-                              'rounded-full border px-3 py-1.5 text-xs transition-colors',
-                              weatherCity === item.name
-                                ? 'border-transparent bg-slate-900 text-white'
-                                : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
-                            )}
-                          >
-                            {item.name}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                        {tWidgets('auth_type')}
-                      </label>
-                      <div className="grid grid-cols-2 gap-2">
-                        {[
-                          { value: 'param', label: tWidgets('auth_param') },
-                          { value: 'bearer', label: tWidgets('auth_bearer') },
-                        ].map((option) => (
-                          <button
-                            key={option.value}
-                            type="button"
-                            onClick={() => setWeatherAuthType(option.value as 'param' | 'bearer')}
-                            className={cn(
-                              'rounded-2xl border px-3 py-3 text-sm transition-colors',
-                              weatherAuthType === option.value
-                                ? 'border-transparent bg-slate-900 text-white'
-                                : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
-                            )}
-                          >
-                            {option.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                    <div>
-                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                        {tWidgets('latitude')}
-                      </label>
-                      <input
-                        type="number"
-                        value={weatherLat ?? ''}
-                        onChange={(e) => setWeatherLat(parseOptionalNumber(e.target.value))}
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition-all focus:border-slate-300 focus:ring-4 focus:ring-[rgba(var(--primary-color),0.12)]"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                        {tWidgets('longitude')}
-                      </label>
-                      <input
-                        type="number"
-                        value={weatherLon ?? ''}
-                        onChange={(e) => setWeatherLon(parseOptionalNumber(e.target.value))}
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition-all focus:border-slate-300 focus:ring-4 focus:ring-[rgba(var(--primary-color),0.12)]"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid gap-4 xl:grid-cols-[0.8fr_1.2fr]">
-                    <div>
-                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                        {tWidgets('subscription_type')}
-                      </label>
-                      <div className="grid gap-2">
-                        {[
-                          { value: 'free', label: tWidgets('sub_free') },
-                          { value: 'standard', label: tWidgets('sub_standard') },
-                        ].map((option) => (
-                          <button
-                            key={option.value}
-                            type="button"
-                            onClick={() => setWeatherSub(option.value)}
-                            className={cn(
-                              'rounded-2xl border px-3 py-3 text-left text-sm transition-colors',
-                              weatherSub === option.value
-                                ? 'border-transparent bg-slate-900 text-white'
-                                : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
-                            )}
-                          >
-                            {option.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                        {tWidgets('quick_select_city')}
-                      </label>
-                      <p className="mt-2 text-xs text-slate-400">{tWidgets('weather_city_hint')}</p>
-                    </div>
-                  </div>
                 </div>
               </div>
             )}

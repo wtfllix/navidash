@@ -1,6 +1,36 @@
 import { z } from 'zod';
 import { DEFAULT_SETTINGS, Settings, Widget, WidgetConfigEntry, WidgetLayout } from '@/types';
 
+function normalizeLinkUrl(url: string): string {
+  const trimmed = url.trim();
+
+  if (!trimmed) {
+    return trimmed;
+  }
+
+  if (/^[a-zA-Z][a-zA-Z\d+\-.]*:\/\//.test(trimmed)) {
+    return trimmed;
+  }
+
+  return `https://${trimmed}`;
+}
+
+function normalizeWeatherAuthType(value: string | undefined): 'apikey' | 'jwt' | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  if (value === 'apikey' || value === 'param') {
+    return 'apikey';
+  }
+
+  if (value === 'jwt' || value === 'bearer') {
+    return 'jwt';
+  }
+
+  return undefined;
+}
+
 const widgetSizeSchema = z.object({
   w: z.number().int().positive(),
   h: z.number().int().positive(),
@@ -16,7 +46,7 @@ const emptyConfigSchema = z.object({}).strict().default({});
 const linkItemSchema = z.object({
   id: z.string().min(1),
   title: z.string().min(1),
-  url: z.string().min(1),
+  url: z.string().min(1).transform(normalizeLinkUrl),
 });
 
 const clockWidgetConfigSchema = z
@@ -34,9 +64,17 @@ const weatherWidgetConfigSchema = z
     lon: z.number().finite().optional(),
     weatherSub: z.string().optional(),
     weatherCustomHost: z.string().optional(),
-    weatherAuthType: z.enum(['param', 'bearer']).optional(),
+    weatherAuthType: z.enum(['apikey', 'jwt', 'param', 'bearer']).optional(),
   })
   .strict()
+  .transform((config) => ({
+    city: config.city,
+    lat: config.lat,
+    lon: config.lon,
+    weatherSub: config.weatherSub,
+    weatherCustomHost: config.weatherCustomHost?.trim() || undefined,
+    weatherAuthType: normalizeWeatherAuthType(config.weatherAuthType),
+  }))
   .default({});
 
 const dateWidgetConfigSchema = z
@@ -295,28 +333,23 @@ export const WidgetConfigEntrySchema = z.discriminatedUnion('type', [
 
 export const WidgetConfigsArraySchema = z.array(WidgetConfigEntrySchema);
 
-export const SettingsSchema = z
-  .object({
-    backgroundImage: z.string(),
-    backgroundBlur: z.number().min(0),
-    backgroundOpacity: z.number().min(0),
-    backgroundSize: z.string(),
-    backgroundRepeat: z.string(),
-    themeColor: z.string(),
-    customFavicon: z.string(),
-    customTitle: z.string(),
-    language: z.string(),
-    weatherApiKey: z.string(),
-    weatherCity: z.string(),
-    weatherLat: z.number().finite().optional(),
-    weatherLon: z.number().finite().optional(),
-    weatherSub: z.string(),
-    weatherCustomHost: z.string(),
-    weatherAuthType: z.enum(['param', 'bearer']),
-  })
-  .strict();
+const settingsShape = {
+  backgroundImage: z.string(),
+  backgroundBlur: z.number().min(0),
+  backgroundOpacity: z.number().min(0),
+  backgroundSize: z.string(),
+  backgroundRepeat: z.string(),
+  themeColor: z.string(),
+  customFavicon: z.string(),
+  customTitle: z.string(),
+  language: z.string(),
+};
 
-export const PartialSettingsSchema = SettingsSchema.partial();
+export const SettingsSchema = z.object(settingsShape).strict();
+
+export const SettingsNormalizationSchema = z.object(settingsShape).partial();
+
+export const PartialSettingsSchema = SettingsNormalizationSchema;
 
 export const WidgetStorePersistedStateSchema = z
   .object({
@@ -327,7 +360,7 @@ export const WidgetStorePersistedStateSchema = z
 
 export const SettingsStorePersistedStateSchema = PartialSettingsSchema.extend({
   dataVersion: z.number().finite().nonnegative().optional(),
-}).strict();
+});
 
 export function createDefaultSettings(): Settings {
   return { ...DEFAULT_SETTINGS };

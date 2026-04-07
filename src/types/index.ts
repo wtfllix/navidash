@@ -31,23 +31,12 @@ export interface ClockWidgetConfig {
 }
 
 export interface WeatherWidgetConfig {
-  apiKey?: string;
   city?: string;
   lat?: number;
   lon?: number;
   weatherSub?: string;
   weatherCustomHost?: string;
-  weatherAuthType?: 'param' | 'bearer';
-}
-
-export interface WeatherSettingsConfig {
-  weatherApiKey: string;
-  weatherCity: string;
-  weatherLat?: number;
-  weatherLon?: number;
-  weatherSub: string;
-  weatherCustomHost: string;
-  weatherAuthType: 'param' | 'bearer';
+  weatherAuthType?: 'apikey' | 'jwt';
 }
 
 export interface DateWidgetConfig {
@@ -173,13 +162,6 @@ export interface Settings {
   customFavicon: string;
   customTitle: string;
   language: string;
-  weatherApiKey: string;
-  weatherCity: string;
-  weatherLat?: number;
-  weatherLon?: number;
-  weatherSub: string;
-  weatherCustomHost: string;
-  weatherAuthType: 'param' | 'bearer';
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -192,11 +174,4 @@ export const DEFAULT_SETTINGS: Settings = {
   customFavicon: '/favicon.svg',
   customTitle: 'Navidash',
   language: 'en',
-  weatherApiKey: '',
-  weatherCity: 'Beijing',
-  weatherLat: 39.9042,
-  weatherLon: 116.4074,
-  weatherSub: 'free',
-  weatherCustomHost: '',
-  weatherAuthType: 'param',
 };

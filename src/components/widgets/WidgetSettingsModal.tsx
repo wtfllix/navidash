@@ -78,10 +78,6 @@ export default function WidgetSettingsModal({
       return <ClockEditor config={config as never} setConfig={handleConfigChange as never} setSize={setSize} />;
     }
 
-    if (widget.type === 'weather') {
-      return <p className="text-sm text-gray-500">{t('weather_settings_moved')}</p>;
-    }
-
     const GenericEditor = widgetConfigEditors[widget.type as Exclude<EditableWidgetType, 'clock'>];
     return GenericEditor ? (
       <GenericEditor config={config as never} setConfig={handleConfigChange as never} />

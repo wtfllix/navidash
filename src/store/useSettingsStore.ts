@@ -18,13 +18,6 @@ interface SettingsState extends Settings {
   setCustomFavicon: (url: string) => void;
   setCustomTitle: (title: string) => void;
   setLanguage: (lang: string) => void;
-  setWeatherApiKey: (value: string) => void;
-  setWeatherCity: (value: string) => void;
-  setWeatherLat: (value: number | undefined) => void;
-  setWeatherLon: (value: number | undefined) => void;
-  setWeatherSub: (value: string) => void;
-  setWeatherCustomHost: (value: string) => void;
-  setWeatherAuthType: (value: 'param' | 'bearer') => void;
   isSavingSettings: boolean;
   hasFetchedSettings: boolean;
   resetSettings: () => void;
@@ -45,13 +38,6 @@ function extractSettings(state: Settings): Settings {
     customFavicon: state.customFavicon,
     customTitle: state.customTitle,
     language: state.language,
-    weatherApiKey: state.weatherApiKey,
-    weatherCity: state.weatherCity,
-    weatherLat: state.weatherLat,
-    weatherLon: state.weatherLon,
-    weatherSub: state.weatherSub,
-    weatherCustomHost: state.weatherCustomHost,
-    weatherAuthType: state.weatherAuthType,
   };
 }
 
@@ -158,13 +144,6 @@ export const useSettingsStore = create<SettingsState>()(
         setCustomFavicon: (customFavicon) => updateSettings({ customFavicon }),
         setCustomTitle: (customTitle) => updateSettings({ customTitle }),
         setLanguage: (language) => updateSettings({ language }),
-        setWeatherApiKey: (weatherApiKey) => updateSettings({ weatherApiKey }),
-        setWeatherCity: (weatherCity) => updateSettings({ weatherCity }),
-        setWeatherLat: (weatherLat) => updateSettings({ weatherLat }),
-        setWeatherLon: (weatherLon) => updateSettings({ weatherLon }),
-        setWeatherSub: (weatherSub) => updateSettings({ weatherSub }),
-        setWeatherCustomHost: (weatherCustomHost) => updateSettings({ weatherCustomHost }),
-        setWeatherAuthType: (weatherAuthType) => updateSettings({ weatherAuthType }),
         resetSettings: () => {
           const defaults = createDefaultSettings();
           set({ ...defaults, isSavingSettings: false, hasFetchedSettings: true });
