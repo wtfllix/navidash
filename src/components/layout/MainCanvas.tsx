@@ -14,6 +14,8 @@ import { useCanvasDragPreview } from './useCanvasDragPreview';
 import { useCanvasLayoutItems } from './useCanvasLayoutItems';
 import MainCanvasBackground from './MainCanvasBackground';
 import CanvasWidgetItem from './CanvasWidgetItem';
+import WidgetDeleteZone from './WidgetDeleteZone';
+import { useDragDrop } from './DragDropProvider';
 
 const GRID_ROW_HEIGHT = 120;
 const GRID_MARGIN: [number, number] = [8, 8];
@@ -30,8 +32,9 @@ export default function MainCanvas() {
     backgroundSize,
     backgroundRepeat,
   } = useSettingsStore();
-  const { widgets, setWidgets } = useWidgetStore();
+  const { widgets, setWidgets, removeWidget } = useWidgetStore();
   const { isEditing, isWidgetPickerOpen, closeWidgetPicker, setCurrentCanvasCols } = useUIStore();
+  const { isDragging: isStoreDragging } = useDragDrop();
 
   const [editingWidget, setEditingWidget] = useState<Widget | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -168,6 +171,9 @@ export default function MainCanvas() {
       </div>
 
       <WidgetPicker isOpen={isWidgetPickerOpen} onClose={closeWidgetPicker} />
+      <WidgetDeleteZone
+        visible={isStoreDragging}
+      />
       <WidgetSettingsModal
         isOpen={!!editingWidget}
         widget={editingWidget}
