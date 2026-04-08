@@ -107,9 +107,9 @@ If you prefer to push to Docker Hub instead of GHCR:
 ## 4. Environment Variables
 
 - `NEXT_PUBLIC_DEMO_MODE`: Set to `true` to enable demo mode (read-only).
-- `NEXT_PUBLIC_QWEATHER_API_KEY`: API key used by weather widgets.
-- `NEXT_PUBLIC_QWEATHER_API_HOST`: Optional custom host for weather widgets. When set, it takes priority over the widget-level host field.
-- `NEXT_PUBLIC_QWEATHER_AUTH_TYPE`: Optional weather auth mode. Supported values: `apikey`, `jwt`. Legacy values `param` and `bearer` are still read for backward compatibility.
+- `QWEATHER_API_KEY`: API key or JWT used by the server-side weather proxy.
+- `QWEATHER_API_HOST`: Optional custom host for weather requests. When set, it takes priority over the widget-level host field.
+- `QWEATHER_AUTH_TYPE`: Optional weather auth mode. Supported values: `apikey`, `jwt`. Legacy values `param` and `bearer` are still read for backward compatibility.
 - `PORT`: Port to run the server on (default: 3000).
 
 ## 5. Persistence

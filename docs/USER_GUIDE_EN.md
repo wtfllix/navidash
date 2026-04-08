@@ -33,8 +33,10 @@ In Edit Mode, click the **Settings (⚙️)** button on the top-right of a widge
   - *Tip: The Analog clock features a borderless design that blends perfectly with the Pegboard background.*
 
 #### ☀️ Weather Widget
-- **Location**: Enter your city name (Pinyin or English supported).
+- **Environment Variables**: Set `QWEATHER_API_KEY` in your deployment first. We recommend `QWEATHER_AUTH_TYPE=apikey`.
+- **Location**: Enter your city name (Pinyin or English supported), or provide exact coordinates.
 - **Display**: Shows current temperature, weather conditions, feels-like temperature, etc.
+- **Request Path**: Weather requests now go through the server-side `/api/weather` proxy, so runtime container env changes take effect after restart.
 
 #### 📝 Memo & Todo
 - **Memo**: Click directly on the memo area to type content; saves automatically.
@@ -93,7 +95,7 @@ NaviDash values your data security; all configurations are stored locally.
 ## ❓ FAQ
 
 **Q: Why isn't my weather showing?**
-A: Please check your network connection and ensure the city name is correct. Some regions might need a more specific name (e.g., "Beijing, China").
+A: First confirm `QWEATHER_API_KEY` is set in the running environment and that the container has been restarted. Then check your network connection and verify the city name or coordinates.
 
 **Q: How do I reset all settings?**
 A: There is a red **Reset** button at the bottom of the settings panel. Clicking it will restore the app to its initial state (Note: This action is irreversible).

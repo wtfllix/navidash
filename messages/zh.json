@@ -335,7 +335,7 @@
     "clock_live": "实时时钟",
     "clock_live_with_seconds": "实时时钟含秒数",
     "weather_setup_title": "先配置天气密钥",
-    "weather_setup_hint": "请在环境变量中设置 NEXT_PUBLIC_QWEATHER_API_KEY，然后在组件配置里填写城市或坐标。",
+    "weather_setup_hint": "请在环境变量中设置 QWEATHER_API_KEY，然后在组件配置里填写城市或坐标。",
     "weather_cloud_cover": "云量",
     "weather_updated_at": "更新于 {time}"
   }

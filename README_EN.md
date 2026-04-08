@@ -108,16 +108,16 @@ This is the simplest way to run NaviDash without configuring a local Node.js env
 
     Recommended: `apikey` (preferred)
     ```bash
-    export NEXT_PUBLIC_QWEATHER_API_KEY=your_qweather_key
-    export NEXT_PUBLIC_QWEATHER_API_HOST=your_qweather_host
-    export NEXT_PUBLIC_QWEATHER_AUTH_TYPE=apikey
+    export QWEATHER_API_KEY=your_qweather_key
+    export QWEATHER_API_HOST=your_qweather_host
+    export QWEATHER_AUTH_TYPE=apikey
     ```
 
     If you use JWT instead:
     ```bash
-    export NEXT_PUBLIC_QWEATHER_API_KEY=your_qweather_jwt
-    export NEXT_PUBLIC_QWEATHER_API_HOST=your_qweather_host
-    export NEXT_PUBLIC_QWEATHER_AUTH_TYPE=jwt
+    export QWEATHER_API_KEY=your_qweather_jwt
+    export QWEATHER_API_HOST=your_qweather_host
+    export QWEATHER_AUTH_TYPE=jwt
     ```
 
     Then start the container:
@@ -176,16 +176,16 @@ If you want to contribute or modify the code:
 
     Recommended: `apikey` (preferred)
     ```bash
-    export NEXT_PUBLIC_QWEATHER_API_KEY=your_qweather_key
-    export NEXT_PUBLIC_QWEATHER_API_HOST=your_qweather_host
-    export NEXT_PUBLIC_QWEATHER_AUTH_TYPE=apikey
+    export QWEATHER_API_KEY=your_qweather_key
+    export QWEATHER_API_HOST=your_qweather_host
+    export QWEATHER_AUTH_TYPE=apikey
     ```
 
     If you use JWT instead:
     ```bash
-    export NEXT_PUBLIC_QWEATHER_API_KEY=your_qweather_jwt
-    export NEXT_PUBLIC_QWEATHER_API_HOST=your_qweather_host
-    export NEXT_PUBLIC_QWEATHER_AUTH_TYPE=jwt
+    export QWEATHER_API_KEY=your_qweather_jwt
+    export QWEATHER_API_HOST=your_qweather_host
+    export QWEATHER_AUTH_TYPE=jwt
     ```
 
     Then start the development server:
@@ -206,18 +206,19 @@ If you want to contribute or modify the code:
 
 ### ☀️ How to use the Weather widget
 
-1.  Set `NEXT_PUBLIC_QWEATHER_API_KEY` in your deployment or local development environment.
-    We recommend `NEXT_PUBLIC_QWEATHER_AUTH_TYPE=apikey`.
+1.  Set `QWEATHER_API_KEY` in your deployment or local development environment.
+    We recommend `QWEATHER_AUTH_TYPE=apikey`.
 2.  Start the app and add a `Weather` widget.
 3.  Open that widget's settings and fill in a city name or exact coordinates.
 4.  If your deployment uses a custom Host or JWT authentication, configure those through environment variables.
 
 Notes:
 - The weather key is no longer stored in app settings, backup exports, or `settings.json`.
-- If `NEXT_PUBLIC_QWEATHER_API_HOST` is set, it overrides the widget-level Host field.
-- If `NEXT_PUBLIC_QWEATHER_AUTH_TYPE` is set, it overrides the widget-level auth setting.
+- If `QWEATHER_API_HOST` is set, it overrides the widget-level Host field.
+- If `QWEATHER_AUTH_TYPE` is set, it overrides the widget-level auth setting.
 - `apikey` is the recommended default; `jwt` is supported as an alternative.
 - The weather tab has been removed from the main settings panel. Weather configuration now lives in each Weather widget's own settings.
+- Weather requests now go through the server-side `/api/weather` proxy, so runtime container environment variables take effect immediately.
 
 For detailed usage instructions, please refer to the [User Guide](./docs/USER_GUIDE_EN.md).
 

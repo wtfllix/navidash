@@ -72,16 +72,16 @@
 
     推荐方案：`apikey`（优先）
     ```bash
-    export NEXT_PUBLIC_QWEATHER_API_KEY=your_qweather_key
-    export NEXT_PUBLIC_QWEATHER_API_HOST=your_qweather_host
-    export NEXT_PUBLIC_QWEATHER_AUTH_TYPE=apikey
+    export QWEATHER_API_KEY=your_qweather_key
+    export QWEATHER_API_HOST=your_qweather_host
+    export QWEATHER_AUTH_TYPE=apikey
     ```
 
     如果你使用 JWT，也可以改成：
     ```bash
-    export NEXT_PUBLIC_QWEATHER_API_KEY=your_qweather_jwt
-    export NEXT_PUBLIC_QWEATHER_API_HOST=your_qweather_host
-    export NEXT_PUBLIC_QWEATHER_AUTH_TYPE=jwt
+    export QWEATHER_API_KEY=your_qweather_jwt
+    export QWEATHER_API_HOST=your_qweather_host
+    export QWEATHER_AUTH_TYPE=jwt
     ```
 
     然后启动容器：
@@ -140,16 +140,16 @@
 
     推荐方案：`apikey`（优先）
     ```bash
-    export NEXT_PUBLIC_QWEATHER_API_KEY=your_qweather_key
-    export NEXT_PUBLIC_QWEATHER_API_HOST=your_qweather_host
-    export NEXT_PUBLIC_QWEATHER_AUTH_TYPE=apikey
+    export QWEATHER_API_KEY=your_qweather_key
+    export QWEATHER_API_HOST=your_qweather_host
+    export QWEATHER_AUTH_TYPE=apikey
     ```
 
     如果你使用 JWT，也可以改成：
     ```bash
-    export NEXT_PUBLIC_QWEATHER_API_KEY=your_qweather_jwt
-    export NEXT_PUBLIC_QWEATHER_API_HOST=your_qweather_host
-    export NEXT_PUBLIC_QWEATHER_AUTH_TYPE=jwt
+    export QWEATHER_API_KEY=your_qweather_jwt
+    export QWEATHER_API_HOST=your_qweather_host
+    export QWEATHER_AUTH_TYPE=jwt
     ```
 
     然后启动开发服务器：
@@ -170,18 +170,19 @@
 
 ### ☀️ 天气组件如何使用
 
-1.  在部署环境或本地开发环境中设置 `NEXT_PUBLIC_QWEATHER_API_KEY`。
-    推荐使用 `NEXT_PUBLIC_QWEATHER_AUTH_TYPE=apikey`。
+1.  在部署环境或本地开发环境中设置 `QWEATHER_API_KEY`。
+    推荐使用 `QWEATHER_AUTH_TYPE=apikey`。
 2.  启动应用后，添加一个“天气”组件。
 3.  打开该天气组件的设置，在组件内填写城市，或直接填写经纬度。
 4.  如果你的部署使用自定义 Host 或 JWT 认证，请通过环境变量统一配置。
 
 说明：
 - 天气密钥不再保存在应用设置、备份文件或 `settings.json` 中。
-- 如果设置了 `NEXT_PUBLIC_QWEATHER_API_HOST`，组件里的 Host 会被环境变量优先覆盖。
-- 如果设置了 `NEXT_PUBLIC_QWEATHER_AUTH_TYPE`，组件里的认证方式也会被环境变量优先覆盖。
+- 如果设置了 `QWEATHER_API_HOST`，组件里的 Host 会被环境变量优先覆盖。
+- 如果设置了 `QWEATHER_AUTH_TYPE`，组件里的认证方式也会被环境变量优先覆盖。
 - 推荐优先使用 `apikey`，`jwt` 作为备选方案。
 - 全局设置面板里的天气选项卡已移除，天气相关配置现在在天气组件自己的设置里完成。
+- 天气请求现在通过服务端 `/api/weather` 代理发起，容器运行时环境变量会立即生效。
 
 详细的使用说明请参考 [用户指南 (User Guide)](./docs/USER_GUIDE.md)。
 

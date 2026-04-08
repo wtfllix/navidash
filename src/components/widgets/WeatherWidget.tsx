@@ -33,22 +33,6 @@ interface WeatherData {
   current: QWeatherNow;
 }
 
-function normalizeWeatherAuthType(value: string | undefined): 'apikey' | 'jwt' | undefined {
-  if (!value) {
-    return undefined;
-  }
-
-  if (value === 'apikey' || value === 'param') {
-    return 'apikey';
-  }
-
-  if (value === 'jwt' || value === 'bearer') {
-    return 'jwt';
-  }
-
-  return undefined;
-}
-
 const getWeatherIcon = (iconCode: string, size = 24, className = '') => {
   const code = parseInt(iconCode, 10);
 
@@ -158,27 +142,18 @@ const WeatherWidget = React.memo(({ widget }: { widget: WidgetOfType<'weather'> 
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
+  const [missingServerConfig, setMissingServerConfig] = useState(false);
   const t = useTranslations('Widgets');
   const locale = useLocale();
-  const apiKey = process.env.NEXT_PUBLIC_QWEATHER_API_KEY?.trim() ?? '';
-  const envWeatherHost = process.env.NEXT_PUBLIC_QWEATHER_API_HOST?.trim();
-  const envWeatherAuthType = normalizeWeatherAuthType(
-    process.env.NEXT_PUBLIC_QWEATHER_AUTH_TYPE?.trim()
-  );
   const lat = widget.config?.lat ?? 39.9042;
   const lon = widget.config?.lon ?? 116.4074;
   const city = widget.config?.city || 'Beijing';
   const weatherSub = widget.config?.weatherSub || 'free';
-  const weatherCustomHost = envWeatherHost || widget.config?.weatherCustomHost;
-  const weatherAuthType = envWeatherAuthType || widget.config?.weatherAuthType || 'apikey';
+  const weatherCustomHost = widget.config?.weatherCustomHost;
+  const weatherAuthType = widget.config?.weatherAuthType || 'apikey';
 
   useEffect(() => {
     const fetchWeather = async () => {
-      if (!apiKey) {
-        setLoading(false);
-        return;
-      }
-
       const cacheKey = `qweather_cache_${lat}_${lon}_${weatherSub}_${weatherCustomHost}_${weatherAuthType}`;
       const cached = localStorage.getItem(cacheKey);
 
@@ -196,49 +171,33 @@ const WeatherWidget = React.memo(({ widget }: { widget: WidgetOfType<'weather'> 
 
       try {
         setLoading(true);
-        const lang = locale === 'zh' ? 'zh' : 'en';
-        const location = `${Math.round(lon * 100) / 100},${Math.round(lat * 100) / 100}`;
-
-        let baseUrl;
-        if (weatherCustomHost && weatherCustomHost.trim()) {
-          let host = weatherCustomHost.trim();
-          if (!/^https?:\/\//i.test(host)) {
-            host = `https://${host}`;
-          }
-          baseUrl = host.replace(/\/+$/, '');
-        } else {
-          baseUrl = 'https://devapi.qweather.com';
-        }
-
-        const headers: HeadersInit = {};
-        if (weatherAuthType === 'jwt') {
-          headers.Authorization = `Bearer ${apiKey}`;
-        }
-
-        if (weatherAuthType === 'apikey') {
-          headers['X-QW-Api-Key'] = apiKey;
-        }
-
         const queryParams = new URLSearchParams({
-          location,
-          lang,
+          lat: String(lat),
+          lon: String(lon),
+          locale,
         });
 
-        const nowUrl = `${baseUrl}/v7/weather/now?${queryParams.toString()}`;
-        const nowRes = await fetch(nowUrl, { headers });
+        if (weatherCustomHost) {
+          queryParams.set('host', weatherCustomHost);
+        }
 
-        if (!nowRes.ok) {
+        if (weatherAuthType) {
+          queryParams.set('authType', weatherAuthType);
+        }
+
+        const response = await fetch(`/api/weather?${queryParams.toString()}`, {
+          cache: 'no-store',
+        });
+
+        if (!response.ok) {
+          const payload = (await response.json().catch(() => null)) as
+            | { details?: string }
+            | null;
+          setMissingServerConfig(payload?.details === 'Missing QWeather API key');
           throw new Error('Weather API Error');
         }
 
-        const nowData = await nowRes.json();
-        if (nowData.code !== '200') {
-          throw new Error('API Code Error');
-        }
-
-        const combinedData: WeatherData = {
-          current: nowData.now,
-        };
+        const combinedData = (await response.json()) as WeatherData;
 
         setWeatherData(combinedData);
         localStorage.setItem(
@@ -248,6 +207,7 @@ const WeatherWidget = React.memo(({ widget }: { widget: WidgetOfType<'weather'> 
             data: combinedData,
           })
         );
+        setMissingServerConfig(false);
         setError(false);
       } catch (fetchError) {
         console.error('Failed to fetch weather', fetchError);
@@ -260,11 +220,11 @@ const WeatherWidget = React.memo(({ widget }: { widget: WidgetOfType<'weather'> 
     fetchWeather();
     const interval = setInterval(fetchWeather, 30 * 60 * 1000);
     return () => clearInterval(interval);
-  }, [apiKey, lat, lon, locale, weatherAuthType, weatherCustomHost, weatherSub]);
+  }, [lat, lon, locale, weatherAuthType, weatherCustomHost, weatherSub]);
 
   const sizeKey = `${widget.size.w}x${widget.size.h}`;
 
-  if (!apiKey) {
+  if (missingServerConfig) {
     return (
       <div className="flex h-full w-full flex-col items-center justify-center bg-white px-4 text-center">
         <CloudSun size={32} className="mb-2 text-gray-300" />
