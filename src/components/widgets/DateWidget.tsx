@@ -180,11 +180,7 @@ const DateWidget = React.memo(({ widget }: { widget: WidgetOfType<'date'> }) => 
         <div className="grid h-full w-full grid-cols-[1.58fr_0.92fr]">
           <div className="flex h-full flex-col border-r border-black/[0.03] px-5 py-4">
             <div className="flex items-center justify-between gap-2.5">
-              <div className="flex items-center gap-1.5">
-                <span
-                  className="h-px w-3 shrink-0 rounded-full"
-                  style={{ backgroundColor: `${themeColor}55` }}
-                />
+              <div>
                 <div
                   className="text-[0.6rem] font-medium uppercase tracking-[0.16em]"
                   style={{ color: `${themeColor}aa` }}
@@ -253,17 +249,11 @@ const DateWidget = React.memo(({ widget }: { widget: WidgetOfType<'date'> }) => 
         <div className="absolute inset-0 rounded-[inherit] ring-1 ring-black/[0.03]" />
         <div className="flex h-full flex-col px-4 py-4">
           <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <span
-                className="h-px w-4 shrink-0 rounded-full"
-                style={{ backgroundColor: `${themeColor}55` }}
-              />
-              <div
-                className="text-[0.64rem] font-medium uppercase tracking-[0.2em]"
-                style={{ color: `${themeColor}aa` }}
-              >
-                {monthLabel}
-              </div>
+            <div
+              className="text-[0.64rem] font-medium uppercase tracking-[0.2em]"
+              style={{ color: `${themeColor}aa` }}
+            >
+              {monthLabel}
             </div>
             <div className="text-[0.64rem] font-medium tracking-[0.02em] text-[#55606a]">
               {weekdayShort}
@@ -296,11 +286,7 @@ const DateWidget = React.memo(({ widget }: { widget: WidgetOfType<'date'> }) => 
       <div className="grid h-full w-full grid-cols-[1.55fr_0.95fr]">
         <div className="flex h-full flex-col border-r border-black/[0.03] px-5 py-4">
           <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <span
-                className="h-px w-4 shrink-0 rounded-full"
-                style={{ backgroundColor: `${themeColor}55` }}
-              />
+            <div>
               <div
                 className="text-[0.64rem] font-medium uppercase tracking-[0.2em]"
                 style={{ color: `${themeColor}aa` }}
