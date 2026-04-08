@@ -64,11 +64,22 @@ cp .env.example .env
 
 4. 如果需要天气组件，补充天气配置
 
+当前版本天气服务使用的是和风天气（QWeather）。
+
 推荐使用 `apikey`：
+
+获取方式可以尽量简单一些：
+
+1. 注册并登录和风天气控制台
+2. 创建一个项目或应用，并启用天气相关 API
+3. 在项目凭证页面生成 `API Key`，填入 `QWEATHER_API_KEY`
+4. 使用和风天气提供的 API Host，填入 `QWEATHER_API_HOST`；默认可用地址是 `https://devapi.qweather.com`
+
+如果你没有使用其他由和风天气提供的接入地址，`QWEATHER_API_HOST` 可以直接填写默认值 `https://devapi.qweather.com`。
 
 ```bash
 QWEATHER_API_KEY=your_qweather_key
-QWEATHER_API_HOST=your_qweather_host
+QWEATHER_API_HOST=https://devapi.qweather.com
 QWEATHER_AUTH_TYPE=apikey
 ```
 
@@ -76,7 +87,7 @@ QWEATHER_AUTH_TYPE=apikey
 
 ```bash
 QWEATHER_API_KEY=your_qweather_jwt
-QWEATHER_API_HOST=your_qweather_host
+QWEATHER_API_HOST=https://devapi.qweather.com
 QWEATHER_AUTH_TYPE=jwt
 ```
 
@@ -119,11 +130,11 @@ npm run build
 `.env.example` 中最重要的配置项：
 
 - `NEXT_PUBLIC_DEMO_MODE`: 设为 `true` 时启用只读演示模式
-- `QWEATHER_API_KEY`: 天气服务使用的 Key 或 JWT
-- `QWEATHER_API_HOST`: 可选，自定义天气服务 Host
+- `QWEATHER_API_KEY`: 和风天气（QWeather）使用的 Key 或 JWT
+- `QWEATHER_API_HOST`: 可选，自定义和风天气兼容 Host
 - `QWEATHER_AUTH_TYPE`: `apikey` 或 `jwt`
 
-天气请求通过服务端 `/api/weather` 代理发起。推荐优先把天气相关参数放在环境变量里，而不是写进组件配置。
+当前版本天气请求通过服务端 `/api/weather` 代理发起，默认对接和风天气（QWeather）。推荐优先把天气相关参数放在环境变量里，而不是写进组件配置。
 
 ## 数据与持久化
 

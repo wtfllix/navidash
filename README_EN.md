@@ -63,11 +63,22 @@ cp .env.example .env
 
 4. Add weather configuration if you want the Weather widget
 
+The current weather integration uses QWeather (HeWeather).
+
 Recommended `apikey` mode:
+
+The simplest way to get one is:
+
+1. Sign in to the QWeather console
+2. Create a project or app and enable the weather APIs you need
+3. Generate an `API Key` from the project credentials page and put it into `QWEATHER_API_KEY`
+4. Use the API Host provided by QWeather for `QWEATHER_API_HOST`; the default available host is `https://devapi.qweather.com`
+
+If you are not using another QWeather-provided endpoint, set `QWEATHER_API_HOST` to the default value `https://devapi.qweather.com`.
 
 ```bash
 QWEATHER_API_KEY=your_qweather_key
-QWEATHER_API_HOST=your_qweather_host
+QWEATHER_API_HOST=https://devapi.qweather.com
 QWEATHER_AUTH_TYPE=apikey
 ```
 
@@ -75,7 +86,7 @@ If you use JWT:
 
 ```bash
 QWEATHER_API_KEY=your_qweather_jwt
-QWEATHER_API_HOST=your_qweather_host
+QWEATHER_API_HOST=https://devapi.qweather.com
 QWEATHER_AUTH_TYPE=jwt
 ```
 
@@ -118,11 +129,11 @@ npm run build
 The most important environment variables in `.env.example` are:
 
 - `NEXT_PUBLIC_DEMO_MODE`: enables read-only demo mode when set to `true`
-- `QWEATHER_API_KEY`: weather API key or JWT
-- `QWEATHER_API_HOST`: optional custom weather host
+- `QWEATHER_API_KEY`: QWeather (HeWeather) API key or JWT
+- `QWEATHER_API_HOST`: optional custom QWeather-compatible host
 - `QWEATHER_AUTH_TYPE`: `apikey` or `jwt`
 
-Weather requests go through the server-side `/api/weather` proxy. In most cases, weather-related credentials should live in environment variables rather than widget config.
+Weather requests go through the server-side `/api/weather` proxy and currently target QWeather (HeWeather) by default. In most cases, weather-related credentials should live in environment variables rather than widget config.
 
 ## Persistence
 
