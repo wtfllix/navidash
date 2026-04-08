@@ -12,7 +12,7 @@
 
 NaviDash is a customizable personal homepage for people who want a cleaner and more intentional browser start page. It combines a pegboard-inspired visual style with a draggable widget canvas and local-first self-hosting, making it a good fit for long-term use on personal devices or home setups.
 
-Live demo: [navidash.vercel.app/zh](https://navidash.vercel.app/zh)
+Live demo: [navidash](https://navidash.vercel.app/en)
 
 ## Who It's For
 
