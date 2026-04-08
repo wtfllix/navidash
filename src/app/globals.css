@@ -154,28 +154,54 @@
     animation: weather-twinkle 7s ease-in-out infinite;
   }
 
-  .custom-scrollbar::-webkit-scrollbar {
+  .hover-scrollbar {
+    scrollbar-width: none;
+  }
+
+  .hover-scrollbar::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
+
+  .hover-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .hover-scrollbar::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 9999px;
+  }
+
+  .hover-scrollbar:hover {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(148, 163, 184, 0.72) transparent;
+  }
+
+  .hover-scrollbar:hover::-webkit-scrollbar,
+  .hover-scrollbar:focus::-webkit-scrollbar,
+  .hover-scrollbar:focus-visible::-webkit-scrollbar {
     width: 4px;
     height: 4px;
   }
-  .custom-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  .custom-scrollbar::-webkit-scrollbar-thumb {
+
+  .hover-scrollbar:hover::-webkit-scrollbar-thumb,
+  .hover-scrollbar:focus::-webkit-scrollbar-thumb,
+  .hover-scrollbar:focus-visible::-webkit-scrollbar-thumb {
     background: #cbd5e1; /* slate-300 */
-    border-radius: 4px;
   }
-  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+
+  .hover-scrollbar:hover::-webkit-scrollbar-thumb:hover,
+  .hover-scrollbar:focus::-webkit-scrollbar-thumb:hover,
+  .hover-scrollbar:focus-visible::-webkit-scrollbar-thumb:hover {
     background: #94a3b8; /* slate-400 */
   }
 
   .memo-scrollbar {
-    scrollbar-width: thin;
-    scrollbar-color: transparent transparent;
+    scrollbar-width: none;
   }
 
   .memo-scrollbar::-webkit-scrollbar {
-    width: 3px;
+    width: 0;
   }
 
   .memo-scrollbar::-webkit-scrollbar-track {
@@ -188,7 +214,14 @@
   }
 
   .memo-scrollbar:hover {
+    scrollbar-width: thin;
     scrollbar-color: rgba(113, 63, 18, 0.28) transparent;
+  }
+
+  .memo-scrollbar:hover::-webkit-scrollbar,
+  .memo-scrollbar:focus::-webkit-scrollbar,
+  .memo-scrollbar:focus-visible::-webkit-scrollbar {
+    width: 3px;
   }
 
   .memo-scrollbar:hover::-webkit-scrollbar-thumb,

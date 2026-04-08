@@ -111,7 +111,7 @@ export default function LinksWidget({ widget }: { widget: WidgetOfType<'links'> 
         )}
       </div>
       {isSingleRow ? (
-        <div className="scrollbar-hide flex-1 overflow-y-auto overflow-x-hidden pr-1 snap-y snap-mandatory">
+        <div className="hover-scrollbar flex-1 overflow-y-auto overflow-x-hidden pr-1 snap-y snap-mandatory">
           <div className="space-y-3">
             {linkRows.map((row, rowIndex) => (
               <div
@@ -151,7 +151,7 @@ export default function LinksWidget({ widget }: { widget: WidgetOfType<'links'> 
       ) : (
         <div
           className={cn(
-            'scrollbar-hide grid flex-1 content-start gap-x-2 gap-y-3 overflow-y-auto overflow-x-hidden pr-1',
+            'hover-scrollbar grid flex-1 content-start gap-x-2 gap-y-3 overflow-y-auto overflow-x-hidden pr-1',
             gridColumnsClass
           )}
         >
