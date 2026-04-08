@@ -129,3 +129,18 @@ export const DEMO_SETTINGS: Settings = {
   customTitle: 'NaviDash Demo',
   language: 'en',
 };
+
+export function getDemoWeather(city = 'Hangzhou') {
+  return {
+    current: {
+      obsTime: new Date('2026-04-08T09:30:00.000Z').toISOString(),
+      temp: '22',
+      feelsLike: '24',
+      icon: '101',
+      text: city === 'Hangzhou' ? 'Cloudy' : 'Partly cloudy',
+      windScale: '2',
+      humidity: '61',
+      cloud: '42',
+    },
+  };
+}

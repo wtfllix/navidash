@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { getDemoWeather, isServerDemoMode } from '@/lib/demo';
 
 export type WeatherAuthType = 'apikey' | 'jwt';
 
@@ -61,6 +62,10 @@ export async function fetchServerWeather({
   host,
   authType,
 }: WeatherRequestParams) {
+  if (isServerDemoMode) {
+    return getDemoWeather();
+  }
+
   const serverConfig = getWeatherServerConfig();
   const apiKey = serverConfig.apiKey;
 
