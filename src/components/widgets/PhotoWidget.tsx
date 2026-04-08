@@ -19,11 +19,17 @@ export default function PhotoWidget({ widget }: PhotoWidgetProps) {
   const [currentIndex, setCurrentIndex] = React.useState(0);
   const [isLoading, setIsLoading] = React.useState(imageUrls.length > 0);
   const [failedImages, setFailedImages] = React.useState<string[]>([]);
+  const [displayedImage, setDisplayedImage] = React.useState<string | null>(null);
+  const [incomingImage, setIncomingImage] = React.useState<string | null>(null);
+  const [isIncomingVisible, setIsIncomingVisible] = React.useState(false);
 
   React.useEffect(() => {
     setCurrentIndex(0);
     setIsLoading(imageUrls.length > 0);
     setFailedImages([]);
+    setDisplayedImage(null);
+    setIncomingImage(null);
+    setIsIncomingVisible(false);
   }, [imageUrls]);
 
   const availableImages = React.useMemo(
@@ -60,8 +66,32 @@ export default function PhotoWidget({ widget }: PhotoWidgetProps) {
   const currentImage = availableImages[currentIndex];
 
   React.useEffect(() => {
-    setIsLoading(Boolean(currentImage));
-  }, [currentImage]);
+    if (!currentImage) {
+      setDisplayedImage(null);
+      setIncomingImage(null);
+      setIsIncomingVisible(false);
+      setIsLoading(false);
+      return;
+    }
+
+    if (!displayedImage) {
+      setDisplayedImage(currentImage);
+      setIncomingImage(null);
+      setIsIncomingVisible(false);
+      setIsLoading(true);
+      return;
+    }
+
+    if (currentImage === displayedImage) {
+      setIncomingImage(null);
+      setIsIncomingVisible(false);
+      return;
+    }
+
+    setIncomingImage(currentImage);
+    setIsIncomingVisible(false);
+    setIsLoading(true);
+  }, [currentImage, displayedImage]);
 
   if (!imageUrls.length) {
     return (
@@ -83,21 +113,51 @@ export default function PhotoWidget({ widget }: PhotoWidgetProps) {
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-gray-100">
-      {isLoading && (
+      {isLoading && !displayedImage && (
         <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-gray-100 to-gray-200" />
       )}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        key={currentImage}
-        src={currentImage}
+        src={displayedImage ?? currentImage}
         alt="Widget Photo"
-        className="h-full w-full object-cover transition-opacity duration-500"
+        className="h-full w-full object-cover"
         onLoad={() => setIsLoading(false)}
         onError={() => {
           setIsLoading(false);
+          if (!currentImage) return;
+          setDisplayedImage(null);
           setFailedImages((current) => (current.includes(currentImage) ? current : [...current, currentImage]));
         }}
       />
+      {incomingImage ? (
+        // Keep the current image mounted underneath so the next one can fade in smoothly.
+        /* eslint-disable-next-line @next/next/no-img-element */
+        <img
+          src={incomingImage}
+          alt="Widget Photo"
+          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-500 ${
+            isIncomingVisible ? 'opacity-100' : 'opacity-0'
+          }`}
+          onLoad={() => {
+            setIsLoading(false);
+            requestAnimationFrame(() => {
+              setIsIncomingVisible(true);
+            });
+          }}
+          onTransitionEnd={(event) => {
+            if (event.propertyName !== 'opacity' || !isIncomingVisible) return;
+            setDisplayedImage(incomingImage);
+            setIncomingImage(null);
+            setIsIncomingVisible(false);
+          }}
+          onError={() => {
+            setIsLoading(false);
+            setIncomingImage(null);
+            setIsIncomingVisible(false);
+            setFailedImages((current) => (current.includes(incomingImage) ? current : [...current, incomingImage]));
+          }}
+        />
+      ) : null}
     </div>
   );
 }
