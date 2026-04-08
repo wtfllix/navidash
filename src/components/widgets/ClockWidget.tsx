@@ -15,10 +15,6 @@ function useClockDisplay(time: Date, locale: string, size: { w: number; h: numbe
   const weekday = time.toLocaleDateString(locale, { weekday: is11 ? 'short' : 'long' });
   const monthDay = time.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
   const compactDate = time.toLocaleDateString(locale, { month: 'numeric', day: 'numeric' });
-  const monthDayWeekday = `${monthDay} ${weekday}`;
-  const fullTime = `${hourString}:${minuteString}`;
-  const preciseTime = `${hourString}:${minuteString}:${secondString}`;
-
   return {
     is11,
     hourString,
@@ -27,8 +23,6 @@ function useClockDisplay(time: Date, locale: string, size: { w: number; h: numbe
     weekday,
     monthDay,
     compactDate,
-    fullTime,
-    preciseTime,
   };
 }
 
@@ -81,11 +75,18 @@ function GlassClock({
           }`}
         >
           <div
-            className={`break-keep leading-none tracking-[-0.06em] text-slate-900 [font-variant-numeric:tabular-nums] ${timeClass} font-semibold ${
+            className={`break-keep leading-none tracking-[-0.06em] text-slate-800/85 [font-variant-numeric:tabular-nums] ${timeClass} font-normal ${
               isCompact ? 'text-center' : 'text-right'
             }`}
           >
-            {isCompact ? display.fullTime : display.preciseTime}
+            {isCompact ? (
+              `${display.hourString}:${display.minuteString}`
+            ) : (
+              <>
+                <span>{display.hourString}:{display.minuteString}</span>
+                <span className="text-[0.72em] text-slate-500/70">:{display.secondString}</span>
+              </>
+            )}
           </div>
         </div>
       </div>
