@@ -74,17 +74,24 @@
     cp .env.example .env
     ```
 
+    当前版本天气服务使用的是和风天气（QWeather）。
+    获取方式可以尽量简单一些：
+    1. 注册并登录和风天气控制台
+    2. 创建一个项目或应用，并启用天气相关 API
+    3. 在项目凭证页面生成 `API Key`，填入 `QWEATHER_API_KEY`
+    4. 使用和风天气提供的 API Host，填入 `QWEATHER_API_HOST`；默认可用地址是 `https://devapi.qweather.com`
+
     推荐方案：`apikey`（优先）
     ```bash
     QWEATHER_API_KEY=your_qweather_key
-    QWEATHER_API_HOST=your_qweather_host
+    QWEATHER_API_HOST=https://devapi.qweather.com
     QWEATHER_AUTH_TYPE=apikey
     ```
 
     如果你使用 JWT，可以把 `.env` 改成：
     ```bash
     QWEATHER_API_KEY=your_qweather_jwt
-    QWEATHER_API_HOST=your_qweather_host
+    QWEATHER_API_HOST=https://devapi.qweather.com
     QWEATHER_AUTH_TYPE=jwt
     ```
 
@@ -146,17 +153,19 @@
     cp .env.example .env
     ```
 
+    当前版本天气请求通过服务端 `/api/weather` 代理发起，默认对接和风天气（QWeather）。
+
     推荐方案：`apikey`（优先）
     ```bash
     QWEATHER_API_KEY=your_qweather_key
-    QWEATHER_API_HOST=your_qweather_host
+    QWEATHER_API_HOST=https://devapi.qweather.com
     QWEATHER_AUTH_TYPE=apikey
     ```
 
     如果你使用 JWT，可以把 `.env` 改成：
     ```bash
     QWEATHER_API_KEY=your_qweather_jwt
-    QWEATHER_API_HOST=your_qweather_host
+    QWEATHER_API_HOST=https://devapi.qweather.com
     QWEATHER_AUTH_TYPE=jwt
     ```
 

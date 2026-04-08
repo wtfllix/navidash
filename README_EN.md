@@ -110,17 +110,24 @@ This is the simplest way to run NaviDash without configuring a local Node.js env
     cp .env.example .env
     ```
 
+    The current weather integration uses QWeather (HeWeather).
+    The simplest way to get one is:
+    1. Sign in to the QWeather console
+    2. Create a project or app and enable the weather APIs you need
+    3. Generate an `API Key` from the project credentials page and put it into `QWEATHER_API_KEY`
+    4. Use the API Host provided by QWeather for `QWEATHER_API_HOST`; the default available host is `https://devapi.qweather.com`
+
     Recommended: `apikey` (preferred)
     ```bash
     QWEATHER_API_KEY=your_qweather_key
-    QWEATHER_API_HOST=your_qweather_host
+    QWEATHER_API_HOST=https://devapi.qweather.com
     QWEATHER_AUTH_TYPE=apikey
     ```
 
     If you use JWT instead, update `.env` to:
     ```bash
     QWEATHER_API_KEY=your_qweather_jwt
-    QWEATHER_API_HOST=your_qweather_host
+    QWEATHER_API_HOST=https://devapi.qweather.com
     QWEATHER_AUTH_TYPE=jwt
     ```
 
@@ -185,14 +192,14 @@ If you want to contribute or modify the code:
     Recommended: `apikey` (preferred)
     ```bash
     QWEATHER_API_KEY=your_qweather_key
-    QWEATHER_API_HOST=your_qweather_host
+    QWEATHER_API_HOST=https://devapi.qweather.com
     QWEATHER_AUTH_TYPE=apikey
     ```
 
     If you use JWT instead, update `.env` to:
     ```bash
     QWEATHER_API_KEY=your_qweather_jwt
-    QWEATHER_API_HOST=your_qweather_host
+    QWEATHER_API_HOST=https://devapi.qweather.com
     QWEATHER_AUTH_TYPE=jwt
     ```
 

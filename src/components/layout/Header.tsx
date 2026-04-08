@@ -62,7 +62,7 @@ export default function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-10 border-b border-slate-200/70 bg-white/82 px-4 py-3 backdrop-blur-xl transition-all">
+    <header className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/82 px-4 py-3 backdrop-blur-xl transition-all">
       <div className="flex items-center gap-3">
         <div className="hidden items-center gap-2 md:flex">
           <div className="flex items-center gap-2 rounded-2xl bg-slate-900 px-3 py-2 text-white shadow-sm">
@@ -89,7 +89,7 @@ export default function Header() {
           </span>
         </button>
 
-        <div className="relative z-30 mx-auto w-full max-w-3xl flex-1">
+        <div className="relative z-50 mx-auto w-full max-w-3xl flex-1">
           <form
             onSubmit={handleSearch}
             role="search"
@@ -109,9 +109,9 @@ export default function Header() {
 
               {isSearchDropdownOpen && (
                 <>
-                  <div className="fixed inset-0 z-10" onClick={() => setIsSearchDropdownOpen(false)} />
+                  <div className="fixed inset-0 z-40" onClick={() => setIsSearchDropdownOpen(false)} />
                   <div
-                    className="absolute left-0 top-full z-20 mt-2 w-40 overflow-hidden rounded-2xl border border-slate-200 bg-white py-1 shadow-xl shadow-slate-900/8"
+                    className="absolute left-0 top-full z-50 mt-2 w-40 overflow-hidden rounded-2xl border border-slate-200 bg-white py-1 shadow-xl shadow-slate-900/8"
                     role="listbox"
                   >
                     {ENGINES.map((eng) => (
