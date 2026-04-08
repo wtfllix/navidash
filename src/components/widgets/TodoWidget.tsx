@@ -136,7 +136,7 @@ export default function TodoWidget({ widget }: TodoWidgetProps) {
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto border-t border-gray-100 pt-2 pr-1 custom-scrollbar">
+      <div className="min-h-0 flex-1 overflow-y-auto border-t border-gray-100 pt-2 scrollbar-hide">
         {todos.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center px-3 text-center text-xs text-gray-400">
             <p className="text-sm font-medium text-gray-500">{t('no_todos')}</p>
