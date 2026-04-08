@@ -181,6 +181,7 @@ const MemoWidget = ({ widget }: { widget: WidgetOfType<'memo'> }) => {
   const [saveFeedback, setSaveFeedback] = useState<SaveFeedbackState>('idle');
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const feedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastSyncedContentRef = useRef(widget.config?.content || '');
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const isDirty = content !== (widget.config?.content || '');
   const hasContent = content.trim().length > 0;
@@ -188,10 +189,15 @@ const MemoWidget = ({ widget }: { widget: WidgetOfType<'memo'> }) => {
 
   useEffect(() => {
     const remoteContent = widget.config?.content || '';
-    if (remoteContent !== content && !isDirty) {
+
+    // 只在本地内容仍然等于上一次已同步内容时，接受外部同步结果，
+    // 避免把远端更新误判为“本地脏数据”而卡住自动同步。
+    if (remoteContent !== lastSyncedContentRef.current && content === lastSyncedContentRef.current) {
       setContent(remoteContent);
     }
-  }, [content, isDirty, widget.config?.content]);
+
+    lastSyncedContentRef.current = remoteContent;
+  }, [content, widget.config?.content]);
 
   const showFeedback = useCallback((nextState: SaveFeedbackState) => {
     setSaveFeedback(nextState);

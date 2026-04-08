@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useWidgetStore } from '@/store/useWidgetStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { isClientDemoMode } from '@/lib/demo';
@@ -8,14 +8,15 @@ import { isClientDemoMode } from '@/lib/demo';
 export default function DataSyncer() {
   const { fetchWidgets } = useWidgetStore();
   const { fetchSettings } = useSettingsStore();
-
-  useEffect(() => {
-    // Initial fetch
-    const fetchAll = (forceSettings = false) => {
+  const fetchAll = useCallback(
+    (forceSettings = false) => {
       fetchWidgets();
       fetchSettings(forceSettings);
-    };
+    },
+    [fetchSettings, fetchWidgets]
+  );
 
+  useEffect(() => {
     fetchAll(true);
 
     if (isClientDemoMode) {
@@ -48,18 +49,40 @@ export default function DataSyncer() {
       }
     };
 
+    const handleFocus = () => {
+      if (!document.hidden) {
+        fetchAll(true);
+      }
+    };
+
+    const handlePageShow = () => {
+      fetchAll(true);
+      startPolling();
+    };
+
+    const handleOnline = () => {
+      fetchAll(true);
+      startPolling();
+    };
+
     // Start polling initially if visible
     if (!document.hidden) {
       startPolling();
     }
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('pageshow', handlePageShow);
+    window.addEventListener('online', handleOnline);
 
     return () => {
       stopPolling();
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('pageshow', handlePageShow);
+      window.removeEventListener('online', handleOnline);
     };
-  }, [fetchWidgets, fetchSettings]);
+  }, [fetchAll]);
 
   return null;
 }

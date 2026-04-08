@@ -87,7 +87,7 @@ function WidgetItemContent({
                 e.stopPropagation();
                 removeWidget(widget.id);
               }}
-              className="p-1.5 bg-white shadow-sm border border-gray-100 rounded-full hover:bg-red-50 text-gray-500 hover:text-red-600 transition-colors"
+              className="p-1.5 rounded-full border border-red-100 bg-red-50 text-red-600 shadow-sm hover:bg-red-100 hover:text-red-700 transition-colors"
               title={t('remove_widget')}
               aria-label={t('remove_widget')}
             >

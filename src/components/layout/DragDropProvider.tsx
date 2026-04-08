@@ -34,12 +34,14 @@ interface DragDropContextType {
   activeDragData: DragData | null;
   dragOverlayPosition: Coordinates | null;
   isDragging: boolean;
+  isOverDeleteZone: boolean;
 }
 
 const DragDropContext = createContext<DragDropContextType>({
   activeDragData: null,
   dragOverlayPosition: null,
   isDragging: false,
+  isOverDeleteZone: false,
 });
 
 interface DragDropProviderProps {
@@ -111,8 +113,10 @@ export default function DragDropProvider({ children }: DragDropProviderProps) {
   const [activeDragData, setActiveDragData] = useState<DragData | null>(null);
   const [dragOverlayPosition, setDragOverlayPosition] = useState<Coordinates | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isOverDeleteZone, setIsOverDeleteZone] = useState(false);
   const lastPointerClientRef = useRef<{ x: number; y: number } | null>(null);
   const smoothTransformRef = useRef<{ x: number; y: number } | null>(null);
+  const isOverDeleteZoneRef = useRef(false);
   const { close: closeSidebar } = useSidebarStore();
 
   const dragLagModifier: Modifier = useCallback(({ transform }) => {
@@ -138,11 +142,31 @@ export default function DragDropProvider({ children }: DragDropProviderProps) {
     if (!isDragging) return;
 
     const handlePointerMove = (event: PointerEvent) => {
-      lastPointerClientRef.current = { x: event.clientX, y: event.clientY };
+      const nextClient = { x: event.clientX, y: event.clientY };
+      lastPointerClientRef.current = nextClient;
+
+      const deleteZone = document.querySelector('[data-widget-delete-zone="true"]');
+      if (deleteZone instanceof HTMLElement) {
+        const rect = deleteZone.getBoundingClientRect();
+        const nextIsOverDeleteZone =
+          nextClient.x >= rect.left &&
+          nextClient.x <= rect.right &&
+          nextClient.y >= rect.top &&
+          nextClient.y <= rect.bottom;
+        isOverDeleteZoneRef.current = nextIsOverDeleteZone;
+        setIsOverDeleteZone(nextIsOverDeleteZone);
+      } else {
+        isOverDeleteZoneRef.current = false;
+        setIsOverDeleteZone(false);
+      }
     };
 
     window.addEventListener('pointermove', handlePointerMove);
-    return () => window.removeEventListener('pointermove', handlePointerMove);
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      isOverDeleteZoneRef.current = false;
+      setIsOverDeleteZone(false);
+    };
   }, [isDragging]);
 
   // 配置传感器
@@ -164,6 +188,8 @@ export default function DragDropProvider({ children }: DragDropProviderProps) {
     if (dragData) {
       setActiveDragData(dragData);
       setIsDragging(true);
+      isOverDeleteZoneRef.current = false;
+      setIsOverDeleteZone(false);
       smoothTransformRef.current = null;
       lastPointerClientRef.current = getClientFromEvent(event.activatorEvent);
       // 拖拽开始即自动收起组件商店，释放主面板操作空间
@@ -190,6 +216,7 @@ export default function DragDropProvider({ children }: DragDropProviderProps) {
     setActiveDragData(null);
     setDragOverlayPosition(null);
     setIsDragging(false);
+    setIsOverDeleteZone(false);
 
     const dragData = active.data.current as DragData | undefined;
     if (!dragData) {
@@ -197,10 +224,35 @@ export default function DragDropProvider({ children }: DragDropProviderProps) {
       return;
     }
 
+    if (isOverDeleteZoneRef.current || over?.id === 'widget-delete-drop-zone') {
+      isOverDeleteZoneRef.current = false;
+      lastPointerClientRef.current = null;
+      smoothTransformRef.current = null;
+      return;
+    }
+
     const dropClient =
       lastPointerClientRef.current ??
       getClientFromActiveRect(active.rect) ??
       getClientFromEvent(event.activatorEvent);
+
+    let droppedOnDeleteZone = over?.id === 'widget-delete-drop-zone';
+    const deleteZone = document.querySelector('[data-widget-delete-zone="true"]');
+    if (!droppedOnDeleteZone && dropClient && deleteZone instanceof HTMLElement) {
+      const rect = deleteZone.getBoundingClientRect();
+      droppedOnDeleteZone =
+        dropClient.x >= rect.left &&
+        dropClient.x <= rect.right &&
+        dropClient.y >= rect.top &&
+        dropClient.y <= rect.bottom;
+    }
+
+    if (droppedOnDeleteZone) {
+      isOverDeleteZoneRef.current = false;
+      lastPointerClientRef.current = null;
+      smoothTransformRef.current = null;
+      return;
+    }
 
     const droppedByOver = over?.id === 'main-canvas-drop-area';
     let droppedByRect = false;
@@ -226,6 +278,7 @@ export default function DragDropProvider({ children }: DragDropProviderProps) {
         },
     });
     window.dispatchEvent(dropEvent);
+    isOverDeleteZoneRef.current = false;
     lastPointerClientRef.current = null;
     smoothTransformRef.current = null;
   }, []);
@@ -235,12 +288,16 @@ export default function DragDropProvider({ children }: DragDropProviderProps) {
     setActiveDragData(null);
     setDragOverlayPosition(null);
     setIsDragging(false);
+    setIsOverDeleteZone(false);
+    isOverDeleteZoneRef.current = false;
     lastPointerClientRef.current = null;
     smoothTransformRef.current = null;
   }, []);
 
   return (
-    <DragDropContext.Provider value={{ activeDragData, dragOverlayPosition, isDragging }}>
+    <DragDropContext.Provider
+      value={{ activeDragData, dragOverlayPosition, isDragging, isOverDeleteZone }}
+    >
       <DndContext
         sensors={sensors}
         modifiers={[dragLagModifier]}

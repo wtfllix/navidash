@@ -1,246 +1,179 @@
-# 🧭 NaviDash
+# NaviDash
 
-> A clean, efficient, and highly customizable personal dashboard.
+> A customizable personal start page with a pegboard-inspired layout.
 
 [中文](./README.md) | **English**
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Version](https://img.shields.io/badge/version-0.4.0-green)
-![Next.js](https://img.shields.io/badge/Next.js-14-black)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
-![Docker](https://img.shields.io/badge/Docker-Ready-2496ed)
+![Version](https://img.shields.io/badge/version-0.5.0-green.svg)
+![Next.js](https://img.shields.io/badge/Next.js-14-black.svg)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue.svg)
+![Docker](https://img.shields.io/badge/Docker-ready-2496ed.svg)
 
-**NaviDash** is designed for users who seek ultimate efficiency and aesthetics. Abandoning clutter, it uses a classic "Pegboard" style foundation combined with a free-dragging grid layout to create a browser start page that is both beautiful and practical.
+NaviDash is a customizable personal homepage for people who want a cleaner and more intentional browser start page. It combines a pegboard-inspired visual style with a draggable widget canvas and local-first self-hosting, making it a good fit for long-term use on personal devices or home setups.
 
----
+Live demo: [navidash.vercel.app/zh](https://navidash.vercel.app/zh)
 
-## ✨ v0.4.0 Changelog
+## Who It's For
 
-- 🧩 **Widget Store Drag & Drop Upgrade**: Dragging from the widget store now auto-collapses the sidebar and returns focus to the main canvas.
-- 📍 **Placement UX Improvements**: Improved placeholder feedback and drop positioning; removed the "fly-back" overlay effect.
-- 🔁 **Conflict Reflow Enhancement**: Added chain-style downward reflow so conflicting widgets move in sequence with fewer cross-column jumps.
-- ✨ **Edit-Mode Consistency**: Unified conflict detection and preview reflow behavior between edit-mode dragging and store-to-canvas dragging.
-- 🧪 **Regression Coverage**: Added tests for placement and conflict scenarios, including tall-widget and mixed-height cases.
+- People who want a personal start page with frequently used links and lightweight widgets
+- Self-hosting users who prefer to keep data on their own machine or NAS
+- Users who want a clean UI without giving up layout and appearance control
 
-## ✨ v0.3.2 Changelog
+## Current Features
 
-- 🔗 **New Links Widget**: Added links collection widget with group title, icon size adjustment, label toggle, and bulk import functionality
-- 🧠 **Smart Layout**: Improved WidgetPicker's intelligent occupancy detection algorithm to prevent widget overlap
-- 🖱️ **Interaction Optimization**: Enhanced drag handle styling for better visual feedback and user experience
-- 🔧 **Type Safety**: Updated Zod schema validation to support links widget type
-- 🧪 **Test Coverage**: Added schema validation tests for links widget
+- Freely arranged widget canvas with drag, reflow, and size adjustment
+- Pegboard-style background with custom wallpaper, blur, and overlay tuning
+- Built-in `Clock`, `Weather`, `Date`, `Calendar`, `Todo`, `Memo`, `Quick Link`, `Links`, and `Photo Frame`
+- Separate persistence for widget layout and widget configuration
+- JSON import/export for backup and migration
+- Docker-first self-hosting workflow for local container deployment
+- Read-only demo mode for online preview
 
-## ✨ v0.3.1 Changelog
+## Quick Start
 
-- 🐛 **Bug Fixes**: Fixed configuration sync issues for Quick Link and Memo widgets in certain scenarios.
-- ✨ **Feature**: Quick Link widget now supports automatic website icon (Favicon) fetching.
-- 🐳 **Docker**: Optimized `docker-compose.yml` configuration, defaulting to GHCR images.
+### Docker Deployment (Recommended)
 
-## ✨ v0.3.0 Changelog
+1. Clone the repository
 
-- 🔄 **Full Multi‑Device Sync**: Bookmarks, widget layouts, and personal settings now sync in real‑time across multiple devices.
-- 🚀 **Smart Performance Optimization**: Introduced page visibility detection to pause synchronization when the page is in the background.
-- 🐳 **Docker Deployment Upgrade**: Added `entrypoint` script to automatically fix permissions, resolving `EACCES` issues.
+```bash
+git clone https://github.com/wtfllix/navidash.git
+cd navidash
+```
 
-## ✨ v0.2.1 Changelog
+2. Prepare a data directory
 
-- 📏 **Layout System Upgrade**: Optimized grid responsive breakpoints (10/8/6/4/2 columns) and reduced margins for better space utilization.
-- ☀️ **Weather Widget Optimization**: Redesigned layouts for 1x2 and 1x3 sizes, resolving text truncation issues and improving information hierarchy.
-- 🧩 **Widget Picker Enhancement**: Added widget categorization (System/Productivity/Custom) and improved selection UI.
-- 🌍 **i18n Improvements**: Completed missing translations for widget categories.
+```bash
+sudo mkdir -p /opt/navidash-data
+```
 
-## ✨ v0.2.0 New Features
+By default, `docker-compose.yml` mounts runtime data to `/opt/navidash-data`. Keeping runtime data outside the git working tree is recommended so it is safer across upgrades and redeploys.
 
-- 🕰️ **Analog Clock**: New high-quality analog clock style with a borderless design that blends perfectly into the background.
-- 🎨 **Minimalist Backgrounds**: Defaults to a textured "Pegboard" background; supports custom images with blur/opacity adjustments to keep text clear.
-- ⚙️ **Simplified Config**: Removed redundant presets to focus on the core experience; optimized settings panel interaction.
+If you want a different location:
 
-## 🌟 Core Features
+```bash
+export NAVIDASH_DATA_DIR=/your/data/path
+```
 
-- 🎨 **Highly Customizable UI**
-  - **Free Layout**: Grid-based drag-and-drop board; adjust widget position and size as you wish.
-  - **Background System**: Default Pegboard style; supports HTTP image links as wallpapers.
-  - **Visual Tuning**: Built-in background blur and overlay opacity adjustments ensure readability on any wallpaper.
+3. Copy the environment template
 
-- 🧩 **Useful Widgets**
-  - **Clock**: Supports switching between Digital and Analog modes.
-  - **Weather**: Real-time weather updates (powered by QWeather).
-  - **Productivity**: Todo list, Memo, Calendar.
-  - **Photo Frame**: Display your favorite photos.
+```bash
+cp .env.example .env
+```
 
-- 📑 **Powerful Bookmark Management**
-  - **Infinite Nesting**: Sidebar supports infinite nesting of bookmark folders.
-  - **Smart Icons**: Automatically integrates Lucide icon library.
-  - **Drag & Drop**: Intuitive sorting experience.
+4. Add weather configuration if you want the Weather widget
 
-- 💾 **Data Security & Self-Hosting**
-  - **Full Control**: All data can be exported as JSON backups and restored anytime.
-  - **Docker Ready**: Provides out-of-the-box Docker images; data is stored in local JSON files, making migration as simple as copying files.
+The current weather integration uses QWeather (HeWeather).
 
----
+Recommended `apikey` mode:
 
-## 🚀 Quick Start
+The simplest way to get one is:
 
-### 🐳 Deploy with Docker (Recommended)
+1. Sign in to the QWeather console
+2. Create a project or app and enable the weather APIs you need
+3. Generate an `API Key` from the project credentials page and put it into `QWEATHER_API_KEY`
+4. Use the API Host provided by QWeather for `QWEATHER_API_HOST`; the default available host is `https://devapi.qweather.com`
 
-This is the simplest way to run NaviDash without configuring a local Node.js environment.
+If you are not using another QWeather-provided endpoint, set `QWEATHER_API_HOST` to the default value `https://devapi.qweather.com`.
 
-1.  **Clone the repository**
-    ```bash
-    git clone https://github.com/wtfllix/navidash.git
-    cd navidash
-    ```
+```bash
+QWEATHER_API_KEY=your_qweather_key
+QWEATHER_API_HOST=https://devapi.qweather.com
+QWEATHER_AUTH_TYPE=apikey
+```
 
-2.  **Prepare a data directory outside the repository**
-    ```bash
-    sudo mkdir -p /opt/navidash-data
-    ```
+If you use JWT:
 
-    The default `docker-compose.yml` mounts persistent data to `/opt/navidash-data`. This is recommended over using `./data` inside the git working tree, which is easier to lose during redeploys, repo replacement, or workspace cleanup.
+```bash
+QWEATHER_API_KEY=your_qweather_jwt
+QWEATHER_API_HOST=https://devapi.qweather.com
+QWEATHER_AUTH_TYPE=jwt
+```
 
-    If you prefer a different path, set it before starting:
-    ```bash
-    export NAVIDASH_DATA_DIR=/your/data/path
-    ```
+5. Start the container
 
-3.  **Start the container**
-    If you want to use the Weather widget, first copy the template and edit `.env`:
+```bash
+docker-compose up -d
+```
 
-    ```bash
-    cp .env.example .env
-    ```
+6. Open `http://localhost:3000`
 
-    The current weather integration uses QWeather (HeWeather).
-    The simplest way to get one is:
-    1. Sign in to the QWeather console
-    2. Create a project or app and enable the weather APIs you need
-    3. Generate an `API Key` from the project credentials page and put it into `QWEATHER_API_KEY`
-    4. Use the API Host provided by QWeather for `QWEATHER_API_HOST`; the default available host is `https://devapi.qweather.com`
+### Upgrade
 
-    Recommended: `apikey` (preferred)
-    ```bash
-    QWEATHER_API_KEY=your_qweather_key
-    QWEATHER_API_HOST=https://devapi.qweather.com
-    QWEATHER_AUTH_TYPE=apikey
-    ```
+```bash
+git pull
+docker-compose pull
+docker-compose up -d
+```
 
-    If you use JWT instead, update `.env` to:
-    ```bash
-    QWEATHER_API_KEY=your_qweather_jwt
-    QWEATHER_API_HOST=https://devapi.qweather.com
-    QWEATHER_AUTH_TYPE=jwt
-    ```
+As long as your data directory stays mounted outside the repository, your saved data remains intact during upgrades.
 
-    Then start the container:
-    ```bash
-    docker-compose up -d
-    ```
+### Local Development
 
-4.  **Access the app**
-    Open your browser and visit `http://localhost:3000` to start using it.
+```bash
+npm install
+cp .env.example .env
+npm run dev
+```
 
-### 🔄 Upgrade Guide
+Useful commands:
 
-If you deploy with Docker, update with:
+```bash
+npm run lint
+npm test
+npm run build
+```
 
-1.  **Pull the latest code**
-    ```bash
-    git pull
-    ```
+## Configuration
 
-2.  **Pull the latest image**
-    ```bash
-    docker-compose pull
-    ```
+The most important environment variables in `.env.example` are:
 
-3.  **Restart the container**
-    ```bash
-    docker-compose up -d
-    ```
+- `NEXT_PUBLIC_DEMO_MODE`: enables read-only demo mode when set to `true`
+- `QWEATHER_API_KEY`: QWeather (HeWeather) API key or JWT
+- `QWEATHER_API_HOST`: optional custom QWeather-compatible host
+- `QWEATHER_AUTH_TYPE`: `apikey` or `jwt`
 
-    *Your data will remain safe as long as it is mounted outside the repository directory, using the default `/opt/navidash-data` or your own `NAVIDASH_DATA_DIR`.*
+Weather requests go through the server-side `/api/weather` proxy and currently target QWeather (HeWeather) by default. In most cases, weather-related credentials should live in environment variables rather than widget config.
 
-4.  **If you previously stored data in `./data` inside the repo**
-    migrate it before your next redeploy:
-    ```bash
-    docker-compose down
-    sudo mkdir -p /opt/navidash-data
-    sudo cp -a ./data/. /opt/navidash-data/
-    docker-compose up -d
-    ```
+## Persistence
 
-### 🛠️ Local Development
+Runtime data is stored under `/app/data` and should be mounted to a host directory in Docker deployments.
 
-If you want to contribute or modify the code:
+The main persisted files are:
 
-1.  **Prerequisites**
-    - Node.js 18+
-    - npm / yarn / pnpm
+- `settings.json`
+- `widget-layouts.json`
+- `widget-configs.json`
 
-2.  **Install dependencies**
-    ```bash
-    npm install
-    ```
+These files use a versioned JSON envelope so future migrations remain explicit, while legacy raw JSON is still readable for backward compatibility.
 
-3.  **Start development server**
-    If you want to use the Weather widget, first copy the template and edit `.env`:
+## Documentation
 
-    ```bash
-    cp .env.example .env
-    ```
+- [Deployment Guide](./docs/DEPLOY.md)
+- [User Guide](./docs/USER_GUIDE_EN.md)
+- [Chinese README](./README.md)
 
-    Recommended: `apikey` (preferred)
-    ```bash
-    QWEATHER_API_KEY=your_qweather_key
-    QWEATHER_API_HOST=https://devapi.qweather.com
-    QWEATHER_AUTH_TYPE=apikey
-    ```
+## Demo Mode
 
-    If you use JWT instead, update `.env` to:
-    ```bash
-    QWEATHER_API_KEY=your_qweather_jwt
-    QWEATHER_API_HOST=https://devapi.qweather.com
-    QWEATHER_AUTH_TYPE=jwt
-    ```
+NaviDash supports a read-only demo mode, which works well for Vercel deployments and public previews.
 
-    Then start the development server:
-    ```bash
-    npm run dev
-    ```
-    Visit `http://localhost:3000`.
+- Visitors can drag, edit, and explore the UI
+- A refresh resets the page to curated demo content
+- Write APIs return read-only errors and do not persist data
 
-4.  **Build for production**
-    ```bash
-    npm run build
-    npm start
-    ```
+## Product Direction
 
----
+The current direction is:
 
-## 📖 User Guide
+- a customizable personal start page
+- a pegboard-inspired homepage experience
+- local container deployment first
+- gradual expansion toward widgets useful for home and self-hosted setups
 
-### ☀️ How to use the Weather widget
+## Contributing
 
-1.  Run `cp .env.example .env` in the project root, then edit `.env`.
-    We recommend `QWEATHER_AUTH_TYPE=apikey`.
-2.  Start the app and add a `Weather` widget.
-3.  Open that widget's settings and fill in a city name or exact coordinates.
-4.  If your deployment uses a custom Host or JWT authentication, configure those through environment variables.
+Issues and pull requests are welcome.
 
-Notes:
-- The weather key is no longer stored in app settings, backup exports, or `settings.json`.
-- If `QWEATHER_API_HOST` is set, it overrides the widget-level Host field.
-- If `QWEATHER_AUTH_TYPE` is set, it overrides the widget-level auth setting.
-- `apikey` is the recommended default; `jwt` is supported as an alternative.
-- The weather tab has been removed from the main settings panel. Weather configuration now lives in each Weather widget's own settings.
-- Weather requests now go through the server-side `/api/weather` proxy, so runtime container environment variables take effect immediately.
+## License
 
-For detailed usage instructions, please refer to the [User Guide](./docs/USER_GUIDE_EN.md).
-
-## 🤝 Contributing
-
-Issues and Pull Requests are welcome!
-
-## 📄 License
-
-MIT License
+MIT

@@ -1,255 +1,180 @@
-# 🧭 NaviDash
+# NaviDash
 
-> 一个极简、高效、高度可定制的个人导航仪表盘。
-> A clean, efficient, and highly customizable personal dashboard.
+> 一个可定制的个人导航主页，采用洞洞板式自由布局。
+> A customizable personal start page with a pegboard-inspired layout.
 
 **中文** | [English](./README_EN.md)
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Version](https://img.shields.io/badge/version-0.4.0-green)
-![Next.js](https://img.shields.io/badge/Next.js-14-black)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
-![Docker](https://img.shields.io/badge/Docker-Ready-2496ed)
+![Version](https://img.shields.io/badge/version-0.5.0-green.svg)
+![Next.js](https://img.shields.io/badge/Next.js-14-black.svg)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue.svg)
+![Docker](https://img.shields.io/badge/Docker-ready-2496ed.svg)
 
-**NaviDash** 专为追求极致效率与美学的用户设计。它摒弃了繁杂的装饰，以经典的“洞洞板”风格为基础，结合自由拖拽的网格布局，为您打造一个既美观又实用的浏览器起始页。
+NaviDash 面向想要把浏览器首页整理得更顺手、更耐看的用户。它以洞洞板风格为基础，提供可拖拽的网格画布、常用信息组件和本地自托管部署方式，适合作为家用设备或个人电脑上的长期主页。
 
-### 🌐 [在线演示 (Live Demo)](https://navidash.vercel.app/zh)
+在线演示: [navidash.vercel.app/zh](https://navidash.vercel.app/zh)
 
----
+## 适合谁
 
+- 想把浏览器起始页整理成自己的常用入口和信息面板
+- 偏好本地部署，希望数据保存在自己的机器或 NAS 上
+- 喜欢简洁界面，但仍希望保留布局和外观的可定制能力
 
+## 当前特性
 
-## 🌟 核心功能
+- 自由布局的 widget 画布，支持拖拽、重排和尺寸调整
+- 洞洞板风格背景，支持自定义壁纸、模糊和遮罩透明度
+- 内置 `Clock`、`Weather`、`Date`、`Calendar`、`Todo`、`Memo`、`Quick Link`、`Links`、`Photo Frame`
+- 组件配置与布局分离持久化，便于后续迁移和演进
+- 支持 JSON 导入导出，方便备份和迁移
+- Docker 自托管优先，适合本地容器长期运行
+- 提供只读 Demo 模式，便于在线展示
 
-- 🎨 **高度可定制 UI**
-  - **自由布局**：基于 Grid 的拖拽式看板，随心所欲调整组件位置与大小。
-  - **背景系统**：默认洞洞板 (Pegboard) 风格，支持 HTTP 图片链接作为壁纸。
-  - **视觉微调**：内置背景模糊与遮罩透明度调节，确保任何壁纸下内容都清晰易读。
+## 快速开始
 
-- 🧩 **实用小组件**
-  - **时钟**：支持数字/拟真双模式切换。
-  - **天气**：实时天气更新 (QWeather 驱动)。
-  - **效率工具**：待办事项 (Todo)、便签 (Memo)、日历 (Calendar)。
-  - **相框**：展示你喜爱的照片。
+### Docker 部署（推荐）
 
-- 📑 **强大的书签管理**
-  - **无限层级**：侧边栏支持书签文件夹无限嵌套。
-  - **智能图标**：自动集成 Lucide 图标库。
-  - **拖拽整理**：直观的拖拽排序体验。
+1. 克隆仓库
 
-- 💾 **数据安全与自托管**
-  - **完全掌控**：所有数据均可导出为 JSON 备份，随时恢复。
-  - **Docker 部署**：提供开箱即用的 Docker 镜像，数据存储在本地 JSON 文件中，支持多端实时同步。
+```bash
+git clone https://github.com/wtfllix/navidash.git
+cd navidash
+```
 
----
+2. 准备数据目录
 
-## 🚀 快速开始
+```bash
+sudo mkdir -p /opt/navidash-data
+```
 
-### 🐳 使用 Docker 部署（推荐）
+默认 `docker-compose.yml` 会把数据挂载到 `/opt/navidash-data`。推荐把运行数据放在仓库外，避免在升级、替换目录或误删工作区时丢失。
 
-这是最简单的运行方式，无需配置本地 Node.js 环境。
+如需自定义路径，可以先设置：
 
-1.  **克隆仓库**
-    ```bash
-    git clone https://github.com/wtfllix/navidash.git
-    cd navidash
-    ```
+```bash
+export NAVIDASH_DATA_DIR=/your/data/path
+```
 
-2.  **准备数据目录（推荐放在仓库外）**
-    ```bash
-    sudo mkdir -p /opt/navidash-data
-    ```
+3. 复制环境变量模板
 
-    `docker-compose.yml` 默认会把数据挂载到 `/opt/navidash-data`。不建议继续使用仓库内的 `./data` 目录，否则在重新部署、替换仓库目录或误删工作区时更容易丢失数据。
+```bash
+cp .env.example .env
+```
 
-    如果你想自定义数据目录，也可以在启动前指定环境变量：
-    ```bash
-    export NAVIDASH_DATA_DIR=/your/data/path
-    ```
+4. 如果需要天气组件，补充天气配置
 
-3.  **启动容器**
-    如需使用天气组件，请先复制配置模板并编辑 `.env`：
+当前版本天气服务使用的是和风天气（QWeather）。
 
-    ```bash
-    cp .env.example .env
-    ```
+推荐使用 `apikey`：
 
-    当前版本天气服务使用的是和风天气（QWeather）。
-    获取方式可以尽量简单一些：
-    1. 注册并登录和风天气控制台
-    2. 创建一个项目或应用，并启用天气相关 API
-    3. 在项目凭证页面生成 `API Key`，填入 `QWEATHER_API_KEY`
-    4. 使用和风天气提供的 API Host，填入 `QWEATHER_API_HOST`；默认可用地址是 `https://devapi.qweather.com`
+获取方式可以尽量简单一些：
 
-    推荐方案：`apikey`（优先）
-    ```bash
-    QWEATHER_API_KEY=your_qweather_key
-    QWEATHER_API_HOST=https://devapi.qweather.com
-    QWEATHER_AUTH_TYPE=apikey
-    ```
+1. 注册并登录和风天气控制台
+2. 创建一个项目或应用，并启用天气相关 API
+3. 在项目凭证页面生成 `API Key`，填入 `QWEATHER_API_KEY`
+4. 使用和风天气提供的 API Host，填入 `QWEATHER_API_HOST`；默认可用地址是 `https://devapi.qweather.com`
 
-    如果你使用 JWT，可以把 `.env` 改成：
-    ```bash
-    QWEATHER_API_KEY=your_qweather_jwt
-    QWEATHER_API_HOST=https://devapi.qweather.com
-    QWEATHER_AUTH_TYPE=jwt
-    ```
+如果你没有使用其他由和风天气提供的接入地址，`QWEATHER_API_HOST` 可以直接填写默认值 `https://devapi.qweather.com`。
 
-    然后启动容器：
-    ```bash
-    docker-compose up -d
-    ```
+```bash
+QWEATHER_API_KEY=your_qweather_key
+QWEATHER_API_HOST=https://devapi.qweather.com
+QWEATHER_AUTH_TYPE=apikey
+```
 
-4.  **访问应用**
-    打开浏览器访问 `http://localhost:3000` 即可开始使用。
+如果你使用 JWT：
 
-### 🔄 更新指南 (Upgrade)
+```bash
+QWEATHER_API_KEY=your_qweather_jwt
+QWEATHER_API_HOST=https://devapi.qweather.com
+QWEATHER_AUTH_TYPE=jwt
+```
 
-如果您正在使用 Docker 部署，可以通过以下命令轻松升级到最新版本：
+5. 启动容器
 
-1.  **拉取最新代码** (如果你使用了 `docker-compose.yml`)
-    ```bash
-    git pull
-    ```
+```bash
+docker-compose up -d
+```
 
-2.  **拉取最新镜像**
-    ```bash
-    docker-compose pull
-    ```
+6. 打开 `http://localhost:3000`
 
-3.  **重启容器**
-    ```bash
-    docker-compose up -d
-    ```
+### 升级
 
-    *只要你将数据目录挂载到仓库外位置（默认 `/opt/navidash-data`），升级过程不会删除你的数据。*
+```bash
+git pull
+docker-compose pull
+docker-compose up -d
+```
 
-4.  **如果你之前把数据放在仓库内的 `./data`**
-    可以先停掉容器，再迁移数据：
-    ```bash
-    docker-compose down
-    sudo mkdir -p /opt/navidash-data
-    sudo cp -a ./data/. /opt/navidash-data/
-    docker-compose up -d
-    ```
+只要数据目录仍然挂载在仓库外位置，升级不会清空你的配置。
 
-### 🛠️ 本地开发
+### 本地开发
 
-如果您想参与开发或进行二次修改：
+```bash
+npm install
+cp .env.example .env
+npm run dev
+```
 
-1.  **环境准备**
-    - Node.js 18+
-    - npm / yarn / pnpm
+常用命令：
 
-2.  **安装依赖**
-    ```bash
-    npm install
-    ```
+```bash
+npm run lint
+npm test
+npm run build
+```
 
-3.  **启动开发服务器**
-    如需使用天气组件，请先复制配置模板并编辑 `.env`：
+## 配置说明
 
-    ```bash
-    cp .env.example .env
-    ```
+`.env.example` 中最重要的配置项：
 
-    当前版本天气请求通过服务端 `/api/weather` 代理发起，默认对接和风天气（QWeather）。
+- `NEXT_PUBLIC_DEMO_MODE`: 设为 `true` 时启用只读演示模式
+- `QWEATHER_API_KEY`: 和风天气（QWeather）使用的 Key 或 JWT
+- `QWEATHER_API_HOST`: 可选，自定义和风天气兼容 Host
+- `QWEATHER_AUTH_TYPE`: `apikey` 或 `jwt`
 
-    推荐方案：`apikey`（优先）
-    ```bash
-    QWEATHER_API_KEY=your_qweather_key
-    QWEATHER_API_HOST=https://devapi.qweather.com
-    QWEATHER_AUTH_TYPE=apikey
-    ```
+当前版本天气请求通过服务端 `/api/weather` 代理发起，默认对接和风天气（QWeather）。推荐优先把天气相关参数放在环境变量里，而不是写进组件配置。
 
-    如果你使用 JWT，可以把 `.env` 改成：
-    ```bash
-    QWEATHER_API_KEY=your_qweather_jwt
-    QWEATHER_API_HOST=https://devapi.qweather.com
-    QWEATHER_AUTH_TYPE=jwt
-    ```
+## 数据与持久化
 
-    然后启动开发服务器：
-    ```bash
-    npm run dev
-    ```
-    访问 `http://localhost:3000`。
+运行时数据默认保存在 `/app/data`，Docker 部署时通过 volume 挂载到宿主机目录。
 
-4.  **构建生产版本**
-    ```bash
-    npm run build
-    npm start
-    ```
+当前主要持久化文件包括：
 
----
+- `settings.json`
+- `widget-layouts.json`
+- `widget-configs.json`
 
-## 📖 用户指南
+这些文件采用版本化 JSON 包装格式，新版本可以继续兼容迁移；旧格式也保留了读取兼容。
 
-### ☀️ 天气组件如何使用
+## 文档
 
-1.  在项目根目录执行 `cp .env.example .env`，然后编辑 `.env`。
-    推荐使用 `QWEATHER_AUTH_TYPE=apikey`。
-2.  启动应用后，添加一个“天气”组件。
-3.  打开该天气组件的设置，在组件内填写城市，或直接填写经纬度。
-4.  如果你的部署使用自定义 Host 或 JWT 认证，请通过环境变量统一配置。
+- [部署说明](./docs/DEPLOY.md)
+- [用户指南](./docs/USER_GUIDE.md)
+- [English README](./README_EN.md)
 
-说明：
-- 天气密钥不再保存在应用设置、备份文件或 `settings.json` 中。
-- 如果设置了 `QWEATHER_API_HOST`，组件里的 Host 会被环境变量优先覆盖。
-- 如果设置了 `QWEATHER_AUTH_TYPE`，组件里的认证方式也会被环境变量优先覆盖。
-- 推荐优先使用 `apikey`，`jwt` 作为备选方案。
-- 全局设置面板里的天气选项卡已移除，天气相关配置现在在天气组件自己的设置里完成。
-- 天气请求现在通过服务端 `/api/weather` 代理发起，容器运行时环境变量会立即生效。
+## 演示模式
 
-详细的使用说明请参考 [用户指南 (User Guide)](./docs/USER_GUIDE.md)。
+NaviDash 支持只读 Demo 模式，适合部署到 Vercel 或作为在线预览站点。
 
-## 🤝 贡献
+- 前端可以自由拖拽和编辑
+- 刷新页面后恢复为预置内容
+- 写入接口会返回只读错误，不会持久化数据
 
-欢迎提交 Issue 和 Pull Request！
+## 路线方向
 
-## 📄 许可证
+当前产品方向是：
 
-MIT License
+- 定制化个人导航主页
+- 洞洞板风格的首页体验
+- 以本地容器部署为主
+- 逐步补充更适合家用和自托管场景的 widget
 
----
+## 贡献
 
-## 📝 更新日志 (Changelog)
+欢迎提交 Issue 和 Pull Request。
 
-### v0.4.0
-- 🧩 **组件商店拖拽升级**：支持从组件商店拖拽到主面板后自动收起侧栏，并将焦点切回主面板。
-- 📍 **放置体验优化**：拖拽时提供占位反馈，放置后按目标位置落位，不再出现“回弹飞回”效果。
-- 🔁 **冲突避让增强**：新增链式下移重排，冲突组件按顺序下移，减少跨列跳跃与尾部飞移。
-- ✨ **编辑模式一致性**：编辑模式拖动与组件商店拖拽统一冲突检测与预排版反馈，交互更稳定。
-- 🧪 **回归测试补充**：新增组件放置与冲突场景测试（含长条组件与异高组件场景）。
+## License
 
-### v0.3.2
-- 🔗 **新增 Links Widget**: 新增链接集合小组件，支持分组标题、图标大小调整、标签显示开关，以及批量导入功能
-- 🧠 **智能布局**: 改进 WidgetPicker 添加组件时的智能占位检测算法，避免组件重叠
-- 🖱️ **交互优化**: 增强拖拽手柄样式，提升视觉反馈和操作体验
-- 🔧 **类型安全**: 更新 Zod schema 验证，支持 links 类型组件
-- 🧪 **测试覆盖**: 添加 links widget 的 schema 验证测试
-
-### v0.3.1
-- 🐛 **Bug Fixes**: 修复了快捷链接 (Quick Link) 和备忘录 (Memo) 组件在部分情况下无法同步配置的问题。
-- ✨ **Feature**: 快捷链接组件现在支持自动获取网站图标 (Favicon)。
-- 🐳 **Docker**: 优化了 `docker-compose.yml` 配置，默认使用 GHCR 镜像。
-
-### v0.3.0
-- 🔄 **全方位多端同步**：支持书签、小组件布局、个性化设置在多设备间实时同步。
-- 🚀 **智能性能优化**：引入页面可见性检测，页面后台运行时自动暂停同步。
-- 🐳 **Docker 部署升级**：新增 `entrypoint` 脚本自动修复权限，解决 `EACCES` 问题。
-
-### v0.2.1
-- 📏 **布局升级**：优化网格响应式断点，提升空间利用率。
-- ☀️ **天气优化**：重设计 1x2/1x3 布局，解决文字截断。
-- 🧩 **组件增强**：新增组件分类系统，优化选择器 UI。
-- 🌍 **国际化**：补充缺失翻译。
-
-### v0.2.0
-- 🕰️ **拟真时钟**：新增无边框拟真时钟。
-- 🎨 **背景管理**：支持自定义图片 + 模糊调节。
-- ⚙️ **配置简化**：移除冗余预设，优化交互。
-
-## Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=wtfllix/navidash&type=date&legend=top-left)](https://www.star-history.com/#wtfllix/navidash&type=date&legend=top-left)
+MIT

@@ -1,108 +1,204 @@
-# 📖 NaviDash User Guide
+# NaviDash User Guide
 
-Welcome to NaviDash! This guide will help you get started quickly and build your own personalized dashboard.
+This guide reflects the current product shape of NaviDash and focuses on the real interaction model in the app today.
 
----
+## Layout Overview
 
-## 🎨 Interface Overview
+NaviDash currently has three main areas:
 
-The main interface of NaviDash consists of three parts:
-1.  **Main Dashboard**: The central area for placing various widgets (Clock, Weather, Memo, etc.).
-2.  **Sidebar**: Hover over the left edge of the screen to reveal the sidebar, used for managing bookmarks and navigation.
-3.  **Top/Bottom Toolbar**: Contains the search bar, edit mode toggle, and global settings.
+1. Top bar
+   Includes search, widget store toggle, edit mode toggle, and global settings.
+2. Left widget store
+   Used to browse, search, and add widgets.
+3. Main canvas
+   Your homepage area where widgets are placed and used daily.
 
----
+## Basic Usage
 
-## 🧩 Widget Management
+### Search
 
-### Adding Widgets
-1.  Click the **Edit Mode** icon at the bottom of the page (usually an unlock 🔓 icon, or a "+" button).
-2.  Select a widget from the popup library (e.g., "Clock", "Weather", "Todo").
-3.  The widget will be automatically added to an empty space at the bottom of the dashboard.
+- Use the top search bar to search with the selected search engine
+- You can switch between supported engines
+- `Ctrl + K` focuses the search input
 
-### Moving & Resizing
-1.  Enter **Edit Mode**.
-2.  **Move**: Click and hold the **Drag Handle** at the top-left of a widget to move it anywhere.
-3.  **Resize**: Drag the **Resize Handle** at the bottom-right of a widget to adjust its aspect ratio.
+### Edit Mode
 
-### Configuring Widgets
-In Edit Mode, click the **Settings (⚙️)** button on the top-right of a widget to customize it.
+- Use the top bar button to switch between customize and done states
+- In edit mode, you can move widgets, open widget settings, and remove widgets
 
-#### 🕰️ Clock Widget
-- **Style Switching**: Select **Digital** or **Analog** in the settings.
-  - *Tip: The Analog clock features a borderless design that blends perfectly with the Pegboard background.*
+### Open the Widget Store
 
-#### ☀️ Weather Widget
-- **Environment Variables**: Run `cp .env.example .env` in the project root first, then edit `.env`. We recommend `QWEATHER_AUTH_TYPE=apikey`.
-- **Location**: Enter your city name (Pinyin or English supported), or provide exact coordinates.
-- **Display**: Shows current temperature, weather conditions, feels-like temperature, etc.
-- **Request Path**: Weather requests now go through the server-side `/api/weather` proxy, so runtime container env changes take effect after restart.
+- Click the widget store button in the top bar
+- Search for widgets or add them directly
+- Some widgets open their settings right after creation for first-time setup
 
-#### 📝 Memo & Todo
-- **Memo**: Click directly on the memo area to type content; saves automatically.
-- **Todo**: Click "+" to add tasks, click the checkbox to mark as done.
+## Widget Actions
 
----
+### Add a Widget
 
-## 🖼️ Background & Visual Customization
+1. Open the widget store
+2. Find the widget you want
+3. Click to add it, or drag it onto the canvas where supported
 
-Click the **Settings** button on the sidebar bottom or the main interface to enter global settings.
+Built-in widgets currently include:
 
-### Default Background (Pegboard)
-NaviDash defaults to a classic **Pegboard** style, offering a clean, tangible texture.
+- `Clock`
+- `Weather`
+- `Date`
+- `Calendar`
+- `Todo`
+- `Memo`
+- `Quick Link`
+- `Links`
+- `Photo Frame`
 
-### Custom Wallpaper
-1.  Find the **Background Image URL** input in the settings panel.
-2.  Paste a link to any web image (starting with `http` or `https`).
-    - *Recommended sources: Unsplash, Bing Daily Wallpaper, etc.*
-3.  **Visual Tuning**:
-    - **Blur**: Drag the slider to blur the background, making foreground widgets pop.
-    - **Opacity**: Add a black overlay to improve text readability on bright backgrounds.
+### Move a Widget
 
----
+1. Enter edit mode
+2. Drag the handle on the top-left of a widget
+3. Drop it in the desired position
 
-## 📑 Bookmark Management (Sidebar)
+If the target area is already occupied, NaviDash automatically reflows nearby widgets.
 
-### Quick Navigation
-- Hover over the left edge of the screen to slide out the sidebar.
-- Click category folders to expand/collapse, click links to navigate.
+### Edit Widget Content
 
-### Editing Bookmarks
-1.  Click the **Manage** button at the bottom of the sidebar.
-2.  **Add**: Click "New Category" or "New Link".
-3.  **Sort**: Drag and drop bookmarks or folders to reorder them.
-4.  **Icons**: Enter an icon name (e.g., `github`, `youtube`, `code`) to automatically match Lucide icons.
+Different widgets support different editing flows:
 
----
+- `Memo` can be edited directly inside the widget and saves automatically
+- `Todo` supports adding, toggling, and deleting tasks directly inside the widget
+- `Clock`, `Weather`, `Links`, `Quick Link`, and `Photo Frame` are mainly configured through the settings modal
 
-## 💾 Data Backup & Restore
+### Open Widget Settings
 
-NaviDash values your data security; all configurations are stored locally.
+1. Enter edit mode
+2. Click the settings button on the widget
+3. Update size or widget-specific configuration in the modal
 
-### Export Backup
-1.  Open the **Settings** panel.
-2.  Click the **Export** button.
-3.  The system will generate a `.json` file containing all your layout, widget configs, and bookmark data.
+## Common Widget Notes
 
-### Restore Data
-1.  Open the **Settings** panel.
-2.  Click the **Import** button.
-3.  Select your previously backed-up `.json` file. Upon confirmation, the page will refresh with your restored configuration.
-4.  *Note: Importing will overwrite your current configuration. Please proceed with caution.*
+### Clock
 
----
+- Displays the current time
+- Supports multiple visual styles
+- Density and layout vary depending on widget size
 
-## ❓ FAQ
+### Weather
 
-**Q: Why isn't my weather showing?**
-A: First confirm you have run `cp .env.example .env`, filled in `QWEATHER_API_KEY` in `.env`, and restarted the container or dev server. Then check your network connection and verify the city name or coordinates.
+- Uses the server-side `/api/weather` proxy
+- Weather service credentials are best configured through environment variables
+- At the widget level, you usually only need a city or coordinates
 
-**Q: How do I reset all settings?**
-A: There is a red **Reset** button at the bottom of the settings panel. Clicking it will restore the app to its initial state (Note: This action is irreversible).
+If weather does not appear, check:
 
-**Q: Why does the Analog Clock have no background frame?**
-A: This is to simulate a real wall clock effect, "hanging" naturally on the background wall. If you switch back to Digital, you will see the standard card background.
+- whether `QWEATHER_API_KEY` is set in `.env`
+- whether the container or dev server has been restarted
+- whether the city or coordinates are valid
 
----
+### Memo
 
-Enjoy using NaviDash! If you have more questions, feel free to submit feedback on our [GitHub Repository](https://github.com/wtfllix/navidash).
+- Supports direct writing inside the widget
+- Supports lightweight Markdown-like formatting such as headings, lists, links, and quotes
+- Saves automatically
+
+### Todo
+
+- Add items directly in the widget
+- Mark items as completed
+- Delete items or clear completed ones
+
+### Links / Quick Link
+
+- `Quick Link` is suitable for a single shortcut
+- `Links` is better for a grouped collection of frequently used destinations
+
+### Photo Frame
+
+- Supports one or multiple images
+- Supports autoplay and interval settings
+
+## Global Settings
+
+Use the settings button in the top bar to open the global settings modal.
+
+The main sections are:
+
+- Appearance
+- Language
+- Data tools
+
+### Appearance
+
+You can customize:
+
+- background presets
+- custom background image
+- blur
+- overlay opacity
+- theme color
+- page title
+- favicon
+
+### Language
+
+- Switch the current interface language
+
+### Data Tools
+
+Available actions include:
+
+- export current configuration as JSON
+- import configuration from JSON
+- reset local data
+
+Importing overwrites the current state, so exporting a backup first is recommended.
+
+## Data Persistence
+
+NaviDash is currently designed primarily for local deployment. Runtime data is usually stored in the host-mounted data directory.
+
+This includes:
+
+- global settings
+- widget layouts
+- widget configuration
+
+For Docker deployments, it is recommended to mount the data directory outside the repository, such as `/opt/navidash-data`.
+
+## Demo Mode
+
+If demo mode is enabled:
+
+- the UI remains fully explorable
+- front-end interactions still work
+- a refresh restores the default demo content
+- writes are not persisted
+
+This is useful for public previews, not long-term usage.
+
+## FAQ
+
+### Why do my changes disappear after refresh?
+
+Usually one of these is true:
+
+- the app is running in demo mode
+- the persistence directory is not mounted correctly or is not writable
+
+### Why does the Weather widget show no data?
+
+Check:
+
+- whether `QWEATHER_API_KEY` is configured
+- whether the container has been restarted
+- whether the city or coordinates are valid
+- whether the weather service is reachable from your environment
+
+### How do I back up my homepage completely?
+
+Open the settings modal and export a JSON backup from the data tools section.  
+If you use Docker, backing up the mounted host data directory is also recommended.
+
+### How do I return to a clean state?
+
+Use the reset action in the settings modal.  
+For a full reset, you can also remove the runtime data from the mounted directory and restart the container.

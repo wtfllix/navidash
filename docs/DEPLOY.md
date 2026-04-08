@@ -1,133 +1,212 @@
 # Deployment Guide
 
-This guide covers multiple ways to deploy NaviDash, including Docker, manual deployment, and CI/CD pipelines.
+This document focuses on the deployment paths that best match NaviDash today.
 
-## 1. Docker Deployment (Recommended)
+Current recommendation:
 
-### Method A: Use Pre-built Image (GHCR)
+- local Docker deployment first
+- persistent host-mounted data directory
+- environment variables for weather and demo mode
 
-If you have configured the GitHub Actions workflow, you can pull the image directly:
+## Recommended: Docker Compose
 
-```bash
-# Pull the image
-docker pull ghcr.io/your-username/navidash:latest
+This is the preferred way to run NaviDash for long-term personal use.
 
-# Run the container
-docker run -d \
-  -p 3000:3000 \
-  -v $(pwd)/data:/app/data \
-  --name navidash \
-  --restart unless-stopped \
-  ghcr.io/your-username/navidash:latest
-```
-
-### Method B: Build Manually
-
-You can build the Docker image locally:
+### 1. Clone the repository
 
 ```bash
-# Build the image
-docker build -t navidash .
-
-# Run the container
-docker run -d \
-  -p 3000:3000 \
-  -v $(pwd)/data:/app/data \
-  --name navidash \
-  --restart unless-stopped \
-  navidash
+git clone https://github.com/wtfllix/navidash.git
+cd navidash
 ```
 
-### Method C: Docker Compose
-
-Using the included `docker-compose.yml`:
+### 2. Prepare a persistent data directory
 
 ```bash
-docker-compose up -d
+sudo mkdir -p /opt/navidash-data
 ```
 
-## 2. Manual Deployment (VPS/Node.js)
+By default, [`docker-compose.yml`](/Users/lx/projects/navidash/docker-compose.yml) mounts:
 
-If you prefer not to use Docker, you can deploy using Node.js directly.
+- host: `/opt/navidash-data`
+- container: `/app/data`
 
-### Prerequisites
-- Node.js 18+
-- NPM or Yarn
-- PM2 (recommended for process management)
+Keeping runtime data outside the repository is strongly recommended.
 
-### Steps
+If you want a different host path:
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/wtfllix/navidash.git
-   cd navidash
-   ```
+```bash
+export NAVIDASH_DATA_DIR=/your/data/path
+```
 
-2. **Install dependencies**:
-   ```bash
-   npm install
-   ```
-
-3. **Build the project**:
-   ```bash
-   npm run build
-   ```
-
-4. **Start the server**:
-   ```bash
-   npm start
-   ```
-
-   **Using PM2 (Production):**
-   ```bash
-   npm install -g pm2
-   pm2 start npm --name "navidash" -- start
-   pm2 save
-   ```
-
-## 3. GitHub Actions (Automated Docker Build)
-
-This repository includes a GitHub Actions workflow (`.github/workflows/docker-publish.yml`) that automatically builds and pushes a Docker image to GitHub Container Registry (GHCR) whenever you push to the `main` or `master` branch.
-
-### Setup for GHCR (Default)
-No additional setup is required. The workflow uses the `GITHUB_TOKEN` to authenticate with GHCR.
-
-### Setup for Docker Hub (Optional)
-If you prefer to push to Docker Hub instead of GHCR:
-
-1. Go to your repository settings on GitHub.
-2. Navigate to **Secrets and variables** > **Actions**.
-3. Create the following secrets:
-   - `DOCKERHUB_USERNAME`: Your Docker Hub username.
-   - `DOCKERHUB_TOKEN`: Your Docker Hub Access Token.
-4. Modify `.github/workflows/docker-publish.yml`:
-   - Change `REGISTRY: ghcr.io` to `REGISTRY: docker.io` (or remove it to default to Docker Hub).
-   - Update the login step to use your secrets.
-
-## 4. Environment Variables
-
-Start by copying the template:
+### 3. Copy environment variables
 
 ```bash
 cp .env.example .env
 ```
 
-- `NEXT_PUBLIC_DEMO_MODE`: Set to `true` to enable demo mode (read-only).
-- `QWEATHER_API_KEY`: API key or JWT used by the server-side weather proxy.
-- `QWEATHER_API_HOST`: Optional custom host for weather requests. When set, it takes priority over the widget-level host field.
-- `QWEATHER_AUTH_TYPE`: Optional weather auth mode. Supported values: `apikey`, `jwt`. Legacy values `param` and `bearer` are still read for backward compatibility.
-- `PORT`: Port to run the server on (default: 3000).
+### 4. Configure weather if needed
 
-## 5. Persistence
+If you want the `Weather` widget, set:
 
-The application stores runtime data under `/app/data`:
+```bash
+QWEATHER_API_KEY=your_qweather_key
+QWEATHER_API_HOST=your_qweather_host
+QWEATHER_AUTH_TYPE=apikey
+```
 
-- `settings.json`: user settings, including weather-related preferences.
-- `widget-layouts.json`: widget size and position data.
-- `widget-configs.json`: widget-specific configuration data.
+If your weather provider setup uses JWT:
 
-New files are written with a versioned envelope so future migrations can be handled explicitly, while legacy raw JSON files are still readable for backward compatibility.
+```bash
+QWEATHER_API_KEY=your_qweather_jwt
+QWEATHER_API_HOST=your_qweather_host
+QWEATHER_AUTH_TYPE=jwt
+```
 
-`bookmarks.json` is a legacy sample file in the repository root and is not part of the current runtime persistence model.
+### 5. Start the container
 
-In Docker, map the `/app/data` volume to persist these files. Runtime data should still stay out of version control, but weather API keys now belong in environment variables instead of `settings.json`.
+```bash
+docker-compose up -d
+```
+
+### 6. Open the app
+
+Visit:
+
+```text
+http://localhost:3000
+```
+
+## Upgrade
+
+For a normal Docker Compose deployment:
+
+```bash
+git pull
+docker-compose pull
+docker-compose up -d
+```
+
+As long as your host data directory stays mounted, your saved layout and settings remain intact.
+
+## Runtime Data
+
+NaviDash stores runtime data under `/app/data`.
+
+Current persisted files include:
+
+- `settings.json`
+- `widget-layouts.json`
+- `widget-configs.json`
+
+These files use a versioned JSON envelope so future migrations can stay explicit, while legacy raw JSON is still readable for backward compatibility.
+
+## Environment Variables
+
+Start from:
+
+```bash
+cp .env.example .env
+```
+
+Most important variables:
+
+- `NEXT_PUBLIC_DEMO_MODE`
+  Enables read-only demo mode when set to `true`
+- `QWEATHER_API_KEY`
+  Weather API key or JWT used by the server-side weather proxy
+- `QWEATHER_API_HOST`
+  Optional custom host for weather requests
+- `QWEATHER_AUTH_TYPE`
+  Supported values: `apikey`, `jwt`
+- `PORT`
+  Server port, default `3000`
+
+Notes:
+
+- weather requests go through `/api/weather`
+- weather credentials should live in environment variables, not widget config
+- for local container deployment, `DEMO_MODE` and `NEXT_PUBLIC_DEMO_MODE` should normally stay `false`
+
+## Alternative: Docker Run
+
+If you prefer a single `docker run` command instead of Compose:
+
+```bash
+docker run -d \
+  -p 3000:3000 \
+  -v /opt/navidash-data:/app/data \
+  -e NODE_ENV=production \
+  -e DEMO_MODE=false \
+  -e NEXT_PUBLIC_DEMO_MODE=false \
+  -e DATA_DIR=/app/data \
+  -e QWEATHER_API_KEY=your_qweather_key \
+  -e QWEATHER_API_HOST=your_qweather_host \
+  -e QWEATHER_AUTH_TYPE=apikey \
+  --name navidash \
+  --restart unless-stopped \
+  ghcr.io/wtfllix/navidash:latest
+```
+
+This is fine for simple setups, but `docker-compose.yml` is easier to maintain over time.
+
+## Alternative: Build Locally
+
+If you want to build the image yourself:
+
+```bash
+docker build -t navidash .
+docker run -d \
+  -p 3000:3000 \
+  -v /opt/navidash-data:/app/data \
+  --name navidash \
+  --restart unless-stopped \
+  navidash
+```
+
+## Non-Docker Deployment
+
+NaviDash can also run directly with Node.js, but this is not the primary recommendation.
+
+Requirements:
+
+- Node.js 18+
+- npm
+
+Basic flow:
+
+```bash
+npm install
+cp .env.example .env
+npm run build
+npm start
+```
+
+If you run without Docker, make sure the process has write access to the runtime data directory.
+
+## Demo Deployment
+
+NaviDash supports a read-only demo mode.
+
+Set:
+
+```bash
+NEXT_PUBLIC_DEMO_MODE=true
+```
+
+In demo mode:
+
+- the UI remains interactive
+- refresh restores curated demo content
+- write requests are blocked
+
+This is useful for preview environments such as Vercel, but not for long-term personal usage with persistent data.
+
+## GitHub Actions Image Publishing
+
+The repository includes a GitHub Actions workflow at:
+
+- [`.github/workflows/docker-publish.yml`](/Users/lx/projects/navidash/.github/workflows/docker-publish.yml)
+
+It builds and publishes Docker images to GHCR on `main`, `master`, and version tags.
+
+For most users, this just means you can pull and run the published image directly instead of building your own.
