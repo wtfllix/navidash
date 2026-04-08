@@ -4,7 +4,6 @@ import { useWidgetStore } from '@/store/useWidgetStore';
 import { ExternalLink, Edit2, Check, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
-import { isClientDemoMode } from '@/lib/demo';
 
 const getValidUrl = (value?: string) => {
   if (!value) return '';
@@ -44,7 +43,6 @@ export default React.memo(function QuickLinkWidget({ widget }: { widget: WidgetO
   const [url, setUrl] = useState(widget.config?.url || '');
   const [showValidation, setShowValidation] = useState(false);
   const t = useTranslations('Widgets');
-  const isDemoMode = isClientDemoMode;
 
   // 当外部配置(如模态框)更新时，同步本地状态
   useEffect(() => {
@@ -159,19 +157,17 @@ export default React.memo(function QuickLinkWidget({ widget }: { widget: WidgetO
   return (
     <div className="relative group w-full h-full">
       {/* 悬停显示的编辑按钮 */}
-      {!isDemoMode && (
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            setIsEditing(true);
-          }}
-          className="absolute top-2 right-2 p-1.5 bg-white/80 rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-100 text-gray-500 z-10"
-          aria-label={t('configure_link')}
-        >
-          <Edit2 size={12} />
-        </button>
-      )}
+      <button
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setIsEditing(true);
+        }}
+        className="absolute top-2 right-2 p-1.5 bg-white/80 rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-100 text-gray-500 z-10"
+        aria-label={t('configure_link')}
+      >
+        <Edit2 size={12} />
+      </button>
 
       <a
         href={getValidUrl(widget.config?.url)}

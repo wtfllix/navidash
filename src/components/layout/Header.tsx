@@ -166,11 +166,11 @@ export default function Header() {
         <div className="ml-2 flex shrink-0 items-center gap-2">
           {isDemoMode && (
             <span className="hidden rounded-full border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-700 md:inline-flex">
-              Read only demo
+              Demo resets on refresh
             </span>
           )}
 
-          {!isDemoMode && isEditing && (
+          {isEditing && (
             <button
               onClick={openWidgetPicker}
               title={t('add_widget')}
@@ -184,38 +184,34 @@ export default function Header() {
             </button>
           )}
 
-          {!isDemoMode && (
-            <>
-              <button
-                onClick={toggleEditing}
-                title={isEditing ? t('done') : t('customize')}
-                aria-label={isEditing ? t('done') : t('customize')}
-                className={cn(
-                  'rounded-2xl border px-3 py-2 text-[15px] font-medium transition-all duration-200',
-                  isEditing
-                    ? 'border-transparent bg-slate-900 text-white shadow-sm'
-                    : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900'
-                )}
-              >
-                <span className="flex items-center gap-2">
-                  {isEditing ? <Check size={18} /> : <Pencil size={18} />}
-                  <span className="hidden md:inline">{isEditing ? t('done') : t('customize')}</span>
-                </span>
-              </button>
+          <button
+            onClick={toggleEditing}
+            title={isEditing ? t('done') : t('customize')}
+            aria-label={isEditing ? t('done') : t('customize')}
+            className={cn(
+              'rounded-2xl border px-3 py-2 text-[15px] font-medium transition-all duration-200',
+              isEditing
+                ? 'border-transparent bg-slate-900 text-white shadow-sm'
+                : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900'
+            )}
+          >
+            <span className="flex items-center gap-2">
+              {isEditing ? <Check size={18} /> : <Pencil size={18} />}
+              <span className="hidden md:inline">{isEditing ? t('done') : t('customize')}</span>
+            </span>
+          </button>
 
-              <button
-                onClick={openSettings}
-                title={t('settings')}
-                aria-label={t('settings')}
-                className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-[15px] font-medium text-slate-600 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
-              >
-                <span className="flex items-center gap-2">
-                  <Settings size={18} />
-                  <span className="hidden lg:inline">{t('settings')}</span>
-                </span>
-              </button>
-            </>
-          )}
+          <button
+            onClick={openSettings}
+            title={t('settings')}
+            aria-label={t('settings')}
+            className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-[15px] font-medium text-slate-600 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
+          >
+            <span className="flex items-center gap-2">
+              <Settings size={18} />
+              <span className="hidden lg:inline">{t('settings')}</span>
+            </span>
+          </button>
         </div>
       </div>
     </header>

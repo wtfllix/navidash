@@ -85,7 +85,7 @@ export default function Sidebar() {
 
           {isDemoMode && (
             <p className="relative mt-3 text-sm leading-6 text-slate-500">
-              Demo 预置了一套展示内容。你可以浏览和点击链接，但不能新增、拖拽或修改组件。
+              Demo 预置了一套展示内容。你可以自由拖拽和调整，但刷新页面后会恢复为默认布局。
             </p>
           )}
         </div>

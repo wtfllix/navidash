@@ -19,10 +19,6 @@ export default function WidgetStoreSidebar() {
   const isDemoMode = isClientDemoMode;
 
   const handleAddWidget = (type: string, defaultSize: { w: number; h: number }) => {
-    if (isDemoMode) {
-      return;
-    }
-
     const placement = buildPlacementResult({
       widgets,
       widgetType: type as any,
@@ -62,7 +58,7 @@ export default function WidgetStoreSidebar() {
 
         {isDemoMode && (
           <p className="mt-2 text-sm leading-6 text-slate-500">
-            当前为只读 demo，组件库仅用于预览，不支持拖拽添加。
+            当前为 demo 模式。你可以拖拽、添加和调整组件，但刷新页面后会恢复为预置内容。
           </p>
         )}
 
@@ -96,7 +92,6 @@ export default function WidgetStoreSidebar() {
               <DraggableWidgetItem
                 key={meta.type}
                 meta={meta}
-                disabled={isDemoMode}
                 onClick={() => handleAddWidget(meta.type, meta.defaultSize)}
               />
             ))}

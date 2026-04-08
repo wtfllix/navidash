@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useWidgetStore } from '@/store/useWidgetStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
+import { isClientDemoMode } from '@/lib/demo';
 
 export default function DataSyncer() {
   const { fetchWidgets } = useWidgetStore();
@@ -16,6 +17,10 @@ export default function DataSyncer() {
     };
 
     fetchAll(true);
+
+    if (isClientDemoMode) {
+      return;
+    }
 
     // Polling logic
     let interval: NodeJS.Timeout | null = null;

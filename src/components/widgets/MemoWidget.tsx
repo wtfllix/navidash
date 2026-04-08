@@ -6,7 +6,6 @@ import { useWidgetStore } from '@/store/useWidgetStore';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { StickyNote } from 'lucide-react';
-import { isClientDemoMode } from '@/lib/demo';
 
 type SaveFeedbackState = 'idle' | 'saved' | 'error';
 
@@ -152,7 +151,6 @@ function renderMarkdownBlocks(content: string) {
 const MemoWidget = ({ widget }: { widget: WidgetOfType<'memo'> }) => {
   const { updateWidget, saveWidgetConfigs } = useWidgetStore();
   const t = useTranslations('Widgets');
-  const isDemoMode = isClientDemoMode;
 
   const [content, setContent] = useState(widget.config?.content || '');
   const [isEditing, setIsEditing] = useState(!(widget.config?.content || '').trim());
@@ -274,7 +272,7 @@ const MemoWidget = ({ widget }: { widget: WidgetOfType<'memo'> }) => {
       </div>
 
       <div className="relative z-10 min-h-0 flex-1 px-3 pb-3">
-        {!isDemoMode && (isEditing || !hasContent) ? (
+        {isEditing || !hasContent ? (
           <textarea
             ref={textareaRef}
             className={cn(
@@ -301,21 +299,15 @@ const MemoWidget = ({ widget }: { widget: WidgetOfType<'memo'> }) => {
         ) : (
           <button
             type="button"
-            onClick={() => {
-              if (!isDemoMode) {
-                setIsEditing(true);
-              }
-            }}
+            onClick={() => setIsEditing(true)}
             className={cn(
               'memo-scrollbar relative h-full w-full overflow-y-auto px-0 py-2 text-left text-sm font-normal leading-7',
               textColor
             )}
-            aria-label={isDemoMode ? t('memo') : t('memo_edit_content')}
+            aria-label={t('memo_edit_content')}
           >
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-black/6 to-transparent opacity-50" />
-            <div className="space-y-2 break-words">
-              {hasContent ? renderedContent : <span>{t('memo_placeholder')}</span>}
-            </div>
+            <div className="space-y-2 break-words">{renderedContent}</div>
           </button>
         )}
       </div>

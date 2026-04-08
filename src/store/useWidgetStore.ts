@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { createJSONStorage, persist } from 'zustand/middleware';
+import { StateStorage, createJSONStorage, persist } from 'zustand/middleware';
 import { Widget } from '@/types';
 import {
   normalizeWidgets,
@@ -48,6 +48,12 @@ const initialWidgets: Widget[] = isClientDemoMode
     ];
 
 const persistKey = 'widget-storage';
+
+const memoryOnlyStorage: StateStorage = {
+  getItem: () => null,
+  setItem: () => undefined,
+  removeItem: () => undefined,
+};
 
 function validateWidgets(widgets: unknown, fallback: Widget[] = initialWidgets): Widget[] {
   return normalizeWidgets(widgets, fallback);
@@ -138,7 +144,9 @@ export const useWidgetStore = create<WidgetState>()(
       widgets: initialWidgets,
       fetchWidgets: async () => {
         if (isClientDemoMode) {
-          set({ widgets: DEMO_WIDGETS, dataVersion: DEMO_DATA_VERSION });
+          if ((get().dataVersion ?? 0) !== DEMO_DATA_VERSION) {
+            set({ widgets: DEMO_WIDGETS, dataVersion: DEMO_DATA_VERSION });
+          }
           return;
         }
 
@@ -165,7 +173,7 @@ export const useWidgetStore = create<WidgetState>()(
       },
       saveWidgetConfigs: async () => {
         if (isClientDemoMode) {
-          return false;
+          return true;
         }
 
         try {
@@ -178,87 +186,72 @@ export const useWidgetStore = create<WidgetState>()(
       },
       addWidget: (widget) =>
         set((state) => {
-          if (isClientDemoMode) {
-            return state;
-          }
-
           const newWidgets = WidgetsArraySchema.parse([...state.widgets, widget]);
-          saveLayoutsToServer(newWidgets);
-          void saveConfigsToServer(newWidgets);
+          if (!isClientDemoMode) {
+            saveLayoutsToServer(newWidgets);
+            void saveConfigsToServer(newWidgets);
+          }
           return { widgets: newWidgets };
         }),
       removeWidget: (id) =>
         set((state) => {
-          if (isClientDemoMode) {
-            return state;
-          }
-
           const newWidgets = state.widgets.filter((widget) => widget.id !== id);
-          saveLayoutsToServer(newWidgets);
-          void saveConfigsToServer(newWidgets);
+          if (!isClientDemoMode) {
+            saveLayoutsToServer(newWidgets);
+            void saveConfigsToServer(newWidgets);
+          }
           return { widgets: newWidgets };
         }),
       updateWidget: (id, data) =>
         set((state) => {
-          if (isClientDemoMode) {
-            return state;
-          }
-
           const newWidgets = state.widgets.map((widget) =>
             widget.id === id ? mergeWidgetUpdate(widget, data) : widget
           );
 
-          if (data.position || data.size) {
+          if (!isClientDemoMode && (data.position || data.size)) {
             saveLayoutsToServer(newWidgets);
           }
 
           return { widgets: newWidgets };
         }),
       setWidgets: (widgets) => {
-        if (isClientDemoMode) {
-          set({ widgets: DEMO_WIDGETS, dataVersion: DEMO_DATA_VERSION });
-          return;
-        }
-
         const parsedWidgets = validateWidgets(widgets, []);
-        saveLayoutsToServer(parsedWidgets);
-        void saveConfigsToServer(parsedWidgets);
+        if (!isClientDemoMode) {
+          saveLayoutsToServer(parsedWidgets);
+          void saveConfigsToServer(parsedWidgets);
+        }
         set({ widgets: parsedWidgets });
       },
       batchUpdatePositions: (updates) =>
         set((state) => {
-          if (isClientDemoMode) {
-            return state;
-          }
-
           const positionMap = new Map(updates.map((update) => [update.id, update.position]));
           const newWidgets = state.widgets.map((widget) => {
             const position = positionMap.get(widget.id);
             return position ? mergeWidgetUpdate(widget, { position }) : widget;
           });
-          saveLayoutsToServer(newWidgets);
+          if (!isClientDemoMode) {
+            saveLayoutsToServer(newWidgets);
+          }
           return { widgets: newWidgets };
         }),
       addWidgetWithLayout: (newWidget, positionUpdates) =>
         set((state) => {
-          if (isClientDemoMode) {
-            return state;
-          }
-
           const positionMap = new Map(positionUpdates.map((update) => [update.id, update.position]));
           const updatedWidgets = state.widgets.map((widget) => {
             const position = positionMap.get(widget.id);
             return position ? mergeWidgetUpdate(widget, { position }) : widget;
           });
           const newWidgets = WidgetsArraySchema.parse([...updatedWidgets, newWidget]);
-          saveLayoutsToServer(newWidgets);
-          void saveConfigsToServer(newWidgets);
+          if (!isClientDemoMode) {
+            saveLayoutsToServer(newWidgets);
+            void saveConfigsToServer(newWidgets);
+          }
           return { widgets: newWidgets };
         }),
     }),
     {
       name: persistKey,
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => (isClientDemoMode ? memoryOnlyStorage : localStorage)),
       partialize: (state) => ({
         widgets: state.widgets,
         dataVersion: state.dataVersion,
@@ -268,14 +261,6 @@ export const useWidgetStore = create<WidgetState>()(
 
         if (!parsed.success) {
           return currentState;
-        }
-
-        if (isClientDemoMode) {
-          return {
-            ...currentState,
-            widgets: DEMO_WIDGETS,
-            dataVersion: DEMO_DATA_VERSION,
-          };
         }
 
         return {

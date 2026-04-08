@@ -4,7 +4,6 @@ import { useWidgetStore } from '@/store/useWidgetStore';
 import { useToastStore } from '@/store/useToastStore';
 import { Plus, Trash2, Check } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { isClientDemoMode } from '@/lib/demo';
 
 interface TodoWidgetProps {
   widget: WidgetOfType<'todo'>;
@@ -20,7 +19,6 @@ export default function TodoWidget({ widget }: TodoWidgetProps) {
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const hasPendingSaveErrorRef = useRef(false);
   const t = useTranslations('Widgets');
-  const isDemoMode = isClientDemoMode;
 
   useEffect(() => {
     setTodos(widget.config.todos || []);
@@ -130,7 +128,6 @@ export default function TodoWidget({ widget }: TodoWidgetProps) {
             <button
               type="button"
               onClick={handleClearCompleted}
-              disabled={isDemoMode}
               className="font-normal text-gray-500 transition-colors hover:text-gray-700"
             >
               {t('todo_clear_done')}
@@ -153,7 +150,6 @@ export default function TodoWidget({ widget }: TodoWidgetProps) {
             >
               <button
                 onClick={() => handleToggle(todo.id)}
-                disabled={isDemoMode}
                 className={`flex h-[18px] w-[18px] flex-shrink-0 items-center justify-center rounded-full border transition-colors ${
                   todo.completed 
                     ? 'bg-blue-500 border-blue-500 text-white' 
@@ -174,7 +170,6 @@ export default function TodoWidget({ widget }: TodoWidgetProps) {
                   e.stopPropagation();
                   handleDelete(todo.id);
                 }}
-                disabled={isDemoMode}
                 className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-500 transition-all"
               >
                 <Trash2 size={12} />
@@ -195,7 +190,7 @@ export default function TodoWidget({ widget }: TodoWidgetProps) {
           )}
         </div>
 
-        {!isDemoMode && isComposerOpen ? (
+        {isComposerOpen ? (
           <form
             onSubmit={handleAdd}
             onBlur={(e) => {
@@ -227,7 +222,7 @@ export default function TodoWidget({ widget }: TodoWidgetProps) {
               <Plus size={15} />
             </button>
           </form>
-        ) : !isDemoMode ? (
+        ) : (
           <button
             type="button"
             onClick={() => setIsComposerOpen(true)}
@@ -236,8 +231,6 @@ export default function TodoWidget({ widget }: TodoWidgetProps) {
           >
             <Plus size={16} />
           </button>
-        ) : (
-          <span className="text-xs text-gray-400">Demo</span>
         )}
       </div>
     </div>

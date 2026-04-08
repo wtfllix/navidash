@@ -8,7 +8,6 @@ import { useWidgetStore } from '@/store/useWidgetStore';
 import { useUIStore } from '@/store/useUIStore';
 import { widgetComponentRegistry } from '../widgets/registry';
 import { cn } from '@/lib/utils';
-import { isClientDemoMode } from '@/lib/demo';
 
 interface CanvasWidgetItemProps {
   widget: Widget;
@@ -47,7 +46,7 @@ function WidgetItemContent({
   const { removeWidget } = useWidgetStore();
   const { isEditing } = useUIStore();
   const t = useTranslations('Widgets');
-  const canEdit = isEditing && !isClientDemoMode;
+  const canEdit = isEditing;
 
   const renderContent = () => {
     const Component = widgetComponentRegistry[widget.type];
@@ -138,7 +137,7 @@ export default function CanvasWidgetItem({
   onDragHandlePointerDown,
 }: CanvasWidgetItemProps) {
   const { isEditing } = useUIStore();
-  const canEdit = isEditing && !isClientDemoMode;
+  const canEdit = isEditing;
 
   return (
     <>

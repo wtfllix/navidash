@@ -95,7 +95,7 @@ export const DEMO_WIDGETS: Widget[] = [
     position: { x: 5, y: 1 },
     config: {
       content:
-        '## This week\n- Ship the read-only Vercel demo\n- Keep the layout clean and focused\n- Tell the story through real content\n\n> Demo visitors can explore, but cannot change anything.\n\nLinks stay practical, notes stay human, and the whole page should feel lived-in.',
+        '## This week\n- Ship the interactive Vercel demo\n- Keep the layout clean and focused\n- Tell the story through real content\n\n> Demo visitors can explore and customize freely. A refresh resets everything back to the curated default.\n\nLinks stay practical, notes stay human, and the whole page should feel lived-in.',
       bgColor: 'bg-amber-100',
       textColor: 'text-amber-950',
     },
