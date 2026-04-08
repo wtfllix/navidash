@@ -8,6 +8,7 @@ import {
   WidgetsArraySchema,
   WidgetStorePersistedStateSchema,
 } from '@/lib/schemas';
+import { DEMO_DATA_VERSION, DEMO_WIDGETS, isClientDemoMode } from '@/lib/demo';
 
 type WidgetUpdate = Partial<Pick<Widget, 'size' | 'position' | 'config'>>;
 
@@ -27,22 +28,24 @@ interface WidgetState {
   ) => void;
 }
 
-const initialWidgets: Widget[] = [
-  {
-    id: '1',
-    type: 'clock',
-    size: { w: 2, h: 1 },
-    position: { x: 0, y: 0 },
-    config: {},
-  },
-  {
-    id: '2',
-    type: 'weather',
-    size: { w: 2, h: 1 },
-    position: { x: 2, y: 0 },
-    config: {},
-  },
-];
+const initialWidgets: Widget[] = isClientDemoMode
+  ? DEMO_WIDGETS
+  : [
+      {
+        id: '1',
+        type: 'clock',
+        size: { w: 2, h: 1 },
+        position: { x: 0, y: 0 },
+        config: {},
+      },
+      {
+        id: '2',
+        type: 'weather',
+        size: { w: 2, h: 1 },
+        position: { x: 2, y: 0 },
+        config: {},
+      },
+    ];
 
 const persistKey = 'widget-storage';
 
@@ -134,6 +137,11 @@ export const useWidgetStore = create<WidgetState>()(
     (set, get) => ({
       widgets: initialWidgets,
       fetchWidgets: async () => {
+        if (isClientDemoMode) {
+          set({ widgets: DEMO_WIDGETS, dataVersion: DEMO_DATA_VERSION });
+          return;
+        }
+
         try {
           const res = await fetch(`/api/widgets?t=${Date.now()}`, {
             cache: 'no-store',
@@ -156,6 +164,10 @@ export const useWidgetStore = create<WidgetState>()(
         }
       },
       saveWidgetConfigs: async () => {
+        if (isClientDemoMode) {
+          return false;
+        }
+
         try {
           await saveConfigsToServer(get().widgets);
           return true;
@@ -166,6 +178,10 @@ export const useWidgetStore = create<WidgetState>()(
       },
       addWidget: (widget) =>
         set((state) => {
+          if (isClientDemoMode) {
+            return state;
+          }
+
           const newWidgets = WidgetsArraySchema.parse([...state.widgets, widget]);
           saveLayoutsToServer(newWidgets);
           void saveConfigsToServer(newWidgets);
@@ -173,6 +189,10 @@ export const useWidgetStore = create<WidgetState>()(
         }),
       removeWidget: (id) =>
         set((state) => {
+          if (isClientDemoMode) {
+            return state;
+          }
+
           const newWidgets = state.widgets.filter((widget) => widget.id !== id);
           saveLayoutsToServer(newWidgets);
           void saveConfigsToServer(newWidgets);
@@ -180,6 +200,10 @@ export const useWidgetStore = create<WidgetState>()(
         }),
       updateWidget: (id, data) =>
         set((state) => {
+          if (isClientDemoMode) {
+            return state;
+          }
+
           const newWidgets = state.widgets.map((widget) =>
             widget.id === id ? mergeWidgetUpdate(widget, data) : widget
           );
@@ -191,6 +215,11 @@ export const useWidgetStore = create<WidgetState>()(
           return { widgets: newWidgets };
         }),
       setWidgets: (widgets) => {
+        if (isClientDemoMode) {
+          set({ widgets: DEMO_WIDGETS, dataVersion: DEMO_DATA_VERSION });
+          return;
+        }
+
         const parsedWidgets = validateWidgets(widgets, []);
         saveLayoutsToServer(parsedWidgets);
         void saveConfigsToServer(parsedWidgets);
@@ -198,6 +227,10 @@ export const useWidgetStore = create<WidgetState>()(
       },
       batchUpdatePositions: (updates) =>
         set((state) => {
+          if (isClientDemoMode) {
+            return state;
+          }
+
           const positionMap = new Map(updates.map((update) => [update.id, update.position]));
           const newWidgets = state.widgets.map((widget) => {
             const position = positionMap.get(widget.id);
@@ -208,6 +241,10 @@ export const useWidgetStore = create<WidgetState>()(
         }),
       addWidgetWithLayout: (newWidget, positionUpdates) =>
         set((state) => {
+          if (isClientDemoMode) {
+            return state;
+          }
+
           const positionMap = new Map(positionUpdates.map((update) => [update.id, update.position]));
           const updatedWidgets = state.widgets.map((widget) => {
             const position = positionMap.get(widget.id);
@@ -231,6 +268,14 @@ export const useWidgetStore = create<WidgetState>()(
 
         if (!parsed.success) {
           return currentState;
+        }
+
+        if (isClientDemoMode) {
+          return {
+            ...currentState,
+            widgets: DEMO_WIDGETS,
+            dataVersion: DEMO_DATA_VERSION,
+          };
         }
 
         return {

@@ -82,6 +82,12 @@ export default function Sidebar() {
               </button>
             </div>
           </div>
+
+          {isDemoMode && (
+            <p className="relative mt-3 text-sm leading-6 text-slate-500">
+              Demo 预置了一套展示内容。你可以浏览和点击链接，但不能新增、拖拽或修改组件。
+            </p>
+          )}
         </div>
 
         <WidgetStoreSidebar />

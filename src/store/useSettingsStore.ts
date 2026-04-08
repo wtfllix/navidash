@@ -7,6 +7,7 @@ import {
   SettingsSchema,
   SettingsStorePersistedStateSchema,
 } from '@/lib/schemas';
+import { DEMO_DATA_VERSION, DEMO_SETTINGS, isClientDemoMode } from '@/lib/demo';
 
 interface SettingsState extends Settings {
   setBackgroundImage: (url: string) => void;
@@ -88,6 +89,10 @@ export const useSettingsStore = create<SettingsState>()(
     (set, get) => {
       const updateSettings = (patch: Partial<Settings>) =>
         set((state) => {
+          if (isClientDemoMode) {
+            return state;
+          }
+
           const nextSettings = normalizeSettings({
             ...extractSettings(state),
             ...patch,
@@ -104,10 +109,20 @@ export const useSettingsStore = create<SettingsState>()(
         });
 
       return {
-        ...DEFAULT_SETTINGS,
+        ...(isClientDemoMode ? DEMO_SETTINGS : DEFAULT_SETTINGS),
         isSavingSettings: false,
         hasFetchedSettings: false,
         fetchSettings: async (force = false) => {
+          if (isClientDemoMode) {
+            set({
+              ...DEMO_SETTINGS,
+              dataVersion: DEMO_DATA_VERSION,
+              hasFetchedSettings: true,
+              isSavingSettings: false,
+            });
+            return;
+          }
+
           try {
             if (get().isSavingSettings) {
               return;
@@ -145,6 +160,16 @@ export const useSettingsStore = create<SettingsState>()(
         setCustomTitle: (customTitle) => updateSettings({ customTitle }),
         setLanguage: (language) => updateSettings({ language }),
         resetSettings: () => {
+          if (isClientDemoMode) {
+            set({
+              ...DEMO_SETTINGS,
+              isSavingSettings: false,
+              hasFetchedSettings: true,
+              dataVersion: DEMO_DATA_VERSION,
+            });
+            return;
+          }
+
           const defaults = createDefaultSettings();
           set({ ...defaults, isSavingSettings: false, hasFetchedSettings: true });
           saveToServer(defaults);
@@ -163,6 +188,16 @@ export const useSettingsStore = create<SettingsState>()(
 
         if (!parsed.success) {
           return currentState;
+        }
+
+        if (isClientDemoMode) {
+          return {
+            ...currentState,
+            ...DEMO_SETTINGS,
+            isSavingSettings: false,
+            hasFetchedSettings: currentState.hasFetchedSettings,
+            dataVersion: DEMO_DATA_VERSION,
+          };
         }
 
         return {

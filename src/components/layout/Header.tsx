@@ -14,6 +14,7 @@ import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { useUIStore } from '@/store/useUIStore';
 import { useSidebarStore } from '@/store/useSidebarStore';
+import { isClientDemoMode } from '@/lib/demo';
 
 const ENGINES = [
   { name: 'Google', url: 'https://www.google.com/search?q=', icon: 'G' },
@@ -28,6 +29,7 @@ export default function Header() {
   const [query, setQuery] = useState('');
   const [engine, setEngine] = useState(ENGINES[0]);
   const inputRef = useRef<HTMLInputElement>(null);
+  const isDemoMode = isClientDemoMode;
 
   const { isEditing, toggleEditing, openWidgetPicker, openSettings } = useUIStore();
   const { isOpen: isSidebarOpen, toggle: toggleSidebar } = useSidebarStore();
@@ -162,7 +164,13 @@ export default function Header() {
         </div>
 
         <div className="ml-2 flex shrink-0 items-center gap-2">
-          {isEditing && (
+          {isDemoMode && (
+            <span className="hidden rounded-full border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-700 md:inline-flex">
+              Read only demo
+            </span>
+          )}
+
+          {!isDemoMode && isEditing && (
             <button
               onClick={openWidgetPicker}
               title={t('add_widget')}
@@ -176,34 +184,38 @@ export default function Header() {
             </button>
           )}
 
-          <button
-            onClick={toggleEditing}
-            title={isEditing ? t('done') : t('customize')}
-            aria-label={isEditing ? t('done') : t('customize')}
-            className={cn(
-              'rounded-2xl border px-3 py-2 text-[15px] font-medium transition-all duration-200',
-              isEditing
-                ? 'border-transparent bg-slate-900 text-white shadow-sm'
-                : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900'
-            )}
-          >
-            <span className="flex items-center gap-2">
-              {isEditing ? <Check size={18} /> : <Pencil size={18} />}
-              <span className="hidden md:inline">{isEditing ? t('done') : t('customize')}</span>
-            </span>
-          </button>
+          {!isDemoMode && (
+            <>
+              <button
+                onClick={toggleEditing}
+                title={isEditing ? t('done') : t('customize')}
+                aria-label={isEditing ? t('done') : t('customize')}
+                className={cn(
+                  'rounded-2xl border px-3 py-2 text-[15px] font-medium transition-all duration-200',
+                  isEditing
+                    ? 'border-transparent bg-slate-900 text-white shadow-sm'
+                    : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900'
+                )}
+              >
+                <span className="flex items-center gap-2">
+                  {isEditing ? <Check size={18} /> : <Pencil size={18} />}
+                  <span className="hidden md:inline">{isEditing ? t('done') : t('customize')}</span>
+                </span>
+              </button>
 
-          <button
-            onClick={openSettings}
-            title={t('settings')}
-            aria-label={t('settings')}
-            className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-[15px] font-medium text-slate-600 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
-          >
-            <span className="flex items-center gap-2">
-              <Settings size={18} />
-              <span className="hidden lg:inline">{t('settings')}</span>
-            </span>
-          </button>
+              <button
+                onClick={openSettings}
+                title={t('settings')}
+                aria-label={t('settings')}
+                className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-[15px] font-medium text-slate-600 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
+              >
+                <span className="flex items-center gap-2">
+                  <Settings size={18} />
+                  <span className="hidden lg:inline">{t('settings')}</span>
+                </span>
+              </button>
+            </>
+          )}
         </div>
       </div>
     </header>

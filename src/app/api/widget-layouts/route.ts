@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { ZodError } from 'zod';
 import { getWidgetsLastModified, getWidgetLayouts, saveWidgetLayouts } from '@/lib/server/storage';
 import { WidgetLayoutsArraySchema } from '@/lib/schemas';
+import { isServerDemoMode } from '@/lib/demo';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,6 +19,10 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  if (isServerDemoMode) {
+    return NextResponse.json({ error: 'Demo mode is read-only' }, { status: 403 });
+  }
+
   try {
     const body = await request.json();
     const layouts = WidgetLayoutsArraySchema.parse(body);

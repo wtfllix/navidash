@@ -9,13 +9,18 @@ import { WidgetMeta } from '@/components/widgets/registry';
 interface DraggableWidgetItemProps {
   meta: WidgetMeta;
   onClick?: () => void;
+  disabled?: boolean;
 }
 
 /**
  * DraggableWidgetItem
  * 可拖拽的小组件项，用于侧边栏小组件商店
  */
-export default function DraggableWidgetItem({ meta, onClick }: DraggableWidgetItemProps) {
+export default function DraggableWidgetItem({
+  meta,
+  onClick,
+  disabled = false,
+}: DraggableWidgetItemProps) {
   const t = useTranslations('Widgets');
   const justDraggedRef = useRef(false);
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
@@ -30,7 +35,7 @@ export default function DraggableWidgetItem({ meta, onClick }: DraggableWidgetIt
 
   const style = {
     transform: CSS.Translate.toString(transform),
-    cursor: isDragging ? 'grabbing' : 'grab',
+    cursor: disabled ? 'not-allowed' : isDragging ? 'grabbing' : 'grab',
   };
 
   useEffect(() => {
@@ -59,16 +64,19 @@ export default function DraggableWidgetItem({ meta, onClick }: DraggableWidgetIt
     <button
       ref={setNodeRef}
       style={style}
-      {...attributes}
-      {...listeners}
+      {...(disabled ? {} : attributes)}
+      {...(disabled ? {} : listeners)}
       onClick={handleClick}
+      disabled={disabled}
       className={`
         flex items-start rounded-2xl border bg-white p-3.5
         text-left focus:outline-none focus:ring-2 focus:ring-[rgba(var(--primary-color),0.22)] group
         transition-all duration-150
         ${isDragging
           ? 'border-[rgba(var(--primary-color),0.5)] shadow-lg shadow-slate-900/10 scale-[1.03] z-50'
-          : 'border-slate-200 hover:border-slate-300 hover:shadow-md'
+          : disabled
+            ? 'border-slate-200 opacity-65'
+            : 'border-slate-200 hover:border-slate-300 hover:shadow-md'
         }
       `}
       aria-label={`${t('click_to_add')} ${t(meta.titleKey as any)}`}

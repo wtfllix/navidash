@@ -9,14 +9,20 @@ import { useUIStore } from '@/store/useUIStore';
 import { buildPlacementResult, WidgetCreatedDetail } from '@/lib/widgetPlacement';
 import { widgetMeta, widgetTypesRequiringSetup } from '@/components/widgets/registry';
 import DraggableWidgetItem from './DraggableWidgetItem';
+import { isClientDemoMode } from '@/lib/demo';
 
 export default function WidgetStoreSidebar() {
   const { widgets, addWidgetWithLayout } = useWidgetStore();
   const currentCanvasCols = useUIStore((state) => state.currentCanvasCols);
   const t = useTranslations('Widgets');
   const [searchQuery, setSearchQuery] = useState('');
+  const isDemoMode = isClientDemoMode;
 
   const handleAddWidget = (type: string, defaultSize: { w: number; h: number }) => {
+    if (isDemoMode) {
+      return;
+    }
+
     const placement = buildPlacementResult({
       widgets,
       widgetType: type as any,
@@ -54,6 +60,12 @@ export default function WidgetStoreSidebar() {
           {t('store_title')}
         </h2>
 
+        {isDemoMode && (
+          <p className="mt-2 text-sm leading-6 text-slate-500">
+            当前为只读 demo，组件库仅用于预览，不支持拖拽添加。
+          </p>
+        )}
+
         <div className="relative mt-2.5">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
           {searchQuery && (
@@ -84,6 +96,7 @@ export default function WidgetStoreSidebar() {
               <DraggableWidgetItem
                 key={meta.type}
                 meta={meta}
+                disabled={isDemoMode}
                 onClick={() => handleAddWidget(meta.type, meta.defaultSize)}
               />
             ))}
