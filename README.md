@@ -68,20 +68,24 @@
     ```
 
 3.  **启动容器**
-    如需使用天气组件，请先配置环境变量。
+    如需使用天气组件，请先复制配置模板并编辑 `.env`：
+
+    ```bash
+    cp .env.example .env
+    ```
 
     推荐方案：`apikey`（优先）
     ```bash
-    export QWEATHER_API_KEY=your_qweather_key
-    export QWEATHER_API_HOST=your_qweather_host
-    export QWEATHER_AUTH_TYPE=apikey
+    QWEATHER_API_KEY=your_qweather_key
+    QWEATHER_API_HOST=your_qweather_host
+    QWEATHER_AUTH_TYPE=apikey
     ```
 
-    如果你使用 JWT，也可以改成：
+    如果你使用 JWT，可以把 `.env` 改成：
     ```bash
-    export QWEATHER_API_KEY=your_qweather_jwt
-    export QWEATHER_API_HOST=your_qweather_host
-    export QWEATHER_AUTH_TYPE=jwt
+    QWEATHER_API_KEY=your_qweather_jwt
+    QWEATHER_API_HOST=your_qweather_host
+    QWEATHER_AUTH_TYPE=jwt
     ```
 
     然后启动容器：
@@ -136,20 +140,24 @@
     ```
 
 3.  **启动开发服务器**
-    如需使用天气组件，请先配置环境变量。
+    如需使用天气组件，请先复制配置模板并编辑 `.env`：
+
+    ```bash
+    cp .env.example .env
+    ```
 
     推荐方案：`apikey`（优先）
     ```bash
-    export QWEATHER_API_KEY=your_qweather_key
-    export QWEATHER_API_HOST=your_qweather_host
-    export QWEATHER_AUTH_TYPE=apikey
+    QWEATHER_API_KEY=your_qweather_key
+    QWEATHER_API_HOST=your_qweather_host
+    QWEATHER_AUTH_TYPE=apikey
     ```
 
-    如果你使用 JWT，也可以改成：
+    如果你使用 JWT，可以把 `.env` 改成：
     ```bash
-    export QWEATHER_API_KEY=your_qweather_jwt
-    export QWEATHER_API_HOST=your_qweather_host
-    export QWEATHER_AUTH_TYPE=jwt
+    QWEATHER_API_KEY=your_qweather_jwt
+    QWEATHER_API_HOST=your_qweather_host
+    QWEATHER_AUTH_TYPE=jwt
     ```
 
     然后启动开发服务器：
@@ -170,7 +178,7 @@
 
 ### ☀️ 天气组件如何使用
 
-1.  在部署环境或本地开发环境中设置 `QWEATHER_API_KEY`。
+1.  在项目根目录执行 `cp .env.example .env`，然后编辑 `.env`。
     推荐使用 `QWEATHER_AUTH_TYPE=apikey`。
 2.  启动应用后，添加一个“天气”组件。
 3.  打开该天气组件的设置，在组件内填写城市，或直接填写经纬度。

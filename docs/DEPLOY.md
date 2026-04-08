@@ -106,6 +106,12 @@ If you prefer to push to Docker Hub instead of GHCR:
 
 ## 4. Environment Variables
 
+Start by copying the template:
+
+```bash
+cp .env.example .env
+```
+
 - `NEXT_PUBLIC_DEMO_MODE`: Set to `true` to enable demo mode (read-only).
 - `QWEATHER_API_KEY`: API key or JWT used by the server-side weather proxy.
 - `QWEATHER_API_HOST`: Optional custom host for weather requests. When set, it takes priority over the widget-level host field.

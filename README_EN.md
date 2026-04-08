@@ -104,20 +104,24 @@ This is the simplest way to run NaviDash without configuring a local Node.js env
     ```
 
 3.  **Start the container**
-    If you want to use the Weather widget, set the environment variables first.
+    If you want to use the Weather widget, first copy the template and edit `.env`:
+
+    ```bash
+    cp .env.example .env
+    ```
 
     Recommended: `apikey` (preferred)
     ```bash
-    export QWEATHER_API_KEY=your_qweather_key
-    export QWEATHER_API_HOST=your_qweather_host
-    export QWEATHER_AUTH_TYPE=apikey
+    QWEATHER_API_KEY=your_qweather_key
+    QWEATHER_API_HOST=your_qweather_host
+    QWEATHER_AUTH_TYPE=apikey
     ```
 
-    If you use JWT instead:
+    If you use JWT instead, update `.env` to:
     ```bash
-    export QWEATHER_API_KEY=your_qweather_jwt
-    export QWEATHER_API_HOST=your_qweather_host
-    export QWEATHER_AUTH_TYPE=jwt
+    QWEATHER_API_KEY=your_qweather_jwt
+    QWEATHER_API_HOST=your_qweather_host
+    QWEATHER_AUTH_TYPE=jwt
     ```
 
     Then start the container:
@@ -172,20 +176,24 @@ If you want to contribute or modify the code:
     ```
 
 3.  **Start development server**
-    If you want to use the Weather widget, set the environment variables first.
+    If you want to use the Weather widget, first copy the template and edit `.env`:
+
+    ```bash
+    cp .env.example .env
+    ```
 
     Recommended: `apikey` (preferred)
     ```bash
-    export QWEATHER_API_KEY=your_qweather_key
-    export QWEATHER_API_HOST=your_qweather_host
-    export QWEATHER_AUTH_TYPE=apikey
+    QWEATHER_API_KEY=your_qweather_key
+    QWEATHER_API_HOST=your_qweather_host
+    QWEATHER_AUTH_TYPE=apikey
     ```
 
-    If you use JWT instead:
+    If you use JWT instead, update `.env` to:
     ```bash
-    export QWEATHER_API_KEY=your_qweather_jwt
-    export QWEATHER_API_HOST=your_qweather_host
-    export QWEATHER_AUTH_TYPE=jwt
+    QWEATHER_API_KEY=your_qweather_jwt
+    QWEATHER_API_HOST=your_qweather_host
+    QWEATHER_AUTH_TYPE=jwt
     ```
 
     Then start the development server:
@@ -206,7 +214,7 @@ If you want to contribute or modify the code:
 
 ### ☀️ How to use the Weather widget
 
-1.  Set `QWEATHER_API_KEY` in your deployment or local development environment.
+1.  Run `cp .env.example .env` in the project root, then edit `.env`.
     We recommend `QWEATHER_AUTH_TYPE=apikey`.
 2.  Start the app and add a `Weather` widget.
 3.  Open that widget's settings and fill in a city name or exact coordinates.
