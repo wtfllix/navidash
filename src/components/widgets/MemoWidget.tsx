@@ -13,6 +13,29 @@ const LINK_PATTERN = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
 const INLINE_CODE_PATTERN = /`([^`]+)`/g;
 const BOLD_PATTERN = /\*\*([^*]+)\*\*/g;
 const ITALIC_PATTERN = /\*([^*]+)\*/g;
+const DEFAULT_MEMO_BG = '#fef08a';
+const DEFAULT_MEMO_TEXT = '#713f12';
+
+function resolveColorValue(value: string | undefined, fallback: string) {
+  const candidate = value?.trim();
+
+  if (!candidate) {
+    return { style: fallback };
+  }
+
+  if (
+    candidate.startsWith('#') ||
+    candidate.startsWith('rgb(') ||
+    candidate.startsWith('rgba(') ||
+    candidate.startsWith('hsl(') ||
+    candidate.startsWith('hsla(') ||
+    candidate.startsWith('var(')
+  ) {
+    return { style: candidate };
+  }
+
+  return { className: candidate };
+}
 
 function renderInlineMarkdown(text: string) {
   const tokens = text.split(/(`[^`]+`|\[[^\]]+\]\(https?:\/\/[^\s)]+\)|\*\*[^*]+\*\*|\*[^*]+\*)/g);
@@ -240,32 +263,44 @@ const MemoWidget = ({ widget }: { widget: WidgetOfType<'memo'> }) => {
     setContent(e.target.value);
   };
 
-  // Determine colors based on config or default to yellow sticky note style
-  const bgColor = widget.config?.bgColor || 'bg-yellow-200';
-  const textColor = widget.config?.textColor || 'text-yellow-900';
+  const backgroundColor = resolveColorValue(widget.config?.bgColor, DEFAULT_MEMO_BG);
+  const foregroundColor = resolveColorValue(widget.config?.textColor, DEFAULT_MEMO_TEXT);
 
   return (
-    <div className={cn(
-      "flex flex-col w-full h-full relative overflow-hidden transition-all duration-300",
-      bgColor
-    )}>
+    <div
+      className={cn(
+        'flex flex-col w-full h-full relative overflow-hidden transition-all duration-300',
+        backgroundColor.className
+      )}
+      style={backgroundColor.style ? { backgroundColor: backgroundColor.style } : undefined}
+    >
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.34),transparent_36%)]" />
       <div className="pointer-events-none absolute inset-0 opacity-30 [background-image:linear-gradient(to_bottom,transparent_27px,rgba(255,255,255,0.22)_28px)] [background-size:100%_28px]" />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-6 bg-gradient-to-b from-white/18 to-transparent" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-black/5 to-transparent opacity-40" />
       <div className="relative z-10 flex items-center justify-between p-3 pb-1 shrink-0">
         <div className="flex items-center gap-2 opacity-60">
-          <StickyNote size={16} className={textColor} />
-          <span className={cn('text-ui-title', textColor)}>{t('memo')}</span>
+          <StickyNote
+            size={16}
+            className={foregroundColor.className}
+            style={foregroundColor.style ? { color: foregroundColor.style } : undefined}
+          />
+          <span
+            className={cn('text-ui-title', foregroundColor.className)}
+            style={foregroundColor.style ? { color: foregroundColor.style } : undefined}
+          >
+            {t('memo')}
+          </span>
         </div>
         <div
           className={cn(
             'rounded-full px-2 py-0.5 text-ui-muted transition-all duration-300',
-            textColor,
+            foregroundColor.className,
             saveFeedback === 'idle' && 'opacity-0',
             saveFeedback === 'saved' && 'bg-white/28 opacity-65',
             saveFeedback === 'error' && 'bg-red-500/12 text-red-900 opacity-85'
           )}
+          style={foregroundColor.style ? { color: foregroundColor.style } : undefined}
         >
           {saveFeedback === 'saved' ? t('memo_saved_hint') : saveFeedback === 'error' ? t('memo_save_failed') : ''}
         </div>
@@ -277,8 +312,9 @@ const MemoWidget = ({ widget }: { widget: WidgetOfType<'memo'> }) => {
             ref={textareaRef}
             className={cn(
               'memo-scrollbar h-full w-full overflow-y-auto bg-transparent px-0 py-2 border-none outline-none resize-none text-sm font-normal leading-7 placeholder-black/20',
-              textColor
+              foregroundColor.className
             )}
+            style={foregroundColor.style ? { color: foregroundColor.style } : undefined}
             placeholder={t('memo_placeholder')}
             value={content}
             onChange={handleChange}
@@ -302,8 +338,9 @@ const MemoWidget = ({ widget }: { widget: WidgetOfType<'memo'> }) => {
             onClick={() => setIsEditing(true)}
             className={cn(
               'memo-scrollbar relative h-full w-full overflow-y-auto px-0 py-2 text-left text-sm font-normal leading-7',
-              textColor
+              foregroundColor.className
             )}
+            style={foregroundColor.style ? { color: foregroundColor.style } : undefined}
             aria-label={t('memo_edit_content')}
           >
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-black/6 to-transparent opacity-50" />
