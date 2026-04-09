@@ -1,3 +1,6 @@
+<img width="200" height="200" alt="image" src="https://github.com/user-attachments/assets/19ebe243-3f0c-4c48-b512-c9a98f23a0c3" />
+
+
 # NaviDash
 
 > 一个可定制的个人导航主页，采用洞洞板式自由布局。
