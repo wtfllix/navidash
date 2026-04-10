@@ -4,6 +4,7 @@ import { useWidgetStore } from '@/store/useWidgetStore';
 import { useToastStore } from '@/store/useToastStore';
 import { Plus, Trash2, Check } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { createResizeObserver } from '@/lib/resizeObserver';
 
 interface TodoWidgetProps {
   widget: WidgetOfType<'todo'>;
@@ -52,12 +53,12 @@ export default function TodoWidget({ widget }: TodoWidgetProps) {
     updateBottomHint();
     container.addEventListener('scroll', updateBottomHint, { passive: true });
 
-    const resizeObserver = new ResizeObserver(updateBottomHint);
-    resizeObserver.observe(container);
+    const resizeObserver = createResizeObserver(() => updateBottomHint());
+    resizeObserver?.observe(container);
 
     return () => {
       container.removeEventListener('scroll', updateBottomHint);
-      resizeObserver.disconnect();
+      resizeObserver?.disconnect();
     };
   }, [todos]);
 
@@ -167,48 +168,46 @@ export default function TodoWidget({ widget }: TodoWidgetProps) {
           }`}
         />
         <div ref={listRef} className="hover-scrollbar h-full overflow-y-auto">
-          {todos.length === 0 ? (
-            <div className="flex h-full flex-col items-center justify-center px-3 text-center text-xs text-gray-400">
-              <p className="text-sm font-medium text-gray-500">{t('no_todos')}</p>
-              <p className="mt-1 text-[11px] text-gray-300">{t('todo_empty_hint')}</p>
-            </div>
-          ) : (
-            sortedTodos.map((todo) => (
-              <div
-                key={todo.id}
-                className="group flex items-center gap-2.5 rounded-md py-2 pl-2.5 pr-1.5 transition-colors hover:bg-gray-50"
+        {todos.length === 0 ? (
+          <div className="flex h-full flex-col items-center justify-center px-3 text-center text-xs text-gray-400">
+            <p className="text-sm font-medium text-gray-500">{t('no_todos')}</p>
+            <p className="mt-1 text-[11px] text-gray-300">{t('todo_empty_hint')}</p>
+          </div>
+        ) : (
+          sortedTodos.map((todo) => (
+            <div 
+              key={todo.id} 
+              className="group flex items-center gap-2.5 rounded-md py-2 pl-2.5 pr-1.5 transition-colors hover:bg-gray-50"
+            >
+              <button
+                onClick={() => handleToggle(todo.id)}
+                className={`flex h-[18px] w-[18px] flex-shrink-0 items-center justify-center rounded-full border transition-colors ${
+                  todo.completed 
+                    ? 'bg-blue-500 border-blue-500 text-white' 
+                    : 'border-gray-300 hover:border-blue-400'
+                }`}
               >
-                <button
-                  onClick={() => handleToggle(todo.id)}
-                  className={`flex h-[18px] w-[18px] flex-shrink-0 items-center justify-center rounded-full border transition-colors ${
-                    todo.completed
-                      ? 'bg-blue-500 border-blue-500 text-white'
-                      : 'border-gray-300 hover:border-blue-400'
-                  }`}
-                >
-                  {todo.completed && <Check size={10} strokeWidth={3} />}
-                </button>
-
-                <span
-                  className={`flex-1 text-sm font-normal leading-5 break-words ${
-                    todo.completed ? 'text-gray-400 line-through' : 'text-gray-700'
-                  }`}
-                >
-                  {todo.text}
-                </span>
-
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDelete(todo.id);
-                  }}
-                  className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-500 transition-all"
-                >
-                  <Trash2 size={12} />
-                </button>
-              </div>
-            ))
-          )}
+                {todo.completed && <Check size={10} strokeWidth={3} />}
+              </button>
+              
+              <span className={`flex-1 text-sm font-normal leading-5 break-words ${
+                todo.completed ? 'text-gray-400 line-through' : 'text-gray-700'
+              }`}>
+                {todo.text}
+              </span>
+              
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete(todo.id);
+                }}
+                className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-500 transition-all"
+              >
+                <Trash2 size={12} />
+              </button>
+            </div>
+          ))
+        )}
         </div>
       </div>
 

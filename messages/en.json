@@ -32,6 +32,12 @@
     "widget_store": "Widget Store",
     "open_widget_store": "Open widget store",
     "close_widget_store": "Close widget store",
+    "layout_desktop": "Desktop",
+    "layout_mobile": "Mobile",
+    "undo": "Undo",
+    "restore": "Restore",
+    "undo_mobile_layout": "Undo mobile layout change",
+    "restore_mobile_layout": "Restore mobile layout from session start",
     "search_query": "Search query",
     "search_engine": "Select search engine",
     "search_action": "Run search"

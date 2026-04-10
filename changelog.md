@@ -18,14 +18,26 @@
 
 ## 2026-04-09
 
-### docs: 初始化变更记录规范
-- 做了什么：新增 `changelog.md` 作为统一的变更记录文件，并在 `AGENTS.md` 中补充变更记录要求
-- 影响范围：开发流程、任务交付规范
-- 涉及模块：`AGENTS.md`、`changelog.md`
-- 是否有兼容性影响：无
-- 后续待补充：后续功能开发完成后，按统一模板持续补充变更记录
+### feat: 支持桌面与手机分离布局并共享组件数据
+- 做了什么：新增桌面/手机两套小组件布局存储与编辑能力，在编辑态顶部加入布局切换入口，并让手机布局可在桌面端以预览画布方式进行摆放
+- 影响范围：移动端适配、布局编辑流程、组件数据同步、导入导出兼容
+- 涉及模块：`src/store/useWidgetStore.ts`、`src/lib/widgetLayouts.ts`、`src/lib/server/storage.ts`、`src/app/api/widget-layouts/route.ts`、`src/components/layout/Header.tsx`、`src/components/layout/MainCanvas.tsx`、`src/components/settings/SettingsModal.tsx`
+- 是否有兼容性影响：无，兼容旧版单布局数据并自动补齐手机布局
+- 后续待补充：继续针对单个组件补充更细的移动端样式优化，并视需要增加布局复制/重置能力
 
-## 2026-04-10
+### feat: 手机布局支持撤销与恢复会话起点
+- 做了什么：为手机布局编辑新增会话级基线快照和撤销栈，支持撤销上一步变更，以及一键恢复到进入本次手机编辑前的布局
+- 影响范围：手机端布局编辑、误操作恢复、布局调整安全感
+- 涉及模块：`src/store/useWidgetStore.ts`、`src/components/layout/MainCanvas.tsx`、`src/components/layout/Header.tsx`、`messages/*.json`
+- 是否有兼容性影响：无
+- 后续待补充：后续可以继续补充多步历史上限、退出编辑前提示和“保存为新版布局”之类的轻量工作流
+
+### fix: 修正手机布局拖拽时的滚动与跨端覆写问题
+- 做了什么：为画布拖拽补充边缘自动滚动能力，并修正手机布局拖拽落位时误走全量 `widgets` 提交、导致桌面布局被覆盖的问题
+- 影响范围：手机端拖拽编辑、长页面排布、双端布局隔离
+- 涉及模块：`src/components/layout/useCanvasDragPreview.ts`、`src/components/layout/MainCanvas.tsx`
+- 是否有兼容性影响：无
+- 后续待补充：后续可以继续微调自动滚动速度曲线，并补充拖拽过程中的边缘反馈
 
 ### feat: 新增画布级快速打开与搜索面板
 - 做了什么：在画布空闲状态下支持直接输入关键词唤起快速打开弹窗，可匹配 `quick-link` 和 `links` 组件里已保存的链接；未命中时回车会走默认搜索引擎；默认态还会展示最近搜索和最近打开的链接
@@ -33,3 +45,17 @@
 - 涉及模块：`src/components/layout/MainCanvas.tsx`、`src/components/layout/CanvasLinkLauncher.tsx`、`src/components/layout/Header.tsx`、`src/lib/linkLauncher.ts`、`src/lib/linkLauncherHistory.ts`、`src/lib/searchEngines.ts`、`messages/*.json`
 - 是否有兼容性影响：无，历史记录仅保存在当前浏览器的 `localStorage`
 - 后续待补充：继续补充明确快捷键入口、历史清理能力、结果排序优化，以及搜索引擎全局配置化
+
+### docs: 初始化变更记录规范
+- 做了什么：新增 `changelog.md` 作为统一的变更记录文件，并在 `AGENTS.md` 中补充变更记录要求
+- 影响范围：开发流程、任务交付规范
+- 涉及模块：`AGENTS.md`、`changelog.md`
+- 是否有兼容性影响：无
+- 后续待补充：后续功能开发完成后，按统一模板持续补充变更记录
+
+### fix: 为缺失 ResizeObserver 的环境补充降级处理
+- 做了什么：为画布尺寸监听和 Todo/Memo 滚动提示补充 `ResizeObserver` 可用性检测，并在 Jest 环境中增加最小 mock，避免在 CI 或不支持该 API 的环境中抛出运行时错误
+- 影响范围：CI 测试稳定性、低兼容环境运行稳定性、画布局部监听逻辑
+- 涉及模块：`src/lib/resizeObserver.ts`、`src/components/layout/useCanvasMetrics.ts`、`src/components/widgets/TodoWidget.tsx`、`src/components/widgets/MemoWidget.tsx`、`jest.setup.js`
+- 是否有兼容性影响：无，不支持 `ResizeObserver` 时仅退化为基础滚动与首次计算能力
+- 后续待补充：后续可视需要补充对应组件测试，覆盖降级路径

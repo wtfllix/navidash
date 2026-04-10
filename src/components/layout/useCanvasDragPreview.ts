@@ -16,7 +16,42 @@ interface UseCanvasDragPreviewOptions {
   currentCols: number;
   rowHeight: number;
   margin: [number, number];
-  setWidgets: (widgets: Widget[]) => void;
+  batchUpdatePositions: (updates: Array<{ id: string; position: { x: number; y: number } }>) => void;
+  scrollContainerRef?: React.RefObject<HTMLElement | null>;
+}
+
+const AUTO_SCROLL_EDGE_THRESHOLD = 72;
+const AUTO_SCROLL_MAX_SPEED = 18;
+
+function getScrollTop(element: HTMLElement | Window | null | undefined) {
+  if (!element) return 0;
+  return element instanceof Window ? element.scrollY : element.scrollTop;
+}
+
+function scrollByDelta(element: HTMLElement | Window | null | undefined, deltaY: number) {
+  if (!element || deltaY === 0) return;
+
+  if (element instanceof Window) {
+    element.scrollBy({ top: deltaY, behavior: 'auto' });
+    return;
+  }
+
+  element.scrollTop += deltaY;
+}
+
+function getViewportRect(element: HTMLElement | Window | null | undefined) {
+  if (!element || element instanceof Window) {
+    return {
+      top: 0,
+      bottom: window.innerHeight,
+    };
+  }
+
+  const rect = element.getBoundingClientRect();
+  return {
+    top: rect.top,
+    bottom: rect.bottom,
+  };
 }
 
 function arePositionsEqual(
@@ -48,7 +83,8 @@ export function useCanvasDragPreview({
   currentCols,
   rowHeight,
   margin,
-  setWidgets,
+  batchUpdatePositions,
+  scrollContainerRef,
 }: UseCanvasDragPreviewOptions) {
   const [draggingWidgetId, setDraggingWidgetId] = useState<string | null>(null);
   const [dragPreviewPosition, setDragPreviewPosition] = useState<{ x: number; y: number } | null>(
@@ -69,12 +105,15 @@ export function useCanvasDragPreview({
     preferredPosition: { x: number; y: number };
     result: MoveResult;
   } | null>(null);
+  const autoScrollFrameRef = useRef<number | null>(null);
+  const activeScrollContainerRef = useRef<HTMLElement | Window | null>(null);
   const dragStartRef = useRef<{
     widgetId: string;
     startClientX: number;
     startClientY: number;
     startGridX: number;
     startGridY: number;
+    startScrollTop: number;
     pointerId: number;
     handleElement: HTMLDivElement | null;
   } | null>(null);
@@ -104,6 +143,13 @@ export function useCanvasDragPreview({
       window.cancelAnimationFrame(pointerFrameRef.current);
       pointerFrameRef.current = null;
     }
+
+    if (autoScrollFrameRef.current !== null) {
+      window.cancelAnimationFrame(autoScrollFrameRef.current);
+      autoScrollFrameRef.current = null;
+    }
+
+    activeScrollContainerRef.current = null;
   }, []);
 
   useEffect(() => {
@@ -126,7 +172,8 @@ export function useCanvasDragPreview({
         if (!pending || !dragStartRef.current) return;
         const drag = dragStartRef.current;
         const deltaX = pending.x - drag.startClientX;
-        const deltaY = pending.y - drag.startClientY;
+        const currentScrollTop = getScrollTop(activeScrollContainerRef.current);
+        const deltaY = pending.y - drag.startClientY + (currentScrollTop - drag.startScrollTop);
         const nextOffset = { x: deltaX, y: deltaY };
         if (!arePositionsEqual(dragPointerOffsetRef.current, nextOffset)) {
           dragPointerOffsetRef.current = nextOffset;
@@ -198,6 +245,41 @@ export function useCanvasDragPreview({
         pointerFrameRef.current = window.requestAnimationFrame(flushPointerMove);
       };
 
+      const tickAutoScroll = () => {
+        autoScrollFrameRef.current = null;
+
+        const pending = pendingPointerRef.current;
+        const scrollContainer = activeScrollContainerRef.current;
+        if (!pending || !scrollContainer || !dragStartRef.current) {
+          return;
+        }
+
+        const viewportRect = getViewportRect(scrollContainer);
+        let deltaY = 0;
+
+        if (pending.y < viewportRect.top + AUTO_SCROLL_EDGE_THRESHOLD) {
+          const distance = viewportRect.top + AUTO_SCROLL_EDGE_THRESHOLD - pending.y;
+          deltaY = -Math.min(
+            AUTO_SCROLL_MAX_SPEED,
+            Math.max(4, (distance / AUTO_SCROLL_EDGE_THRESHOLD) * AUTO_SCROLL_MAX_SPEED)
+          );
+        } else if (pending.y > viewportRect.bottom - AUTO_SCROLL_EDGE_THRESHOLD) {
+          const distance = pending.y - (viewportRect.bottom - AUTO_SCROLL_EDGE_THRESHOLD);
+          deltaY = Math.min(
+            AUTO_SCROLL_MAX_SPEED,
+            Math.max(4, (distance / AUTO_SCROLL_EDGE_THRESHOLD) * AUTO_SCROLL_MAX_SPEED)
+          );
+        }
+
+        if (deltaY !== 0) {
+          scrollByDelta(scrollContainer, deltaY);
+          if (pointerFrameRef.current === null) {
+            pointerFrameRef.current = window.requestAnimationFrame(flushPointerMove);
+          }
+          autoScrollFrameRef.current = window.requestAnimationFrame(tickAutoScroll);
+        }
+      };
+
       const onPointerUp = () => {
         const drag = dragStartRef.current;
         if (!drag) return;
@@ -218,7 +300,12 @@ export function useCanvasDragPreview({
           });
 
         if (moveResult.movedWidgetIds.length > 0) {
-          setWidgets(moveResult.widgets);
+          batchUpdatePositions(
+            moveResult.widgets.map((item) => ({
+              id: item.id,
+              position: item.position,
+            }))
+          );
         }
 
         window.removeEventListener('pointermove', onPointerMove);
@@ -228,12 +315,14 @@ export function useCanvasDragPreview({
       };
 
       event.currentTarget.setPointerCapture(event.pointerId);
+      activeScrollContainerRef.current = scrollContainerRef?.current ?? window;
       dragStartRef.current = {
         widgetId: widget.id,
         startClientX: event.clientX,
         startClientY: event.clientY,
         startGridX: widget.position.x,
         startGridY: widget.position.y,
+        startScrollTop: getScrollTop(activeScrollContainerRef.current),
         pointerId: event.pointerId,
         handleElement: event.currentTarget,
       };
@@ -248,8 +337,9 @@ export function useCanvasDragPreview({
       window.addEventListener('pointermove', onPointerMove);
       window.addEventListener('pointerup', onPointerUp);
       window.addEventListener('pointercancel', onPointerUp);
+      autoScrollFrameRef.current = window.requestAnimationFrame(tickAutoScroll);
     },
-    [isEditing, cellWidth, margin, rowHeight, currentCols, setWidgets, resetDragState]
+    [isEditing, cellWidth, margin, rowHeight, currentCols, batchUpdatePositions, resetDragState, scrollContainerRef]
   );
 
   return {

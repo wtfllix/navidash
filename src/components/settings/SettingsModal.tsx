@@ -46,7 +46,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     setLanguage,
     fetchSettings,
   } = useSettingsStore();
-  const { widgets, setWidgets } = useWidgetStore();
+  const { widgets, layoutsByMode, widgetConfigs, setWidgets } = useWidgetStore();
   const { addToast } = useToastStore();
 
   const t = useTranslations('SettingsModal');
@@ -126,6 +126,8 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const handleExport = () => {
     const data = {
       widgets,
+      widgetLayoutsByMode: layoutsByMode,
+      widgetConfigs,
       settings: {
         themeColor,
         customFavicon,
@@ -168,7 +170,18 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         const result = event.target?.result as string;
         const data = JSON.parse(result);
 
-        if (data.widgets && Array.isArray(data.widgets)) {
+        if (data.widgetLayoutsByMode && data.widgetConfigs) {
+          const nextWidgets =
+            data.widgetLayoutsByMode.desktop?.map((layout: any) => {
+              const configEntry = data.widgetConfigs.find((item: any) => item.id === layout.id);
+              return {
+                ...layout,
+                config: configEntry?.config ?? {},
+              };
+            }) ?? [];
+
+          setWidgets(nextWidgets);
+        } else if (data.widgets && Array.isArray(data.widgets)) {
           setWidgets(data.widgets);
         }
 

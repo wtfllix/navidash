@@ -109,6 +109,52 @@ describe('storage versioned files', () => {
     ]);
   });
 
+  it('writes widget layouts grouped by desktop and mobile modes', async () => {
+    const { saveWidgetLayouts } = await import('@/lib/server/storage');
+
+    await saveWidgetLayouts({
+      desktop: [
+        {
+          id: 'clock-1',
+          type: 'clock',
+          size: { w: 2, h: 1 },
+          position: { x: 0, y: 0 },
+        },
+      ],
+      mobile: [
+        {
+          id: 'clock-1',
+          type: 'clock',
+          size: { w: 2, h: 1 },
+          position: { x: 0, y: 0 },
+        },
+      ],
+    });
+
+    const raw = JSON.parse(await fs.readFile(path.join(tempDir, 'widget-layouts.json'), 'utf-8'));
+    expect(raw).toEqual({
+      version: 1,
+      data: {
+        desktop: [
+          {
+            id: 'clock-1',
+            type: 'clock',
+            size: { w: 2, h: 1 },
+            position: { x: 0, y: 0 },
+          },
+        ],
+        mobile: [
+          {
+            id: 'clock-1',
+            type: 'clock',
+            size: { w: 2, h: 1 },
+            position: { x: 0, y: 0 },
+          },
+        ],
+      },
+    });
+  });
+
   it('reads legacy settings files and drops weather-specific fields', async () => {
     const { getSettings } = await import('@/lib/server/storage');
 

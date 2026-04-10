@@ -1,18 +1,38 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import { Widget } from '@/types';
+import { Widget, WidgetConfigEntry, WidgetLayoutMode, WidgetLayoutsByMode } from '@/types';
 import {
   normalizeWidgets,
   splitWidgets,
+  WidgetConfigsArraySchema,
   WidgetSchema,
-  WidgetsArraySchema,
   WidgetStorePersistedStateSchema,
 } from '@/lib/schemas';
+import {
+  DEFAULT_LAYOUT_MODE,
+  ensureLayoutsByMode,
+  LAYOUT_MODE_COLUMNS,
+  mergeWidgetsForLayoutMode,
+  normalizeLayoutsForMode,
+} from '@/lib/widgetLayouts';
 
 type WidgetUpdate = Partial<Pick<Widget, 'size' | 'position' | 'config'>>;
 
 interface WidgetState {
   widgets: Widget[];
+  widgetConfigs: WidgetConfigEntry[];
+  layoutsByMode: WidgetLayoutsByMode;
+  activeLayoutMode: WidgetLayoutMode;
+  mobileLayoutUndoStack: WidgetLayoutsByMode['mobile'][];
+  mobileLayoutSessionBaseline: WidgetLayoutsByMode['mobile'] | null;
+  isMobileLayoutSessionActive: boolean;
+  canUndoMobileLayout: boolean;
+  canRestoreMobileLayout: boolean;
+  setActiveLayoutMode: (mode: WidgetLayoutMode) => void;
+  beginMobileLayoutSession: () => void;
+  endMobileLayoutSession: () => void;
+  undoMobileLayoutChange: () => void;
+  restoreMobileLayoutBaseline: () => void;
   addWidget: (widget: Widget) => void;
   removeWidget: (id: string) => void;
   updateWidget: (id: string, data: WidgetUpdate) => void;
@@ -71,26 +91,122 @@ function mergeWidgetUpdate(widget: Widget, data: WidgetUpdate): Widget {
   return widget;
 }
 
+function updateWidgetConfigEntry(
+  widgetConfigs: WidgetConfigEntry[],
+  widget: Widget | undefined,
+  nextConfig: WidgetUpdate['config']
+): WidgetConfigEntry[] {
+  if (!widget || !nextConfig) {
+    return widgetConfigs;
+  }
+
+  const mergedWidget = mergeWidgetUpdate(widget, { config: nextConfig });
+  const nextEntry = {
+    id: mergedWidget.id,
+    type: mergedWidget.type,
+    config: mergedWidget.config,
+  } as WidgetConfigEntry;
+
+  return widgetConfigs.map((entry) => (entry.id === mergedWidget.id ? nextEntry : entry));
+}
+
+function layoutContainsWidget(layoutsByMode: WidgetLayoutsByMode, id: string) {
+  return Object.values(layoutsByMode).some((layouts) => layouts.some((widget) => widget.id === id));
+}
+
+function cloneLayouts(layouts: WidgetLayoutsByMode['mobile']) {
+  return layouts.map((layout) => ({
+    ...layout,
+    size: { ...layout.size },
+    position: { ...layout.position },
+  }));
+}
+
+function areLayoutsEqual(a: WidgetLayoutsByMode['mobile'], b: WidgetLayoutsByMode['mobile']) {
+  if (a.length !== b.length) {
+    return false;
+  }
+
+  return a.every((layout, index) => {
+    const other = b[index];
+
+    return (
+      layout.id === other?.id &&
+      layout.type === other.type &&
+      layout.size.w === other.size.w &&
+      layout.size.h === other.size.h &&
+      layout.position.x === other.position.x &&
+      layout.position.y === other.position.y
+    );
+  });
+}
+
+function getMobileLayoutSessionState(
+  nextMobileLayouts: WidgetLayoutsByMode['mobile'],
+  currentState: Pick<
+    WidgetState,
+    'mobileLayoutUndoStack' | 'mobileLayoutSessionBaseline' | 'isMobileLayoutSessionActive'
+  >,
+  previousMobileLayouts?: WidgetLayoutsByMode['mobile']
+) {
+  const baseline = currentState.mobileLayoutSessionBaseline;
+  const canRestoreMobileLayout = !!baseline && !areLayoutsEqual(nextMobileLayouts, baseline);
+
+  if (
+    !currentState.isMobileLayoutSessionActive ||
+    !previousMobileLayouts ||
+    areLayoutsEqual(previousMobileLayouts, nextMobileLayouts)
+  ) {
+    return {
+      mobileLayoutUndoStack: currentState.mobileLayoutUndoStack,
+      mobileLayoutSessionBaseline: baseline,
+      canUndoMobileLayout: currentState.mobileLayoutUndoStack.length > 0,
+      canRestoreMobileLayout,
+    };
+  }
+
+  return {
+    mobileLayoutUndoStack: [...currentState.mobileLayoutUndoStack, cloneLayouts(previousMobileLayouts)],
+    mobileLayoutSessionBaseline: baseline,
+    canUndoMobileLayout: true,
+    canRestoreMobileLayout,
+  };
+}
+
+function getInitialLayoutsByMode() {
+  return ensureLayoutsByMode(initialWidgets, initialWidgets);
+}
+
+function getInitialWidgetConfigs(): WidgetConfigEntry[] {
+  return splitWidgets(initialWidgets).configs;
+}
+
+function hydrateWidgets(
+  layoutMode: WidgetLayoutMode,
+  layoutsByMode: WidgetLayoutsByMode,
+  widgetConfigs: WidgetConfigEntry[],
+  fallback: Widget[] = initialWidgets
+) {
+  return mergeWidgetsForLayoutMode(layoutMode, layoutsByMode, widgetConfigs, fallback);
+}
+
 let saveTimeout: NodeJS.Timeout | null = null;
 
-const saveLayoutsToServer = (widgets: Widget[]) => {
+const saveLayoutsToServer = (layoutsByMode: WidgetLayoutsByMode) => {
   if (saveTimeout) {
     clearTimeout(saveTimeout);
   }
-
-  const parsedWidgets = validateWidgets(widgets, []);
-  const layouts = splitWidgets(parsedWidgets).layouts;
 
   saveTimeout = setTimeout(async () => {
     try {
       const res = await fetch('/api/widget-layouts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(layouts),
+        body: JSON.stringify(layoutsByMode),
       });
 
       if (!res.ok) {
-        throw new Error(`Failed to save widgets: ${res.status}`);
+        throw new Error(`Failed to save widget layouts: ${res.status}`);
       }
 
       const data = await res.json();
@@ -100,17 +216,14 @@ const saveLayoutsToServer = (widgets: Widget[]) => {
         useWidgetStore.setState({ dataVersion: version });
       }
     } catch (error) {
-      console.error('Failed to save widgets:', error);
+      console.error('Failed to save widget layouts:', error);
     } finally {
       saveTimeout = null;
     }
   }, 1000);
 };
 
-const saveConfigsToServer = async (widgets: Widget[]) => {
-  const parsedWidgets = validateWidgets(widgets, []);
-  const configs = splitWidgets(parsedWidgets).configs;
-
+const saveConfigsToServer = async (configs: WidgetConfigEntry[]) => {
   const res = await fetch('/api/widget-configs', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -133,23 +246,124 @@ export const useWidgetStore = create<WidgetState>()(
   persist(
     (set, get) => ({
       widgets: initialWidgets,
-      fetchWidgets: async () => {
-        try {
-          const res = await fetch(`/api/widgets?t=${Date.now()}`, {
-            cache: 'no-store',
-          });
-
-          if (!res.ok) {
-            throw new Error(`Failed to fetch widgets: ${res.status}`);
+      widgetConfigs: getInitialWidgetConfigs(),
+      layoutsByMode: getInitialLayoutsByMode(),
+      activeLayoutMode: DEFAULT_LAYOUT_MODE,
+      mobileLayoutUndoStack: [],
+      mobileLayoutSessionBaseline: null,
+      isMobileLayoutSessionActive: false,
+      canUndoMobileLayout: false,
+      canRestoreMobileLayout: false,
+      setActiveLayoutMode: (activeLayoutMode) =>
+        set((state) => ({
+          activeLayoutMode,
+          widgets: hydrateWidgets(activeLayoutMode, state.layoutsByMode, state.widgetConfigs),
+        })),
+      beginMobileLayoutSession: () =>
+        set((state) => {
+          if (state.isMobileLayoutSessionActive) {
+            return state;
           }
 
-          const serverVersion = parseServerVersion(res.headers.get('X-Data-Version')) ?? 0;
+          const baseline = cloneLayouts(state.layoutsByMode.mobile);
+
+          return {
+            isMobileLayoutSessionActive: true,
+            mobileLayoutSessionBaseline: baseline,
+            mobileLayoutUndoStack: [],
+            canUndoMobileLayout: false,
+            canRestoreMobileLayout: false,
+          };
+        }),
+      endMobileLayoutSession: () =>
+        set({
+          isMobileLayoutSessionActive: false,
+          mobileLayoutSessionBaseline: null,
+          mobileLayoutUndoStack: [],
+          canUndoMobileLayout: false,
+          canRestoreMobileLayout: false,
+        }),
+      undoMobileLayoutChange: () =>
+        set((state) => {
+          if (state.mobileLayoutUndoStack.length === 0) {
+            return state;
+          }
+
+          const previousLayouts = state.mobileLayoutUndoStack[state.mobileLayoutUndoStack.length - 1];
+          const nextUndoStack = state.mobileLayoutUndoStack.slice(0, -1);
+          const layoutsByMode = {
+            ...state.layoutsByMode,
+            mobile: cloneLayouts(previousLayouts),
+          };
+          saveLayoutsToServer(layoutsByMode);
+
+          return {
+            layoutsByMode,
+            widgets: hydrateWidgets(state.activeLayoutMode, layoutsByMode, state.widgetConfigs),
+            mobileLayoutUndoStack: nextUndoStack,
+            canUndoMobileLayout: nextUndoStack.length > 0,
+            canRestoreMobileLayout:
+              !!state.mobileLayoutSessionBaseline &&
+              !areLayoutsEqual(layoutsByMode.mobile, state.mobileLayoutSessionBaseline),
+          };
+        }),
+      restoreMobileLayoutBaseline: () =>
+        set((state) => {
+          if (!state.mobileLayoutSessionBaseline) {
+            return state;
+          }
+
+          const baseline = cloneLayouts(state.mobileLayoutSessionBaseline);
+          const layoutsByMode = {
+            ...state.layoutsByMode,
+            mobile: baseline,
+          };
+          saveLayoutsToServer(layoutsByMode);
+
+          return {
+            layoutsByMode,
+            widgets: hydrateWidgets(state.activeLayoutMode, layoutsByMode, state.widgetConfigs),
+            mobileLayoutUndoStack: [],
+            canUndoMobileLayout: false,
+            canRestoreMobileLayout: false,
+          };
+        }),
+      fetchWidgets: async () => {
+        try {
+          const [layoutsRes, configsRes] = await Promise.all([
+            fetch(`/api/widget-layouts?t=${Date.now()}`, {
+              cache: 'no-store',
+            }),
+            fetch(`/api/widget-configs?t=${Date.now()}`, {
+              cache: 'no-store',
+            }),
+          ]);
+
+          if (!layoutsRes.ok) {
+            throw new Error(`Failed to fetch widget layouts: ${layoutsRes.status}`);
+          }
+
+          if (!configsRes.ok) {
+            throw new Error(`Failed to fetch widget configs: ${configsRes.status}`);
+          }
+
+          const serverVersion = parseServerVersion(layoutsRes.headers.get('X-Data-Version')) ?? 0;
           const currentVersion = get().dataVersion ?? 0;
 
           if (serverVersion !== currentVersion) {
-            const data = await res.json();
-            const parsedWidgets = validateWidgets(data, []);
-            set({ widgets: parsedWidgets, dataVersion: serverVersion });
+            const [layoutsData, configsData] = await Promise.all([layoutsRes.json(), configsRes.json()]);
+            const layoutsByMode = ensureLayoutsByMode(layoutsData, initialWidgets);
+            const widgetConfigs = WidgetConfigsArraySchema.parse(configsData);
+
+            set((state) => ({
+              layoutsByMode,
+              widgetConfigs,
+              widgets: hydrateWidgets(state.activeLayoutMode, layoutsByMode, widgetConfigs),
+              dataVersion: serverVersion,
+              canRestoreMobileLayout:
+                !!state.mobileLayoutSessionBaseline &&
+                !areLayoutsEqual(layoutsByMode.mobile, state.mobileLayoutSessionBaseline),
+            }));
           }
         } catch (error) {
           console.error('Failed to fetch widgets:', error);
@@ -157,7 +371,7 @@ export const useWidgetStore = create<WidgetState>()(
       },
       saveWidgetConfigs: async () => {
         try {
-          await saveConfigsToServer(get().widgets);
+          await saveConfigsToServer(get().widgetConfigs);
           return true;
         } catch (error) {
           console.error('Failed to save widget configs:', error);
@@ -166,57 +380,213 @@ export const useWidgetStore = create<WidgetState>()(
       },
       addWidget: (widget) =>
         set((state) => {
-          const newWidgets = WidgetsArraySchema.parse([...state.widgets, widget]);
-          saveLayoutsToServer(newWidgets);
-          void saveConfigsToServer(newWidgets);
-          return { widgets: newWidgets };
+          const mergedWidgets = validateWidgets([...state.widgets, widget]);
+          const widgetConfigs = splitWidgets(mergedWidgets).configs;
+          const layoutMode = state.activeLayoutMode;
+          const previousMobileLayouts = cloneLayouts(state.layoutsByMode.mobile);
+          const layoutsByMode = {
+            ...state.layoutsByMode,
+            [layoutMode]: normalizeLayoutsForMode(
+              [
+                ...state.layoutsByMode[layoutMode],
+                {
+                  id: widget.id,
+                  type: widget.type,
+                  size: widget.size,
+                  position: widget.position,
+                },
+              ],
+              LAYOUT_MODE_COLUMNS[layoutMode]
+            ),
+          };
+          const mobileSessionState =
+            layoutMode === 'mobile'
+              ? getMobileLayoutSessionState(layoutsByMode.mobile, state, previousMobileLayouts)
+              : {
+                  mobileLayoutUndoStack: state.mobileLayoutUndoStack,
+                  mobileLayoutSessionBaseline: state.mobileLayoutSessionBaseline,
+                  canUndoMobileLayout: state.canUndoMobileLayout,
+                  canRestoreMobileLayout: state.canRestoreMobileLayout,
+                };
+          saveLayoutsToServer(layoutsByMode);
+          void saveConfigsToServer(widgetConfigs);
+
+          return {
+            layoutsByMode,
+            widgetConfigs,
+            widgets: hydrateWidgets(state.activeLayoutMode, layoutsByMode, widgetConfigs),
+            ...mobileSessionState,
+          };
         }),
       removeWidget: (id) =>
         set((state) => {
-          const newWidgets = state.widgets.filter((widget) => widget.id !== id);
-          saveLayoutsToServer(newWidgets);
-          void saveConfigsToServer(newWidgets);
-          return { widgets: newWidgets };
+          const layoutMode = state.activeLayoutMode;
+          const previousMobileLayouts = cloneLayouts(state.layoutsByMode.mobile);
+          const layoutsByMode = {
+            ...state.layoutsByMode,
+            [layoutMode]: state.layoutsByMode[layoutMode].filter((widget) => widget.id !== id),
+          };
+          const widgetConfigs = layoutContainsWidget(layoutsByMode, id)
+            ? state.widgetConfigs
+            : state.widgetConfigs.filter((widget) => widget.id !== id);
+          const mobileSessionState =
+            layoutMode === 'mobile'
+              ? getMobileLayoutSessionState(layoutsByMode.mobile, state, previousMobileLayouts)
+              : {
+                  mobileLayoutUndoStack: state.mobileLayoutUndoStack,
+                  mobileLayoutSessionBaseline: state.mobileLayoutSessionBaseline,
+                  canUndoMobileLayout: state.canUndoMobileLayout,
+                  canRestoreMobileLayout: state.canRestoreMobileLayout,
+                };
+          saveLayoutsToServer(layoutsByMode);
+          void saveConfigsToServer(widgetConfigs);
+
+          return {
+            layoutsByMode,
+            widgetConfigs,
+            widgets: hydrateWidgets(state.activeLayoutMode, layoutsByMode, widgetConfigs, []),
+            ...mobileSessionState,
+          };
         }),
       updateWidget: (id, data) =>
-        set((state) => {
-          const newWidgets = state.widgets.map((widget) =>
-            widget.id === id ? mergeWidgetUpdate(widget, data) : widget
+        set((state): Partial<WidgetState> => {
+          const layoutMode = state.activeLayoutMode;
+          const currentWidget = state.widgets.find((item) => item.id === id);
+          const previousMobileLayouts = cloneLayouts(state.layoutsByMode.mobile);
+          const nextLayouts = state.layoutsByMode[layoutMode].map((widget) => {
+            if (widget.id !== id) {
+              return widget;
+            }
+
+            const updatedLayout = {
+              ...widget,
+              size: data.size ?? widget.size,
+              position: data.position ?? widget.position,
+            };
+
+            return updatedLayout;
+          });
+          const layoutsByMode = ensureLayoutsByMode(
+            {
+              ...state.layoutsByMode,
+              [layoutMode]: nextLayouts,
+            },
+            state.widgets
           );
+          const widgetConfigs: WidgetConfigEntry[] = updateWidgetConfigEntry(
+            state.widgetConfigs,
+            currentWidget,
+            data.config
+          );
+          const mobileSessionState =
+            layoutMode === 'mobile' && (data.position || data.size)
+              ? getMobileLayoutSessionState(layoutsByMode.mobile, state, previousMobileLayouts)
+              : {
+                  mobileLayoutUndoStack: state.mobileLayoutUndoStack,
+                  mobileLayoutSessionBaseline: state.mobileLayoutSessionBaseline,
+                  canUndoMobileLayout: state.canUndoMobileLayout,
+                  canRestoreMobileLayout:
+                    !!state.mobileLayoutSessionBaseline &&
+                    !areLayoutsEqual(layoutsByMode.mobile, state.mobileLayoutSessionBaseline),
+                };
 
           if (data.position || data.size) {
-            saveLayoutsToServer(newWidgets);
+            saveLayoutsToServer(layoutsByMode);
           }
 
-          return { widgets: newWidgets };
+          return {
+            layoutsByMode,
+            widgetConfigs,
+            widgets: hydrateWidgets(layoutMode, layoutsByMode, widgetConfigs),
+            ...mobileSessionState,
+          };
         }),
       setWidgets: (widgets) => {
         const parsedWidgets = validateWidgets(widgets, []);
-        saveLayoutsToServer(parsedWidgets);
-        void saveConfigsToServer(parsedWidgets);
-        set({ widgets: parsedWidgets });
+        const layoutsByMode = ensureLayoutsByMode(parsedWidgets, parsedWidgets);
+        const widgetConfigs = splitWidgets(parsedWidgets).configs;
+        saveLayoutsToServer(layoutsByMode);
+        void saveConfigsToServer(widgetConfigs);
+        set((state) => ({
+          layoutsByMode,
+          widgetConfigs,
+          widgets: hydrateWidgets(state.activeLayoutMode, layoutsByMode, widgetConfigs, []),
+          canRestoreMobileLayout:
+            !!state.mobileLayoutSessionBaseline &&
+            !areLayoutsEqual(layoutsByMode.mobile, state.mobileLayoutSessionBaseline),
+        }));
       },
       batchUpdatePositions: (updates) =>
         set((state) => {
           const positionMap = new Map(updates.map((update) => [update.id, update.position]));
-          const newWidgets = state.widgets.map((widget) => {
-            const position = positionMap.get(widget.id);
-            return position ? mergeWidgetUpdate(widget, { position }) : widget;
-          });
-          saveLayoutsToServer(newWidgets);
-          return { widgets: newWidgets };
+          const layoutMode = state.activeLayoutMode;
+          const previousMobileLayouts = cloneLayouts(state.layoutsByMode.mobile);
+          const layoutsByMode = {
+            ...state.layoutsByMode,
+            [layoutMode]: state.layoutsByMode[layoutMode].map((widget) => {
+              const position = positionMap.get(widget.id);
+              return position ? { ...widget, position } : widget;
+            }),
+          };
+          const mobileSessionState =
+            layoutMode === 'mobile'
+              ? getMobileLayoutSessionState(layoutsByMode.mobile, state, previousMobileLayouts)
+              : {
+                  mobileLayoutUndoStack: state.mobileLayoutUndoStack,
+                  mobileLayoutSessionBaseline: state.mobileLayoutSessionBaseline,
+                  canUndoMobileLayout: state.canUndoMobileLayout,
+                  canRestoreMobileLayout: state.canRestoreMobileLayout,
+                };
+          saveLayoutsToServer(layoutsByMode);
+          return {
+            layoutsByMode,
+            widgets: hydrateWidgets(layoutMode, layoutsByMode, state.widgetConfigs),
+            ...mobileSessionState,
+          };
         }),
       addWidgetWithLayout: (newWidget, positionUpdates) =>
         set((state) => {
+          const layoutMode = state.activeLayoutMode;
+          const previousMobileLayouts = cloneLayouts(state.layoutsByMode.mobile);
           const positionMap = new Map(positionUpdates.map((update) => [update.id, update.position]));
-          const updatedWidgets = state.widgets.map((widget) => {
+          const nextActiveLayouts = state.layoutsByMode[layoutMode].map((widget) => {
             const position = positionMap.get(widget.id);
-            return position ? mergeWidgetUpdate(widget, { position }) : widget;
+            return position ? { ...widget, position } : widget;
           });
-          const newWidgets = WidgetsArraySchema.parse([...updatedWidgets, newWidget]);
-          saveLayoutsToServer(newWidgets);
-          void saveConfigsToServer(newWidgets);
-          return { widgets: newWidgets };
+          nextActiveLayouts.push({
+            id: newWidget.id,
+            type: newWidget.type,
+            size: newWidget.size,
+            position: newWidget.position,
+          });
+
+          const mergedWidgets = validateWidgets([...state.widgets, newWidget], []);
+          const widgetConfigs = splitWidgets(mergedWidgets).configs;
+          const layoutsByMode = {
+            ...state.layoutsByMode,
+            [layoutMode]: normalizeLayoutsForMode(
+              nextActiveLayouts,
+              LAYOUT_MODE_COLUMNS[layoutMode]
+            ),
+          };
+          const mobileSessionState =
+            layoutMode === 'mobile'
+              ? getMobileLayoutSessionState(layoutsByMode.mobile, state, previousMobileLayouts)
+              : {
+                  mobileLayoutUndoStack: state.mobileLayoutUndoStack,
+                  mobileLayoutSessionBaseline: state.mobileLayoutSessionBaseline,
+                  canUndoMobileLayout: state.canUndoMobileLayout,
+                  canRestoreMobileLayout: state.canRestoreMobileLayout,
+                };
+          saveLayoutsToServer(layoutsByMode);
+          void saveConfigsToServer(widgetConfigs);
+
+          return {
+            layoutsByMode,
+            widgetConfigs,
+            widgets: hydrateWidgets(layoutMode, layoutsByMode, widgetConfigs),
+            ...mobileSessionState,
+          };
         }),
     }),
     {
@@ -224,6 +594,8 @@ export const useWidgetStore = create<WidgetState>()(
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         widgets: state.widgets,
+        widgetConfigs: state.widgetConfigs,
+        layoutsByMode: state.layoutsByMode,
         dataVersion: state.dataVersion,
       }),
       merge: (persistedState, currentState) => {
@@ -233,10 +605,25 @@ export const useWidgetStore = create<WidgetState>()(
           return currentState;
         }
 
+        const fallbackWidgets = validateWidgets(parsed.data.widgets, currentState.widgets);
+        const fallbackConfigs = splitWidgets(fallbackWidgets).configs;
+        const widgetConfigs = parsed.data.widgetConfigs ?? fallbackConfigs;
+        const layoutsByMode = ensureLayoutsByMode(
+          parsed.data.layoutsByMode ?? fallbackWidgets,
+          fallbackWidgets
+        );
+
         return {
           ...currentState,
           ...parsed.data,
-          widgets: validateWidgets(parsed.data.widgets, currentState.widgets),
+          widgetConfigs,
+          layoutsByMode,
+          widgets: hydrateWidgets(
+            currentState.activeLayoutMode,
+            layoutsByMode,
+            widgetConfigs,
+            fallbackWidgets
+          ),
         };
       },
     }

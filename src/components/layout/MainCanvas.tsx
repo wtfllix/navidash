@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Monitor, Smartphone } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { Widget } from '@/types';
+import { Widget, WidgetLayoutMode } from '@/types';
 import { useWidgetStore } from '@/store/useWidgetStore';
 import { useUIStore } from '@/store/useUIStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
@@ -20,6 +21,7 @@ import { useDragDrop } from './DragDropProvider';
 import CanvasLinkLauncher from './CanvasLinkLauncher';
 import { collectLauncherLinks, searchLauncherLinks } from '@/lib/linkLauncher';
 import { buildSearchUrl } from '@/lib/searchEngines';
+import { cn } from '@/lib/utils';
 import {
   pushLauncherOpenedLink,
   pushLauncherSearchHistory,
@@ -45,31 +47,40 @@ export default function MainCanvas() {
     backgroundSize,
     backgroundRepeat,
   } = useSettingsStore();
-  const { widgets, setWidgets, removeWidget } = useWidgetStore();
+  const { widgets, setWidgets, removeWidget, setActiveLayoutMode, batchUpdatePositions } =
+    useWidgetStore();
+  const { beginMobileLayoutSession, endMobileLayoutSession } = useWidgetStore();
   const {
     isEditing,
     isWidgetPickerOpen,
     closeWidgetPicker,
     isSettingsOpen,
     setCurrentCanvasCols,
+    editingLayoutMode,
   } = useUIStore();
   const { isDragging: isStoreDragging } = useDragDrop();
 
   const [editingWidget, setEditingWidget] = useState<Widget | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [viewportLayoutMode, setViewportLayoutMode] = useState<WidgetLayoutMode>('desktop');
   const [launcherOpen, setLauncherOpen] = useState(false);
   const [launcherQuery, setLauncherQuery] = useState('');
   const [selectedLauncherIndex, setSelectedLauncherIndex] = useState(0);
   const [searchHistory, setSearchHistory] = useState<LauncherSearchHistoryItem[]>([]);
   const [openedLinksHistory, setOpenedLinksHistory] = useState<LauncherOpenedLinkHistoryItem[]>([]);
   const widgetsRef = useRef(widgets);
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const [dropPreviewUpdates, setDropPreviewUpdates] = useState<
     Array<{ id: string; position: { x: number; y: number } }>
   >([]);
 
+  const displayLayoutMode = isEditing ? editingLayoutMode : viewportLayoutMode;
+  const isDesktopMobilePreview = isEditing && editingLayoutMode === 'mobile' && viewportLayoutMode === 'desktop';
+
   const { width, containerRef, currentCols, cellWidth, toPixelRect } = useCanvasMetrics({
     rowHeight: GRID_ROW_HEIGHT,
     margin: GRID_MARGIN,
+    forcedCols: displayLayoutMode === 'mobile' ? 2 : undefined,
   });
 
   const {
@@ -85,7 +96,8 @@ export default function MainCanvas() {
     currentCols,
     rowHeight: GRID_ROW_HEIGHT,
     margin: GRID_MARGIN,
-    setWidgets,
+    batchUpdatePositions,
+    scrollContainerRef,
   });
 
   const { items: canvasItems, canvasHeight } = useCanvasLayoutItems({
@@ -112,26 +124,22 @@ export default function MainCanvas() {
         subtitle: t('launcher_search_history_item'),
         query: item.query,
       }));
-
       const openedLinkItems = openedLinksHistory.map((item) => ({
         id: item.id,
         kind: 'link' as const,
         title: item.title,
         subtitle: item.hostname || item.url,
         sourceLabel:
-          item.sourceType === 'quick-link'
-            ? t('launcher_source_quick_link')
-            : t('launcher_source_links'),
-        link:
-          launcherLinks.find((link) => link.url === item.url) ?? {
-            id: item.id,
-            title: item.title,
-            url: item.url,
-            hostname: item.hostname,
-            keywords: '',
-            sourceWidgetId: '',
-            sourceType: item.sourceType,
-          },
+          item.sourceType === 'quick-link' ? t('launcher_source_quick_link') : t('launcher_source_links'),
+        link: launcherLinks.find((link) => link.url === item.url) ?? {
+          id: item.id,
+          title: item.title,
+          url: item.url,
+          hostname: item.hostname,
+          keywords: '',
+          sourceWidgetId: '',
+          sourceType: item.sourceType,
+        },
       }));
 
       return [...searchItems, ...openedLinkItems];
@@ -143,9 +151,7 @@ export default function MainCanvas() {
       title: link.title,
       subtitle: link.hostname || link.url,
       sourceLabel:
-        link.sourceType === 'quick-link'
-          ? t('launcher_source_quick_link')
-          : t('launcher_source_links'),
+        link.sourceType === 'quick-link' ? t('launcher_source_quick_link') : t('launcher_source_links'),
       link,
     }));
   }, [launcherLinks, launcherQuery, launcherResults, openedLinksHistory, searchHistory, t]);
@@ -158,6 +164,32 @@ export default function MainCanvas() {
     setSearchHistory(readLauncherSearchHistory());
     setOpenedLinksHistory(readLauncherOpenedLinks());
   }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const mediaQuery = window.matchMedia('(max-width: 767px)');
+    const syncViewportLayoutMode = () => {
+      setViewportLayoutMode(mediaQuery.matches ? 'mobile' : 'desktop');
+    };
+
+    syncViewportLayoutMode();
+    mediaQuery.addEventListener('change', syncViewportLayoutMode);
+    return () => mediaQuery.removeEventListener('change', syncViewportLayoutMode);
+  }, []);
+
+  useEffect(() => {
+    setActiveLayoutMode(displayLayoutMode);
+  }, [displayLayoutMode, setActiveLayoutMode]);
+
+  useEffect(() => {
+    if (isEditing && editingLayoutMode === 'mobile') {
+      beginMobileLayoutSession();
+      return;
+    }
+
+    endMobileLayoutSession();
+  }, [beginMobileLayoutSession, editingLayoutMode, endMobileLayoutSession, isEditing]);
 
   useEffect(() => {
     widgetsRef.current = widgets;
@@ -231,7 +263,7 @@ export default function MainCanvas() {
       setSelectedLauncherIndex(0);
     };
 
-    const openSelectedItem = () => {
+    const openSelectedLink = () => {
       const selectedItem = launcherItems[selectedLauncherIndex];
 
       if (!selectedItem) {
@@ -254,7 +286,6 @@ export default function MainCanvas() {
         setOpenedLinksHistory(pushLauncherOpenedLink(selectedItem.link));
         window.open(selectedItem.link.url, '_blank', 'noopener,noreferrer');
       }
-
       closeLauncher();
     };
 
@@ -272,7 +303,7 @@ export default function MainCanvas() {
 
         if (event.key === 'Enter') {
           event.preventDefault();
-          openSelectedItem();
+          openSelectedLink();
           return;
         }
 
@@ -296,7 +327,15 @@ export default function MainCanvas() {
 
         if (event.key === 'Backspace') {
           event.preventDefault();
-          setLauncherQuery((currentQuery) => currentQuery.slice(0, -1));
+          setLauncherQuery((currentQuery) => {
+            const nextQuery = currentQuery.slice(0, -1);
+
+            if (!nextQuery) {
+              setSelectedLauncherIndex(0);
+            }
+
+            return nextQuery;
+          });
           return;
         }
       }
@@ -316,15 +355,18 @@ export default function MainCanvas() {
     };
 
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
   }, [
     editingWidget,
     isEditing,
     isSettingsOpen,
     isStoreDragging,
     isWidgetPickerOpen,
-    launcherItems,
     launcherLinks.length,
+    launcherItems,
     launcherOpen,
     launcherQuery,
     selectedLauncherIndex,
@@ -336,9 +378,7 @@ export default function MainCanvas() {
     setSelectedLauncherIndex(0);
   };
 
-  const handleSelectLauncherItem = (
-    item: React.ComponentProps<typeof CanvasLinkLauncher>['items'][number]
-  ) => {
+  const handleSelectLauncherItem = (item: React.ComponentProps<typeof CanvasLinkLauncher>['items'][number]) => {
     if (item.kind === 'search' && item.query) {
       setSearchHistory(pushLauncherSearchHistory(item.query));
       window.open(buildSearchUrl(item.query), '_blank', 'noopener,noreferrer');
@@ -350,7 +390,6 @@ export default function MainCanvas() {
       setOpenedLinksHistory(pushLauncherOpenedLink(item.link));
       window.open(item.link.url, '_blank', 'noopener,noreferrer');
     }
-
     handleCloseLauncher();
   };
 
@@ -368,44 +407,75 @@ export default function MainCanvas() {
         backgroundRepeat={backgroundRepeat}
       />
 
-      <div className="flex-1 overflow-y-auto p-6 relative z-10">
-        <div ref={containerRef} className="max-w-7xl mx-auto min-h-[500px]">
-          {mounted && width > 0 && (
-            <DroppableGridArea
-              containerRef={containerRef}
-              width={width}
-              cols={currentCols}
-              rowHeight={GRID_ROW_HEIGHT}
-              margin={GRID_MARGIN}
-            >
-              <div className="relative w-full" style={{ height: `${canvasHeight}px` }}>
-                {canvasItems.map(
-                  ({
-                    widget,
-                    rect,
-                    layoutRect,
-                    dragOffset,
-                    hasPreviewTarget,
-                    isDragging,
-                    isBeingPushed,
-                  }) => (
-                  <CanvasWidgetItem
-                    key={widget.id}
-                    widget={widget}
-                    rect={rect}
-                    layoutRect={layoutRect}
-                    dragOffset={dragOffset}
-                    hasPreviewTarget={hasPreviewTarget}
-                    isDragging={isDragging}
-                    isBeingPushed={isBeingPushed}
-                    onEdit={setEditingWidget}
-                    onDragHandlePointerDown={handleDragHandlePointerDown}
-                  />
-                  )
-                )}
-              </div>
-            </DroppableGridArea>
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-6 relative z-10">
+        {isEditing && (
+          <div className="mx-auto mb-5 flex max-w-7xl items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-white/88 px-4 py-3 text-sm text-slate-600 shadow-sm backdrop-blur">
+            <div className="flex items-center gap-2 font-medium text-slate-900">
+              {displayLayoutMode === 'mobile' ? <Smartphone size={16} /> : <Monitor size={16} />}
+              <span>
+                {displayLayoutMode === 'mobile' ? '正在编辑手机布局' : '正在编辑桌面布局'}
+              </span>
+            </div>
+            <p className="text-xs leading-5 text-slate-500">
+              组件内容共享同步，当前只调整这套端上的尺寸和摆放。
+            </p>
+          </div>
+        )}
+
+        <div
+          className={cn(
+            'mx-auto min-h-[500px]',
+            isDesktopMobilePreview ? 'max-w-[420px]' : 'max-w-7xl'
           )}
+        >
+          <div
+            className={cn(
+              isDesktopMobilePreview &&
+                'rounded-[32px] border border-slate-300/80 bg-white/70 p-4 shadow-[0_20px_60px_rgba(15,23,42,0.12)]'
+            )}
+          >
+            <div
+              ref={containerRef}
+              className={cn('min-h-[500px]', isDesktopMobilePreview && 'mx-auto max-w-[390px]')}
+            >
+              {mounted && width > 0 && (
+                <DroppableGridArea
+                  containerRef={containerRef}
+                  width={width}
+                  cols={currentCols}
+                  rowHeight={GRID_ROW_HEIGHT}
+                  margin={GRID_MARGIN}
+                >
+                  <div className="relative w-full" style={{ height: `${canvasHeight}px` }}>
+                    {canvasItems.map(
+                      ({
+                        widget,
+                        rect,
+                        layoutRect,
+                        dragOffset,
+                        hasPreviewTarget,
+                        isDragging,
+                        isBeingPushed,
+                      }) => (
+                        <CanvasWidgetItem
+                          key={widget.id}
+                          widget={widget}
+                          rect={rect}
+                          layoutRect={layoutRect}
+                          dragOffset={dragOffset}
+                          hasPreviewTarget={hasPreviewTarget}
+                          isDragging={isDragging}
+                          isBeingPushed={isBeingPushed}
+                          onEdit={setEditingWidget}
+                          onDragHandlePointerDown={handleDragHandlePointerDown}
+                        />
+                      )
+                    )}
+                  </div>
+                </DroppableGridArea>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 

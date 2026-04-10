@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { WidgetLayoutMode } from '@/types';
 
 /**
  * UIState Interface
@@ -10,6 +11,8 @@ interface UIState {
   setEditing: (isEditing: boolean) => void;
   currentCanvasCols: number;
   setCurrentCanvasCols: (cols: number) => void;
+  editingLayoutMode: WidgetLayoutMode;
+  setEditingLayoutMode: (mode: WidgetLayoutMode) => void;
   isWidgetPickerOpen: boolean; // 小组件选择器模态框状态
   openWidgetPicker: () => void;
   closeWidgetPicker: () => void;
@@ -30,6 +33,8 @@ export const useUIStore = create<UIState>((set) => ({
   setEditing: (isEditing) => set({ isEditing }),
   currentCanvasCols: 8,
   setCurrentCanvasCols: (currentCanvasCols) => set({ currentCanvasCols }),
+  editingLayoutMode: 'desktop',
+  setEditingLayoutMode: (editingLayoutMode) => set({ editingLayoutMode }),
   isWidgetPickerOpen: false,
   openWidgetPicker: () => set({ isWidgetPickerOpen: true }),
   closeWidgetPicker: () => set({ isWidgetPickerOpen: false }),

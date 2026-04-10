@@ -5,6 +5,7 @@ import { WidgetOfType } from '@/types';
 import { useWidgetStore } from '@/store/useWidgetStore';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
+import { createResizeObserver } from '@/lib/resizeObserver';
 import { StickyNote } from 'lucide-react';
 
 type SaveFeedbackState = 'idle' | 'saved' | 'error';
@@ -279,12 +280,12 @@ const MemoWidget = ({ widget }: { widget: WidgetOfType<'memo'> }) => {
     updateBottomHint();
     container.addEventListener('scroll', updateBottomHint, { passive: true });
 
-    const resizeObserver = new ResizeObserver(updateBottomHint);
-    resizeObserver.observe(container);
+    const resizeObserver = createResizeObserver(() => updateBottomHint());
+    resizeObserver?.observe(container);
 
     return () => {
       container.removeEventListener('scroll', updateBottomHint);
-      resizeObserver.disconnect();
+      resizeObserver?.disconnect();
     };
   }, [content, isEditing, renderedContent]);
 

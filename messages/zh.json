@@ -32,6 +32,12 @@
     "widget_store": "组件商店",
     "open_widget_store": "打开组件商店",
     "close_widget_store": "关闭组件商店",
+    "layout_desktop": "桌面",
+    "layout_mobile": "手机",
+    "undo": "撤销",
+    "restore": "恢复",
+    "undo_mobile_layout": "撤销手机布局上一步",
+    "restore_mobile_layout": "恢复进入编辑前的手机布局",
     "search_query": "搜索内容",
     "search_engine": "选择搜索引擎",
     "search_action": "开始搜索"
