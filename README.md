@@ -133,6 +133,7 @@ npm run build
 `.env.example` 中最重要的配置项：
 
 - `NEXT_PUBLIC_DEMO_MODE`: 设为 `true` 时启用只读演示模式
+- `DEMO_MODE`: 设为 `true` 时在服务端启用 Demo 数据和只读写入保护
 - `QWEATHER_API_KEY`: 和风天气（QWeather）使用的 Key 或 JWT
 - `QWEATHER_API_HOST`: 可选，自定义和风天气兼容 Host
 - `QWEATHER_AUTH_TYPE`: `apikey` 或 `jwt`
@@ -164,6 +165,7 @@ NaviDash 支持只读 Demo 模式，适合部署到 Vercel 或作为在线预览
 - 前端可以自由拖拽和编辑
 - 刷新页面后恢复为预置内容
 - 写入接口会返回只读错误，不会持久化数据
+- 推荐同时设置 `DEMO_MODE=true` 和 `NEXT_PUBLIC_DEMO_MODE=true`
 
 ## 路线方向
 

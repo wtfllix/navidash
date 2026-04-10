@@ -9,6 +9,13 @@
 
 ## 2026-04-10
 
+### feat: 主线吸收 demo 模式并统一为环境变量开关
+- 做了什么：将 `codex/vercel-demo` 的演示能力并回主线实现，新增内置 demo 数据与天气兜底，让前后端都通过环境变量切换到可交互但不持久化的 demo 模式
+- 影响范围：Vercel 演示部署、组件与设置持久化、服务端写接口、默认展示内容、主线代码维护成本
+- 涉及模块：`src/lib/demo.ts`、`src/lib/server/storage.ts`、`src/lib/server/weather.ts`、`src/store/useWidgetStore.ts`、`src/store/useSettingsStore.ts`、`src/app/api/widgets/route.ts`、`src/app/api/widget-layouts/route.ts`、`src/app/api/widget-configs/route.ts`、`src/app/api/settings/route.ts`、`src/components/layout/*`、`src/components/settings/SettingsModal.tsx`、`.env.example`、`README*.md`
+- 是否有兼容性影响：低；默认不开启 demo 模式，开启后写入会变为只读且刷新恢复为预置内容
+- 后续待补充：可继续把 demo 预置内容抽成可配置模板，并补充端到端验证覆盖 demo 模式下的交互流程
+
 ### fix: todo 与 memo 底部滚动提示阴影
 - 做了什么：为 `todo` 和 `memo` 组件的滚动内容区补充动态底部渐隐阴影，仅在下方还有未显示内容时展示，帮助用户感知还可以继续向下滚动
 - 影响范围：组件可读性、滚动内容可发现性、移动端与桌面端的内容浏览体验

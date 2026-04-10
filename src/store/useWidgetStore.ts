@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { createJSONStorage, persist } from 'zustand/middleware';
+import { StateStorage, createJSONStorage, persist } from 'zustand/middleware';
 import { Widget, WidgetConfigEntry, WidgetLayoutMode, WidgetLayoutsByMode } from '@/types';
 import {
   normalizeWidgets,
@@ -15,6 +15,7 @@ import {
   mergeWidgetsForLayoutMode,
   normalizeLayoutsForMode,
 } from '@/lib/widgetLayouts';
+import { DEMO_DATA_VERSION, DEMO_WIDGETS, isClientDemoMode } from '@/lib/demo';
 
 type WidgetUpdate = Partial<Pick<Widget, 'size' | 'position' | 'config'>>;
 
@@ -47,24 +48,32 @@ interface WidgetState {
   ) => void;
 }
 
-const initialWidgets: Widget[] = [
-  {
-    id: '1',
-    type: 'clock',
-    size: { w: 2, h: 1 },
-    position: { x: 0, y: 0 },
-    config: {},
-  },
-  {
-    id: '2',
-    type: 'weather',
-    size: { w: 2, h: 1 },
-    position: { x: 2, y: 0 },
-    config: {},
-  },
-];
+const initialWidgets: Widget[] = isClientDemoMode
+  ? DEMO_WIDGETS
+  : [
+      {
+        id: '1',
+        type: 'clock',
+        size: { w: 2, h: 1 },
+        position: { x: 0, y: 0 },
+        config: {},
+      },
+      {
+        id: '2',
+        type: 'weather',
+        size: { w: 2, h: 1 },
+        position: { x: 2, y: 0 },
+        config: {},
+      },
+    ];
 
 const persistKey = 'widget-storage';
+
+const memoryOnlyStorage: StateStorage = {
+  getItem: () => null,
+  setItem: () => undefined,
+  removeItem: () => undefined,
+};
 
 function validateWidgets(widgets: unknown, fallback: Widget[] = initialWidgets): Widget[] {
   return normalizeWidgets(widgets, fallback);
@@ -295,7 +304,10 @@ export const useWidgetStore = create<WidgetState>()(
             ...state.layoutsByMode,
             mobile: cloneLayouts(previousLayouts),
           };
-          saveLayoutsToServer(layoutsByMode);
+
+          if (!isClientDemoMode) {
+            saveLayoutsToServer(layoutsByMode);
+          }
 
           return {
             layoutsByMode,
@@ -318,7 +330,10 @@ export const useWidgetStore = create<WidgetState>()(
             ...state.layoutsByMode,
             mobile: baseline,
           };
-          saveLayoutsToServer(layoutsByMode);
+
+          if (!isClientDemoMode) {
+            saveLayoutsToServer(layoutsByMode);
+          }
 
           return {
             layoutsByMode,
@@ -329,6 +344,27 @@ export const useWidgetStore = create<WidgetState>()(
           };
         }),
       fetchWidgets: async () => {
+        if (isClientDemoMode) {
+          const demoLayoutsByMode = ensureLayoutsByMode(splitWidgets(DEMO_WIDGETS).layouts, DEMO_WIDGETS);
+          const demoWidgetConfigs = splitWidgets(DEMO_WIDGETS).configs;
+
+          set((state) => ({
+            layoutsByMode: demoLayoutsByMode,
+            widgetConfigs: demoWidgetConfigs,
+            widgets: hydrateWidgets(
+              state.activeLayoutMode,
+              demoLayoutsByMode,
+              demoWidgetConfigs,
+              DEMO_WIDGETS
+            ),
+            dataVersion: DEMO_DATA_VERSION,
+            canRestoreMobileLayout:
+              !!state.mobileLayoutSessionBaseline &&
+              !areLayoutsEqual(demoLayoutsByMode.mobile, state.mobileLayoutSessionBaseline),
+          }));
+          return;
+        }
+
         try {
           const [layoutsRes, configsRes] = await Promise.all([
             fetch(`/api/widget-layouts?t=${Date.now()}`, {
@@ -370,6 +406,10 @@ export const useWidgetStore = create<WidgetState>()(
         }
       },
       saveWidgetConfigs: async () => {
+        if (isClientDemoMode) {
+          return true;
+        }
+
         try {
           await saveConfigsToServer(get().widgetConfigs);
           return true;
@@ -408,8 +448,11 @@ export const useWidgetStore = create<WidgetState>()(
                   canUndoMobileLayout: state.canUndoMobileLayout,
                   canRestoreMobileLayout: state.canRestoreMobileLayout,
                 };
-          saveLayoutsToServer(layoutsByMode);
-          void saveConfigsToServer(widgetConfigs);
+
+          if (!isClientDemoMode) {
+            saveLayoutsToServer(layoutsByMode);
+            void saveConfigsToServer(widgetConfigs);
+          }
 
           return {
             layoutsByMode,
@@ -438,8 +481,11 @@ export const useWidgetStore = create<WidgetState>()(
                   canUndoMobileLayout: state.canUndoMobileLayout,
                   canRestoreMobileLayout: state.canRestoreMobileLayout,
                 };
-          saveLayoutsToServer(layoutsByMode);
-          void saveConfigsToServer(widgetConfigs);
+
+          if (!isClientDemoMode) {
+            saveLayoutsToServer(layoutsByMode);
+            void saveConfigsToServer(widgetConfigs);
+          }
 
           return {
             layoutsByMode,
@@ -458,13 +504,11 @@ export const useWidgetStore = create<WidgetState>()(
               return widget;
             }
 
-            const updatedLayout = {
+            return {
               ...widget,
               size: data.size ?? widget.size,
               position: data.position ?? widget.position,
             };
-
-            return updatedLayout;
           });
           const layoutsByMode = ensureLayoutsByMode(
             {
@@ -473,11 +517,7 @@ export const useWidgetStore = create<WidgetState>()(
             },
             state.widgets
           );
-          const widgetConfigs: WidgetConfigEntry[] = updateWidgetConfigEntry(
-            state.widgetConfigs,
-            currentWidget,
-            data.config
-          );
+          const widgetConfigs = updateWidgetConfigEntry(state.widgetConfigs, currentWidget, data.config);
           const mobileSessionState =
             layoutMode === 'mobile' && (data.position || data.size)
               ? getMobileLayoutSessionState(layoutsByMode.mobile, state, previousMobileLayouts)
@@ -490,7 +530,7 @@ export const useWidgetStore = create<WidgetState>()(
                     !areLayoutsEqual(layoutsByMode.mobile, state.mobileLayoutSessionBaseline),
                 };
 
-          if (data.position || data.size) {
+          if (!isClientDemoMode && (data.position || data.size)) {
             saveLayoutsToServer(layoutsByMode);
           }
 
@@ -505,8 +545,12 @@ export const useWidgetStore = create<WidgetState>()(
         const parsedWidgets = validateWidgets(widgets, []);
         const layoutsByMode = ensureLayoutsByMode(parsedWidgets, parsedWidgets);
         const widgetConfigs = splitWidgets(parsedWidgets).configs;
-        saveLayoutsToServer(layoutsByMode);
-        void saveConfigsToServer(widgetConfigs);
+
+        if (!isClientDemoMode) {
+          saveLayoutsToServer(layoutsByMode);
+          void saveConfigsToServer(widgetConfigs);
+        }
+
         set((state) => ({
           layoutsByMode,
           widgetConfigs,
@@ -537,7 +581,11 @@ export const useWidgetStore = create<WidgetState>()(
                   canUndoMobileLayout: state.canUndoMobileLayout,
                   canRestoreMobileLayout: state.canRestoreMobileLayout,
                 };
-          saveLayoutsToServer(layoutsByMode);
+
+          if (!isClientDemoMode) {
+            saveLayoutsToServer(layoutsByMode);
+          }
+
           return {
             layoutsByMode,
             widgets: hydrateWidgets(layoutMode, layoutsByMode, state.widgetConfigs),
@@ -564,10 +612,7 @@ export const useWidgetStore = create<WidgetState>()(
           const widgetConfigs = splitWidgets(mergedWidgets).configs;
           const layoutsByMode = {
             ...state.layoutsByMode,
-            [layoutMode]: normalizeLayoutsForMode(
-              nextActiveLayouts,
-              LAYOUT_MODE_COLUMNS[layoutMode]
-            ),
+            [layoutMode]: normalizeLayoutsForMode(nextActiveLayouts, LAYOUT_MODE_COLUMNS[layoutMode]),
           };
           const mobileSessionState =
             layoutMode === 'mobile'
@@ -578,8 +623,11 @@ export const useWidgetStore = create<WidgetState>()(
                   canUndoMobileLayout: state.canUndoMobileLayout,
                   canRestoreMobileLayout: state.canRestoreMobileLayout,
                 };
-          saveLayoutsToServer(layoutsByMode);
-          void saveConfigsToServer(widgetConfigs);
+
+          if (!isClientDemoMode) {
+            saveLayoutsToServer(layoutsByMode);
+            void saveConfigsToServer(widgetConfigs);
+          }
 
           return {
             layoutsByMode,
@@ -591,7 +639,7 @@ export const useWidgetStore = create<WidgetState>()(
     }),
     {
       name: persistKey,
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => (isClientDemoMode ? memoryOnlyStorage : localStorage)),
       partialize: (state) => ({
         widgets: state.widgets,
         widgetConfigs: state.widgetConfigs,

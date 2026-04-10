@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getWidgets, saveWidgets, getWidgetsLastModified } from '@/lib/server/storage';
 import { normalizeWidgets, WidgetsArraySchema } from '@/lib/schemas';
 import { ZodError } from 'zod';
+import { isServerDemoMode } from '@/lib/demo';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,6 +31,10 @@ export async function GET() {
  * @returns {Promise<NextResponse>} 成功或错误响应
  */
 export async function POST(request: Request) {
+  if (isServerDemoMode) {
+    return NextResponse.json({ error: 'Demo mode is read-only' }, { status: 403 });
+  }
+
   try {
     const body = await request.json();
     const widgets = WidgetsArraySchema.parse(body); // Validation

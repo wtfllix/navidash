@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { createJSONStorage, persist } from 'zustand/middleware';
+import { StateStorage, createJSONStorage, persist } from 'zustand/middleware';
 import { DEFAULT_SETTINGS, Settings } from '@/types';
 import {
   createDefaultSettings,
@@ -7,6 +7,7 @@ import {
   SettingsSchema,
   SettingsStorePersistedStateSchema,
 } from '@/lib/schemas';
+import { DEMO_DATA_VERSION, DEMO_SETTINGS, isClientDemoMode } from '@/lib/demo';
 
 interface SettingsState extends Settings {
   setBackgroundImage: (url: string) => void;
@@ -26,6 +27,12 @@ interface SettingsState extends Settings {
 }
 
 const persistKey = 'settings-storage';
+
+const memoryOnlyStorage: StateStorage = {
+  getItem: () => null,
+  setItem: () => undefined,
+  removeItem: () => undefined,
+};
 
 function extractSettings(state: Settings): Settings {
   return {
@@ -93,7 +100,7 @@ export const useSettingsStore = create<SettingsState>()(
             ...patch,
           });
 
-          if (state.hasFetchedSettings) {
+          if (state.hasFetchedSettings && !isClientDemoMode) {
             saveToServer(nextSettings);
           }
 
@@ -104,10 +111,24 @@ export const useSettingsStore = create<SettingsState>()(
         });
 
       return {
-        ...DEFAULT_SETTINGS,
+        ...(isClientDemoMode ? DEMO_SETTINGS : DEFAULT_SETTINGS),
         isSavingSettings: false,
         hasFetchedSettings: false,
         fetchSettings: async (force = false) => {
+          if (isClientDemoMode) {
+            if ((get().dataVersion ?? 0) !== DEMO_DATA_VERSION) {
+              set({
+                ...DEMO_SETTINGS,
+                dataVersion: DEMO_DATA_VERSION,
+                hasFetchedSettings: true,
+                isSavingSettings: false,
+              });
+            } else if (!get().hasFetchedSettings) {
+              set({ hasFetchedSettings: true });
+            }
+            return;
+          }
+
           try {
             if (get().isSavingSettings) {
               return;
@@ -145,6 +166,16 @@ export const useSettingsStore = create<SettingsState>()(
         setCustomTitle: (customTitle) => updateSettings({ customTitle }),
         setLanguage: (language) => updateSettings({ language }),
         resetSettings: () => {
+          if (isClientDemoMode) {
+            set({
+              ...DEMO_SETTINGS,
+              isSavingSettings: false,
+              hasFetchedSettings: true,
+              dataVersion: DEMO_DATA_VERSION,
+            });
+            return;
+          }
+
           const defaults = createDefaultSettings();
           set({ ...defaults, isSavingSettings: false, hasFetchedSettings: true });
           saveToServer(defaults);
@@ -153,7 +184,7 @@ export const useSettingsStore = create<SettingsState>()(
     },
     {
       name: persistKey,
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => (isClientDemoMode ? memoryOnlyStorage : localStorage)),
       partialize: (state) => ({
         ...extractSettings(state),
         dataVersion: state.dataVersion,

@@ -234,6 +234,12 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   };
 
   const handleSaveAndClose = async () => {
+    if (isDemoMode) {
+      addToast('Demo changes stay local and reset on refresh.', 'info');
+      onClose();
+      return;
+    }
+
     setIsSavingSettingsNow(true);
 
     try {
@@ -318,7 +324,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
             <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-500">
               <Check size={14} />
-              {t('autosave_status')}
+              {isDemoMode ? 'Demo changes reset on refresh' : t('autosave_status')}
             </div>
           </div>
           <div className="mx-auto mt-2 max-w-6xl">
@@ -615,48 +621,48 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                       <Download size={16} className="shrink-0" />
                     </button>
 
-                    {!isDemoMode && (
-                      <>
-                        <input
-                          type="file"
-                          ref={fileInputRef}
-                          onChange={handleFileChange}
-                          accept=".json"
-                          className="hidden"
-                        />
-                        <button
-                          onClick={handleImportClick}
-                          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50"
-                        >
-                          <span>{t('import_config')}</span>
-                          <Upload size={16} className="shrink-0" />
-                        </button>
-                      </>
-                    )}
+                    <>
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileChange}
+                        accept=".json"
+                        className="hidden"
+                      />
+                      <button
+                        onClick={handleImportClick}
+                        className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50"
+                      >
+                        <span>{t('import_config')}</span>
+                        <Upload size={16} className="shrink-0" />
+                      </button>
+                    </>
                   </div>
                 </div>
 
-                {!isDemoMode && (
-                  <div className="rounded-3xl border border-red-200 bg-red-50/70 p-4 lg:p-5">
-                    <h3 className="mb-3 flex items-center text-sm font-semibold text-red-800">
-                      <AlertTriangle size={16} className="mr-2" />
-                      {t('danger_zone')}
-                    </h3>
-                    <p className="mb-4 text-sm leading-6 text-red-700/75">{t('danger_desc')}</p>
-                    <button
-                      onClick={handleReset}
-                      className={cn(
-                        'inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition-colors',
-                        isResetting
-                          ? 'border-red-600 bg-red-600 text-white hover:bg-red-700'
-                          : 'border-red-200 bg-white text-red-700 hover:border-red-300 hover:bg-red-50'
-                      )}
-                    >
-                      <span>{isResetting ? t('confirm_reset') : t('reset_defaults')}</span>
-                      {isResetting ? <AlertTriangle size={16} /> : <RefreshCw size={16} />}
-                    </button>
-                  </div>
-                )}
+                <div className="rounded-3xl border border-red-200 bg-red-50/70 p-4 lg:p-5">
+                  <h3 className="mb-3 flex items-center text-sm font-semibold text-red-800">
+                    <AlertTriangle size={16} className="mr-2" />
+                    {t('danger_zone')}
+                  </h3>
+                  <p className="mb-4 text-sm leading-6 text-red-700/75">
+                    {isDemoMode
+                      ? 'Demo 中的重置只会恢复当前页面的预置内容。'
+                      : t('danger_desc')}
+                  </p>
+                  <button
+                    onClick={handleReset}
+                    className={cn(
+                      'inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition-colors',
+                      isResetting
+                        ? 'border-red-600 bg-red-600 text-white hover:bg-red-700'
+                        : 'border-red-200 bg-white text-red-700 hover:border-red-300 hover:bg-red-50'
+                    )}
+                  >
+                    <span>{isResetting ? t('confirm_reset') : t('reset_defaults')}</span>
+                    {isResetting ? <AlertTriangle size={16} /> : <RefreshCw size={16} />}
+                  </button>
+                </div>
               </>
             )}
           </div>
@@ -681,7 +687,11 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               )}
             >
               <Save size={15} />
-              {isSavingSettingsNow ? tGeneral('loading') : t('save_settings')}
+              {isSavingSettingsNow
+                ? tGeneral('loading')
+                : isDemoMode
+                  ? 'Apply locally'
+                  : t('save_settings')}
             </button>
           </div>
         </div>
