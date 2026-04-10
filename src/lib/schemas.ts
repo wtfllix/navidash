@@ -1,5 +1,12 @@
 import { z } from 'zod';
-import { DEFAULT_SETTINGS, Settings, Widget, WidgetConfigEntry, WidgetLayout } from '@/types';
+import {
+  DEFAULT_SETTINGS,
+  Settings,
+  Widget,
+  WidgetConfigEntry,
+  WidgetLayout,
+  WidgetLayoutsByMode,
+} from '@/types';
 
 function normalizeLinkUrl(url: string): string {
   const trimmed = url.trim();
@@ -273,6 +280,13 @@ export const WidgetLayoutSchema = z.discriminatedUnion('type', [
 
 export const WidgetLayoutsArraySchema = z.array(WidgetLayoutSchema);
 
+export const WidgetLayoutsByModeSchema = z
+  .object({
+    desktop: WidgetLayoutsArraySchema.default([]),
+    mobile: WidgetLayoutsArraySchema.default([]),
+  })
+  .strict();
+
 export const WidgetConfigEntrySchema = z.discriminatedUnion('type', [
   z.object({
     id: z.string().min(1),
@@ -354,6 +368,8 @@ export const PartialSettingsSchema = SettingsNormalizationSchema;
 export const WidgetStorePersistedStateSchema = z
   .object({
     widgets: WidgetsArraySchema,
+    widgetConfigs: WidgetConfigsArraySchema.optional(),
+    layoutsByMode: WidgetLayoutsByModeSchema.optional(),
     dataVersion: z.number().finite().nonnegative().optional(),
   })
   .strict();
@@ -379,6 +395,13 @@ export function splitWidgets(widgets: Widget[]): {
     layouts: widgets.map(({ config: _config, ...layout }) => layout) as WidgetLayout[],
     configs: widgets.map(({ id, type, config }) => ({ id, type, config })) as WidgetConfigEntry[],
   };
+}
+
+export function splitWidgetsByMode(
+  widgetsByMode: WidgetLayoutsByMode,
+  configs: WidgetConfigEntry[]
+): Widget[] {
+  return mergeWidgets(widgetsByMode.desktop, configs, []);
 }
 
 export function mergeWidgets(

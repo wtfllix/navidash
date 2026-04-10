@@ -4,6 +4,7 @@ import { useWidgetStore } from '@/store/useWidgetStore';
 import { useToastStore } from '@/store/useToastStore';
 import { Plus, Trash2, Check } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { createResizeObserver } from '@/lib/resizeObserver';
 
 interface TodoWidgetProps {
   widget: WidgetOfType<'todo'>;
@@ -15,7 +16,9 @@ export default function TodoWidget({ widget }: TodoWidgetProps) {
   const [inputValue, setInputValue] = useState('');
   const [todos, setTodos] = useState<TodoItem[]>(widget.config.todos || []);
   const [isComposerOpen, setIsComposerOpen] = useState(false);
+  const [showBottomHint, setShowBottomHint] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const hasPendingSaveErrorRef = useRef(false);
   const t = useTranslations('Widgets');
@@ -37,6 +40,27 @@ export default function TodoWidget({ widget }: TodoWidgetProps) {
       }
     };
   }, []);
+
+  useEffect(() => {
+    const container = listRef.current;
+    if (!container) return;
+
+    const updateBottomHint = () => {
+      const remainingScroll = container.scrollHeight - container.scrollTop - container.clientHeight;
+      setShowBottomHint(remainingScroll > 6);
+    };
+
+    updateBottomHint();
+    container.addEventListener('scroll', updateBottomHint, { passive: true });
+
+    const resizeObserver = createResizeObserver(() => updateBottomHint());
+    resizeObserver?.observe(container);
+
+    return () => {
+      container.removeEventListener('scroll', updateBottomHint);
+      resizeObserver?.disconnect();
+    };
+  }, [todos]);
 
   const sortedTodos = [...todos].sort((a, b) => Number(a.completed) - Number(b.completed));
   const completedCount = todos.filter((todo) => todo.completed).length;
@@ -136,7 +160,14 @@ export default function TodoWidget({ widget }: TodoWidgetProps) {
         </div>
       </div>
 
-      <div className="hover-scrollbar min-h-0 flex-1 overflow-y-auto border-t border-gray-100 pt-2">
+      <div className="relative min-h-0 flex-1 border-t border-gray-100 pt-2">
+        <div
+          aria-hidden="true"
+          className={`pointer-events-none absolute inset-x-0 bottom-0 z-10 h-10 bg-gradient-to-t from-white via-white/88 to-transparent transition-opacity duration-200 ${
+            showBottomHint ? 'opacity-100' : 'opacity-0'
+          }`}
+        />
+        <div ref={listRef} className="hover-scrollbar h-full overflow-y-auto">
         {todos.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center px-3 text-center text-xs text-gray-400">
             <p className="text-sm font-medium text-gray-500">{t('no_todos')}</p>
@@ -177,6 +208,7 @@ export default function TodoWidget({ widget }: TodoWidgetProps) {
             </div>
           ))
         )}
+        </div>
       </div>
 
       <div className="mt-2 flex items-end justify-between gap-3">

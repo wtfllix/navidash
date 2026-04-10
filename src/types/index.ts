@@ -24,6 +24,8 @@ export interface WidgetPosition {
   y: number;
 }
 
+export type WidgetLayoutMode = 'desktop' | 'mobile';
+
 // ─── per-Widget config 接口 ───────────────────────────────────────────────────
 
 export interface ClockWidgetConfig {
@@ -141,6 +143,8 @@ export type Widget = {
 export type WidgetOfType<T extends WidgetType> = Extract<Widget, { type: T }>;
 
 export type WidgetLayout = Omit<Widget, 'config'>;
+
+export type WidgetLayoutsByMode = Record<WidgetLayoutMode, WidgetLayout[]>;
 
 export type WidgetConfigEntry = {
   [T in WidgetType]: {

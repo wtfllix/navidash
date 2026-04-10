@@ -10,10 +10,12 @@ import {
   splitWidgets,
   WidgetConfigsArraySchema,
   WidgetLayoutsArraySchema,
+  WidgetLayoutsByModeSchema,
   WidgetsArraySchema,
 } from '@/lib/schemas';
-import { Settings, Widget, WidgetConfigEntry, WidgetLayout } from '@/types';
+import { Settings, Widget, WidgetConfigEntry, WidgetLayout, WidgetLayoutsByMode } from '@/types';
 import { logger } from '@/lib/logger';
+import { ensureLayoutsByMode } from '@/lib/widgetLayouts';
 
 const DATA_FILE_VERSION = 1;
 const DEFAULT_DIR = '/app/data';
@@ -102,12 +104,17 @@ export async function getWidgets(): Promise<Widget[] | null> {
 
   try {
     await ensureDataDir();
-    const layouts = await readJsonFile(WIDGET_LAYOUTS_FILE, WidgetLayoutsArraySchema);
+    const layouts = await readJsonFile(WIDGET_LAYOUTS_FILE, z.union([WidgetLayoutsByModeSchema, WidgetLayoutsArraySchema]));
     const configs = await readJsonFile(WIDGET_CONFIGS_FILE, WidgetConfigsArraySchema);
 
     if (layouts) {
+      const layoutsByMode = ensureLayoutsByMode(
+        layouts as WidgetLayoutsByMode | WidgetLayout[],
+        []
+      );
+
       return mergeWidgets(
-        layouts as WidgetLayout[],
+        layoutsByMode.desktop,
         (configs as WidgetConfigEntry[] | null) ?? [],
         []
       );
@@ -182,18 +189,32 @@ export async function saveWidgets(widgets: Widget[]): Promise<void> {
 }
 
 export async function getWidgetLayouts(): Promise<WidgetLayout[] | null> {
+  const layouts = await getWidgetLayoutsByMode();
+  return layouts?.desktop ?? null;
+}
+
+export async function getWidgetLayoutsByMode(): Promise<WidgetLayoutsByMode | null> {
   if (IS_DEMO_MODE) {
-    return [];
+    return {
+      desktop: [],
+      mobile: [],
+    };
   }
 
   try {
     await ensureDataDir();
-    const layouts = await readJsonFile(WIDGET_LAYOUTS_FILE, WidgetLayoutsArraySchema);
-    if (layouts) return layouts as WidgetLayout[];
+    const layouts = await readJsonFile(
+      WIDGET_LAYOUTS_FILE,
+      z.union([WidgetLayoutsByModeSchema, WidgetLayoutsArraySchema])
+    );
+
+    if (layouts) {
+      return ensureLayoutsByMode(layouts as WidgetLayoutsByMode | WidgetLayout[], []);
+    }
 
     const widgets = await readJsonFile(WIDGETS_FILE, WidgetsArraySchema);
     if (!widgets) return null;
-    return splitWidgets(widgets as Widget[]).layouts;
+    return ensureLayoutsByMode(splitWidgets(widgets as Widget[]).layouts, []);
   } catch (error) {
     logger.error('Failed to read widget layouts', error);
     return null;
@@ -219,7 +240,7 @@ export async function getWidgetConfigs(): Promise<WidgetConfigEntry[] | null> {
   }
 }
 
-export async function saveWidgetLayouts(layouts: WidgetLayout[]): Promise<void> {
+export async function saveWidgetLayouts(layouts: WidgetLayoutsByMode | WidgetLayout[]): Promise<void> {
   if (IS_DEMO_MODE) {
     logger.info('Demo mode: save layouts skipped');
     return;
@@ -227,10 +248,10 @@ export async function saveWidgetLayouts(layouts: WidgetLayout[]): Promise<void> 
 
   try {
     await ensureDataDir();
-    const parsedLayouts = WidgetLayoutsArraySchema.parse(layouts);
+    const parsedLayouts = ensureLayoutsByMode(layouts, []);
     await writeJsonFileAtomic(WIDGET_LAYOUTS_FILE, {
       version: DATA_FILE_VERSION,
-      data: parsedLayouts,
+      data: WidgetLayoutsByModeSchema.parse(parsedLayouts),
     });
     logger.info('Widget layouts saved successfully');
   } catch (error) {

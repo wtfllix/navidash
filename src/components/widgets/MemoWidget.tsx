@@ -5,6 +5,7 @@ import { WidgetOfType } from '@/types';
 import { useWidgetStore } from '@/store/useWidgetStore';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
+import { createResizeObserver } from '@/lib/resizeObserver';
 import { StickyNote } from 'lucide-react';
 
 type SaveFeedbackState = 'idle' | 'saved' | 'error';
@@ -179,10 +180,12 @@ const MemoWidget = ({ widget }: { widget: WidgetOfType<'memo'> }) => {
   const [isEditing, setIsEditing] = useState(!(widget.config?.content || '').trim());
   const [isComposing, setIsComposing] = useState(false);
   const [saveFeedback, setSaveFeedback] = useState<SaveFeedbackState>('idle');
+  const [showBottomHint, setShowBottomHint] = useState(false);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const feedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSyncedContentRef = useRef(widget.config?.content || '');
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const previewRef = useRef<HTMLButtonElement | null>(null);
   const isDirty = content !== (widget.config?.content || '');
   const hasContent = content.trim().length > 0;
   const renderedContent = useMemo(() => renderMarkdownBlocks(content), [content]);
@@ -265,6 +268,27 @@ const MemoWidget = ({ widget }: { widget: WidgetOfType<'memo'> }) => {
     textareaRef.current?.focus();
   }, [isEditing]);
 
+  useEffect(() => {
+    const container = isEditing ? textareaRef.current : previewRef.current;
+    if (!container) return;
+
+    const updateBottomHint = () => {
+      const remainingScroll = container.scrollHeight - container.scrollTop - container.clientHeight;
+      setShowBottomHint(remainingScroll > 6);
+    };
+
+    updateBottomHint();
+    container.addEventListener('scroll', updateBottomHint, { passive: true });
+
+    const resizeObserver = createResizeObserver(() => updateBottomHint());
+    resizeObserver?.observe(container);
+
+    return () => {
+      container.removeEventListener('scroll', updateBottomHint);
+      resizeObserver?.disconnect();
+    };
+  }, [content, isEditing, renderedContent]);
+
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setContent(e.target.value);
   };
@@ -312,12 +336,19 @@ const MemoWidget = ({ widget }: { widget: WidgetOfType<'memo'> }) => {
         </div>
       </div>
 
-      <div className="relative z-10 min-h-0 flex-1 px-3 pb-3">
+      <div className="relative z-10 min-h-0 flex-1 overflow-hidden px-3">
+        <div
+          aria-hidden="true"
+          className={cn(
+            'pointer-events-none absolute inset-x-3 bottom-0 z-10 h-8 bg-gradient-to-t from-black/8 via-black/[0.03] to-transparent transition-opacity duration-200',
+            showBottomHint ? 'opacity-100' : 'opacity-0'
+          )}
+        />
         {isEditing || !hasContent ? (
           <textarea
             ref={textareaRef}
             className={cn(
-              'memo-scrollbar h-full w-full overflow-y-auto bg-transparent px-0 py-2 border-none outline-none resize-none text-sm font-normal leading-7 placeholder-black/20',
+              'memo-scrollbar h-full w-full overflow-y-auto bg-transparent px-0 pb-3 pt-2 border-none outline-none resize-none text-sm font-normal leading-7 placeholder-black/20',
               foregroundColor.className
             )}
             style={foregroundColor.style ? { color: foregroundColor.style } : undefined}
@@ -341,15 +372,15 @@ const MemoWidget = ({ widget }: { widget: WidgetOfType<'memo'> }) => {
         ) : (
           <button
             type="button"
+            ref={previewRef}
             onClick={() => setIsEditing(true)}
             className={cn(
-              'memo-scrollbar relative h-full w-full overflow-y-auto px-0 py-2 text-left text-sm font-normal leading-7',
+              'memo-scrollbar relative h-full w-full overflow-y-auto px-0 pb-3 pt-2 text-left text-sm font-normal leading-7',
               foregroundColor.className
             )}
             style={foregroundColor.style ? { color: foregroundColor.style } : undefined}
             aria-label={t('memo_edit_content')}
           >
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-black/6 to-transparent opacity-50" />
             <div className="space-y-2 break-words">{renderedContent}</div>
           </button>
         )}

@@ -1,12 +1,15 @@
 import { NextResponse } from 'next/server';
 import { ZodError } from 'zod';
-import { getWidgetsLastModified, getWidgetLayouts, saveWidgetLayouts } from '@/lib/server/storage';
-import { WidgetLayoutsArraySchema } from '@/lib/schemas';
+import { getWidgetsLastModified, getWidgetLayoutsByMode, saveWidgetLayouts } from '@/lib/server/storage';
+import { WidgetLayoutsArraySchema, WidgetLayoutsByModeSchema } from '@/lib/schemas';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  const layouts = (await getWidgetLayouts()) ?? [];
+  const layouts = (await getWidgetLayoutsByMode()) ?? {
+    desktop: [],
+    mobile: [],
+  };
   const lastModified = await getWidgetsLastModified();
 
   return NextResponse.json(layouts, {
@@ -20,7 +23,14 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const layouts = WidgetLayoutsArraySchema.parse(body);
+    const layouts = (
+      WidgetLayoutsByModeSchema.safeParse(body).success
+        ? WidgetLayoutsByModeSchema.parse(body)
+        : {
+            desktop: WidgetLayoutsArraySchema.parse(body),
+            mobile: [],
+          }
+    );
     await saveWidgetLayouts(layouts);
     const lastModified = await getWidgetsLastModified();
     return NextResponse.json({ success: true, version: lastModified });

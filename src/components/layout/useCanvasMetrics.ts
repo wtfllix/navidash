@@ -2,39 +2,43 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Widget } from '@/types';
+import { createResizeObserver } from '@/lib/resizeObserver';
 
 interface UseCanvasMetricsOptions {
   rowHeight: number;
   margin: [number, number];
+  forcedCols?: number;
 }
 
-export function useCanvasMetrics({ rowHeight, margin }: UseCanvasMetricsOptions) {
+export function useCanvasMetrics({ rowHeight, margin, forcedCols }: UseCanvasMetricsOptions) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [width, setWidth] = useState(0);
 
   useEffect(() => {
     if (!containerRef.current) return;
 
-    const observer = new ResizeObserver((entries) => {
+    const observer = createResizeObserver((entries) => {
       const entry = entries[0];
       setWidth(entry.contentRect.width);
     });
 
-    observer.observe(containerRef.current);
+    setWidth(containerRef.current.getBoundingClientRect().width);
+    observer?.observe(containerRef.current);
 
     return () => {
-      observer.disconnect();
+      observer?.disconnect();
     };
   }, []);
 
   const currentCols = useMemo(() => {
+    if (forcedCols) return forcedCols;
     if (!width) return 8;
     if (width >= 1600) return 10;
     if (width >= 1200) return 8;
     if (width >= 900) return 6;
     if (width >= 600) return 4;
     return 2;
-  }, [width]);
+  }, [forcedCols, width]);
 
   const cellWidth = useMemo(() => {
     if (!width) return 0;
