@@ -15,7 +15,9 @@ export default function TodoWidget({ widget }: TodoWidgetProps) {
   const [inputValue, setInputValue] = useState('');
   const [todos, setTodos] = useState<TodoItem[]>(widget.config.todos || []);
   const [isComposerOpen, setIsComposerOpen] = useState(false);
+  const [showBottomHint, setShowBottomHint] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const hasPendingSaveErrorRef = useRef(false);
   const t = useTranslations('Widgets');
@@ -37,6 +39,27 @@ export default function TodoWidget({ widget }: TodoWidgetProps) {
       }
     };
   }, []);
+
+  useEffect(() => {
+    const container = listRef.current;
+    if (!container) return;
+
+    const updateBottomHint = () => {
+      const remainingScroll = container.scrollHeight - container.scrollTop - container.clientHeight;
+      setShowBottomHint(remainingScroll > 6);
+    };
+
+    updateBottomHint();
+    container.addEventListener('scroll', updateBottomHint, { passive: true });
+
+    const resizeObserver = new ResizeObserver(updateBottomHint);
+    resizeObserver.observe(container);
+
+    return () => {
+      container.removeEventListener('scroll', updateBottomHint);
+      resizeObserver.disconnect();
+    };
+  }, [todos]);
 
   const sortedTodos = [...todos].sort((a, b) => Number(a.completed) - Number(b.completed));
   const completedCount = todos.filter((todo) => todo.completed).length;
@@ -136,47 +159,57 @@ export default function TodoWidget({ widget }: TodoWidgetProps) {
         </div>
       </div>
 
-      <div className="hover-scrollbar min-h-0 flex-1 overflow-y-auto border-t border-gray-100 pt-2">
-        {todos.length === 0 ? (
-          <div className="flex h-full flex-col items-center justify-center px-3 text-center text-xs text-gray-400">
-            <p className="text-sm font-medium text-gray-500">{t('no_todos')}</p>
-            <p className="mt-1 text-[11px] text-gray-300">{t('todo_empty_hint')}</p>
-          </div>
-        ) : (
-          sortedTodos.map((todo) => (
-            <div 
-              key={todo.id} 
-              className="group flex items-center gap-2.5 rounded-md py-2 pl-2.5 pr-1.5 transition-colors hover:bg-gray-50"
-            >
-              <button
-                onClick={() => handleToggle(todo.id)}
-                className={`flex h-[18px] w-[18px] flex-shrink-0 items-center justify-center rounded-full border transition-colors ${
-                  todo.completed 
-                    ? 'bg-blue-500 border-blue-500 text-white' 
-                    : 'border-gray-300 hover:border-blue-400'
-                }`}
-              >
-                {todo.completed && <Check size={10} strokeWidth={3} />}
-              </button>
-              
-              <span className={`flex-1 text-sm font-normal leading-5 break-words ${
-                todo.completed ? 'text-gray-400 line-through' : 'text-gray-700'
-              }`}>
-                {todo.text}
-              </span>
-              
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDelete(todo.id);
-                }}
-                className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-500 transition-all"
-              >
-                <Trash2 size={12} />
-              </button>
+      <div className="relative min-h-0 flex-1 border-t border-gray-100 pt-2">
+        <div
+          aria-hidden="true"
+          className={`pointer-events-none absolute inset-x-0 bottom-0 z-10 h-10 bg-gradient-to-t from-white via-white/88 to-transparent transition-opacity duration-200 ${
+            showBottomHint ? 'opacity-100' : 'opacity-0'
+          }`}
+        />
+        <div ref={listRef} className="hover-scrollbar h-full overflow-y-auto">
+          {todos.length === 0 ? (
+            <div className="flex h-full flex-col items-center justify-center px-3 text-center text-xs text-gray-400">
+              <p className="text-sm font-medium text-gray-500">{t('no_todos')}</p>
+              <p className="mt-1 text-[11px] text-gray-300">{t('todo_empty_hint')}</p>
             </div>
-          ))
-        )}
+          ) : (
+            sortedTodos.map((todo) => (
+              <div
+                key={todo.id}
+                className="group flex items-center gap-2.5 rounded-md py-2 pl-2.5 pr-1.5 transition-colors hover:bg-gray-50"
+              >
+                <button
+                  onClick={() => handleToggle(todo.id)}
+                  className={`flex h-[18px] w-[18px] flex-shrink-0 items-center justify-center rounded-full border transition-colors ${
+                    todo.completed
+                      ? 'bg-blue-500 border-blue-500 text-white'
+                      : 'border-gray-300 hover:border-blue-400'
+                  }`}
+                >
+                  {todo.completed && <Check size={10} strokeWidth={3} />}
+                </button>
+
+                <span
+                  className={`flex-1 text-sm font-normal leading-5 break-words ${
+                    todo.completed ? 'text-gray-400 line-through' : 'text-gray-700'
+                  }`}
+                >
+                  {todo.text}
+                </span>
+
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(todo.id);
+                  }}
+                  className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-500 transition-all"
+                >
+                  <Trash2 size={12} />
+                </button>
+              </div>
+            ))
+          )}
+        </div>
       </div>
 
       <div className="mt-2 flex items-end justify-between gap-3">
