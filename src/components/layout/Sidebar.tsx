@@ -82,6 +82,12 @@ export default function Sidebar() {
               </button>
             </div>
           </div>
+
+          {isDemoMode && (
+            <p className="relative mt-3 text-sm leading-6 text-slate-500">
+              Demo 预置了一套展示内容。你可以自由拖拽和调整，但刷新页面后会恢复为默认布局。
+            </p>
+          )}
         </div>
 
         <WidgetStoreSidebar />

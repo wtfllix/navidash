@@ -16,6 +16,7 @@ import {
 import { Settings, Widget, WidgetConfigEntry, WidgetLayout, WidgetLayoutsByMode } from '@/types';
 import { logger } from '@/lib/logger';
 import { ensureLayoutsByMode } from '@/lib/widgetLayouts';
+import { DEMO_DATA_VERSION, DEMO_SETTINGS, DEMO_WIDGETS, isServerDemoMode } from '@/lib/demo';
 
 const DATA_FILE_VERSION = 1;
 const DEFAULT_DIR = '/app/data';
@@ -27,9 +28,7 @@ const WIDGET_CONFIGS_FILE = path.join(DATA_DIR, 'widget-configs.json');
 const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
 
 // 检查是否为演示模式（兼容服务端与客户端环境变量）
-const IS_DEMO_MODE =
-  process.env.DEMO_MODE === 'true' ||
-  process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+const IS_DEMO_MODE = isServerDemoMode;
 
 /**
  * 确保数据目录存在
@@ -98,26 +97,22 @@ async function writeJsonFileAtomic(filePath: string, data: unknown): Promise<voi
  */
 export async function getWidgets(): Promise<Widget[] | null> {
   if (IS_DEMO_MODE) {
-    logger.info('Demo mode: returning empty widgets');
-    return [];
+    logger.info('Demo mode: returning demo widgets');
+    return DEMO_WIDGETS;
   }
 
   try {
     await ensureDataDir();
-    const layouts = await readJsonFile(WIDGET_LAYOUTS_FILE, z.union([WidgetLayoutsByModeSchema, WidgetLayoutsArraySchema]));
+    const layouts = await readJsonFile(
+      WIDGET_LAYOUTS_FILE,
+      z.union([WidgetLayoutsByModeSchema, WidgetLayoutsArraySchema])
+    );
     const configs = await readJsonFile(WIDGET_CONFIGS_FILE, WidgetConfigsArraySchema);
 
     if (layouts) {
-      const layoutsByMode = ensureLayoutsByMode(
-        layouts as WidgetLayoutsByMode | WidgetLayout[],
-        []
-      );
+      const layoutsByMode = ensureLayoutsByMode(layouts as WidgetLayoutsByMode | WidgetLayout[], []);
 
-      return mergeWidgets(
-        layoutsByMode.desktop,
-        (configs as WidgetConfigEntry[] | null) ?? [],
-        []
-      );
+      return mergeWidgets(layoutsByMode.desktop, (configs as WidgetConfigEntry[] | null) ?? [], []);
     }
 
     const widgets = await readJsonFile(WIDGETS_FILE, WidgetsArraySchema);
@@ -133,7 +128,7 @@ export async function getWidgets(): Promise<Widget[] | null> {
  * @returns {Promise<number>} 时间戳 (ms)
  */
 export async function getWidgetsLastModified(): Promise<number> {
-  if (IS_DEMO_MODE) return 0;
+  if (IS_DEMO_MODE) return DEMO_DATA_VERSION;
 
   try {
     await ensureDataDir();
@@ -195,10 +190,7 @@ export async function getWidgetLayouts(): Promise<WidgetLayout[] | null> {
 
 export async function getWidgetLayoutsByMode(): Promise<WidgetLayoutsByMode | null> {
   if (IS_DEMO_MODE) {
-    return {
-      desktop: [],
-      mobile: [],
-    };
+    return ensureLayoutsByMode(splitWidgets(DEMO_WIDGETS).layouts, DEMO_WIDGETS);
   }
 
   try {
@@ -223,7 +215,7 @@ export async function getWidgetLayoutsByMode(): Promise<WidgetLayoutsByMode | nu
 
 export async function getWidgetConfigs(): Promise<WidgetConfigEntry[] | null> {
   if (IS_DEMO_MODE) {
-    return [];
+    return splitWidgets(DEMO_WIDGETS).configs;
   }
 
   try {
@@ -287,8 +279,8 @@ export async function saveWidgetConfigs(configs: WidgetConfigEntry[]): Promise<v
  */
 export async function getSettings(): Promise<Settings | null> {
   if (IS_DEMO_MODE) {
-    logger.info('Demo mode: returning empty settings');
-    return null;
+    logger.info('Demo mode: returning demo settings');
+    return DEMO_SETTINGS;
   }
 
   try {
@@ -307,7 +299,7 @@ export async function getSettings(): Promise<Settings | null> {
  * @returns {Promise<number>} 时间戳 (ms)
  */
 export async function getSettingsLastModified(): Promise<number> {
-  if (IS_DEMO_MODE) return 0;
+  if (IS_DEMO_MODE) return DEMO_DATA_VERSION;
 
   try {
     await ensureDataDir();

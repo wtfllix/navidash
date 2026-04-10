@@ -191,4 +191,19 @@ describe('storage versioned files', () => {
       language: 'zh',
     });
   });
+
+  it('returns built-in demo data in demo mode', async () => {
+    process.env.DEMO_MODE = 'true';
+    process.env.NEXT_PUBLIC_DEMO_MODE = 'true';
+    jest.resetModules();
+
+    const { getSettings, getWidgets, getSettingsLastModified, getWidgetsLastModified } =
+      await import('@/lib/server/storage');
+    const { DEMO_DATA_VERSION, DEMO_SETTINGS, DEMO_WIDGETS } = await import('@/lib/demo');
+
+    await expect(getWidgets()).resolves.toEqual(DEMO_WIDGETS);
+    await expect(getSettings()).resolves.toEqual(DEMO_SETTINGS);
+    await expect(getWidgetsLastModified()).resolves.toBe(DEMO_DATA_VERSION);
+    await expect(getSettingsLastModified()).resolves.toBe(DEMO_DATA_VERSION);
+  });
 });

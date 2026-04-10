@@ -129,6 +129,7 @@ npm run build
 The most important environment variables in `.env.example` are:
 
 - `NEXT_PUBLIC_DEMO_MODE`: enables read-only demo mode when set to `true`
+- `DEMO_MODE`: enables demo data and read-only write protection on the server
 - `QWEATHER_API_KEY`: QWeather (HeWeather) API key or JWT
 - `QWEATHER_API_HOST`: optional custom QWeather-compatible host
 - `QWEATHER_AUTH_TYPE`: `apikey` or `jwt`
@@ -160,6 +161,7 @@ NaviDash supports a read-only demo mode, which works well for Vercel deployments
 - Visitors can drag, edit, and explore the UI
 - A refresh resets the page to curated demo content
 - Write APIs return read-only errors and do not persist data
+- Recommended setup: enable both `DEMO_MODE=true` and `NEXT_PUBLIC_DEMO_MODE=true`
 
 ## Product Direction
 

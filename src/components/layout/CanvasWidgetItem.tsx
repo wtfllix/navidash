@@ -46,6 +46,7 @@ function WidgetItemContent({
   const { removeWidget } = useWidgetStore();
   const { isEditing } = useUIStore();
   const t = useTranslations('Widgets');
+  const canEdit = isEditing;
 
   const renderContent = () => {
     const Component = widgetComponentRegistry[widget.type];
@@ -59,13 +60,13 @@ function WidgetItemContent({
   };
 
   const isTransparent =
-    !isEditing &&
+    !canEdit &&
     widget.type === 'clock' &&
     false;
 
   return (
     <div className="w-full h-full relative group">
-      {isEditing && (
+      {canEdit && (
         <>
           <div className="absolute top-2 right-2 flex space-x-1 z-20 animate-in fade-in zoom-in duration-200">
             <button
@@ -106,14 +107,14 @@ function WidgetItemContent({
       <div
         className={cn(
           'w-full h-full transition-all duration-300',
-          isEditing
+          canEdit
             ? 'overflow-hidden rounded-xl border border-blue-400 border-dashed ring-4 ring-blue-50 bg-gray-50/50 scale-[0.98]'
             : isTransparent
               ? ''
               : 'overflow-hidden rounded-xl border border-gray-200 shadow-sm bg-white hover:shadow-md'
         )}
       >
-        <div className={cn('w-full h-full', isEditing && 'pointer-events-none opacity-80 blur-[0.5px]')}>
+        <div className={cn('w-full h-full', canEdit && 'pointer-events-none opacity-80 blur-[0.5px]')}>
           {renderContent()}
         </div>
       </div>
@@ -136,10 +137,11 @@ export default function CanvasWidgetItem({
   onDragHandlePointerDown,
 }: CanvasWidgetItemProps) {
   const { isEditing } = useUIStore();
+  const canEdit = isEditing;
 
   return (
     <>
-      {hasPreviewTarget && (
+      {canEdit && hasPreviewTarget && (
         <div
           className="absolute z-10 pointer-events-none rounded-2xl border border-blue-300/80 border-dashed bg-blue-100/25 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.65)] transition-[left,top,width,height,opacity] duration-200 ease-out"
           style={{

@@ -20,6 +20,7 @@ import { useUIStore } from '@/store/useUIStore';
 import { useWidgetStore } from '@/store/useWidgetStore';
 import { useSidebarStore } from '@/store/useSidebarStore';
 import { buildSearchUrl, DEFAULT_SEARCH_ENGINE, SEARCH_ENGINES } from '@/lib/searchEngines';
+import { isClientDemoMode } from '@/lib/demo';
 
 export default function Header() {
   const t = useTranslations('Header');
@@ -27,6 +28,7 @@ export default function Header() {
   const [query, setQuery] = useState('');
   const [engine, setEngine] = useState(DEFAULT_SEARCH_ENGINE);
   const inputRef = useRef<HTMLInputElement>(null);
+  const isDemoMode = isClientDemoMode;
 
   const {
     isEditing,
@@ -176,6 +178,12 @@ export default function Header() {
         </div>
 
         <div className="ml-2 flex shrink-0 items-center gap-2">
+          {isDemoMode && (
+            <span className="hidden rounded-full border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-700 md:inline-flex">
+              Demo resets on refresh
+            </span>
+          )}
+
           {showMobileLayoutRecovery && (
             <>
               <button

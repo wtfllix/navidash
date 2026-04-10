@@ -9,12 +9,14 @@ import { useUIStore } from '@/store/useUIStore';
 import { buildPlacementResult, WidgetCreatedDetail } from '@/lib/widgetPlacement';
 import { widgetMeta, widgetTypesRequiringSetup } from '@/components/widgets/registry';
 import DraggableWidgetItem from './DraggableWidgetItem';
+import { isClientDemoMode } from '@/lib/demo';
 
 export default function WidgetStoreSidebar() {
   const { widgets, addWidgetWithLayout } = useWidgetStore();
   const currentCanvasCols = useUIStore((state) => state.currentCanvasCols);
   const t = useTranslations('Widgets');
   const [searchQuery, setSearchQuery] = useState('');
+  const isDemoMode = isClientDemoMode;
 
   const handleAddWidget = (type: string, defaultSize: { w: number; h: number }) => {
     const placement = buildPlacementResult({
@@ -53,6 +55,12 @@ export default function WidgetStoreSidebar() {
         <h2 className="text-base font-semibold tracking-[0.01em] text-slate-900">
           {t('store_title')}
         </h2>
+
+        {isDemoMode && (
+          <p className="mt-2 text-sm leading-6 text-slate-500">
+            当前为 demo 模式。你可以拖拽、添加和调整组件，但刷新页面后会恢复为预置内容。
+          </p>
+        )}
 
         <div className="relative mt-2.5">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
