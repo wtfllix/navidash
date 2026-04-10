@@ -24,3 +24,12 @@
 - 涉及模块：`AGENTS.md`、`changelog.md`
 - 是否有兼容性影响：无
 - 后续待补充：后续功能开发完成后，按统一模板持续补充变更记录
+
+## 2026-04-10
+
+### feat: 新增画布级快速打开与搜索面板
+- 做了什么：在画布空闲状态下支持直接输入关键词唤起快速打开弹窗，可匹配 `quick-link` 和 `links` 组件里已保存的链接；未命中时回车会走默认搜索引擎；默认态还会展示最近搜索和最近打开的链接
+- 影响范围：画布交互、链接访问效率、搜索流程一致性、本地历史记录体验
+- 涉及模块：`src/components/layout/MainCanvas.tsx`、`src/components/layout/CanvasLinkLauncher.tsx`、`src/components/layout/Header.tsx`、`src/lib/linkLauncher.ts`、`src/lib/linkLauncherHistory.ts`、`src/lib/searchEngines.ts`、`messages/*.json`
+- 是否有兼容性影响：无，历史记录仅保存在当前浏览器的 `localStorage`
+- 后续待补充：继续补充明确快捷键入口、历史清理能力、结果排序优化，以及搜索引擎全局配置化

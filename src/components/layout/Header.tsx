@@ -14,19 +14,13 @@ import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { useUIStore } from '@/store/useUIStore';
 import { useSidebarStore } from '@/store/useSidebarStore';
-
-const ENGINES = [
-  { name: 'Google', url: 'https://www.google.com/search?q=', icon: 'G' },
-  { name: 'Bing', url: 'https://www.bing.com/search?q=', icon: 'B' },
-  { name: 'Baidu', url: 'https://www.baidu.com/s?wd=', icon: 'du' },
-  { name: 'GitHub', url: 'https://github.com/search?q=', icon: 'Gh' },
-];
+import { buildSearchUrl, DEFAULT_SEARCH_ENGINE, SEARCH_ENGINES } from '@/lib/searchEngines';
 
 export default function Header() {
   const t = useTranslations('Header');
   const [isSearchDropdownOpen, setIsSearchDropdownOpen] = useState(false);
   const [query, setQuery] = useState('');
-  const [engine, setEngine] = useState(ENGINES[0]);
+  const [engine, setEngine] = useState(DEFAULT_SEARCH_ENGINE);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { isEditing, toggleEditing, openWidgetPicker, openSettings } = useUIStore();
@@ -48,7 +42,7 @@ export default function Header() {
     e.preventDefault();
     if (!query.trim()) return;
 
-    window.open(`${engine.url}${encodeURIComponent(query)}`, '_blank');
+    window.open(buildSearchUrl(query, engine), '_blank');
     setQuery('');
   };
 
@@ -112,7 +106,7 @@ export default function Header() {
                     className="absolute left-0 top-full z-50 mt-2 w-40 overflow-hidden rounded-2xl border border-slate-200 bg-white py-1 shadow-xl shadow-slate-900/8"
                     role="listbox"
                   >
-                    {ENGINES.map((eng) => (
+                    {SEARCH_ENGINES.map((eng) => (
                       <button
                         key={eng.name}
                         type="button"
