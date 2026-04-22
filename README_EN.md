@@ -14,6 +14,18 @@ NaviDash is a customizable personal homepage for people who want a cleaner and m
 
 Live demo: [navidash](https://navidash.vercel.app/en)
 
+## Recent Updates
+
+Current version: `0.6.0`
+
+- Separate desktop and mobile layouts now share the same widget data
+- Mobile layout editing supports undo and restore-to-session-start
+- A canvas-level quick open and search panel makes saved links faster to access
+- Demo mode is now part of the mainline build and can be enabled with environment flags
+- `Todo` and `Memo` now show bottom scroll hints for long content
+
+See [changelog.md](./changelog.md) for the full change history.
+
 ## Who It's For
 
 - People who want a personal start page with frequently used links and lightweight widgets
@@ -23,8 +35,10 @@ Live demo: [navidash](https://navidash.vercel.app/en)
 ## Current Features
 
 - Freely arranged widget canvas with drag, reflow, and size adjustment
+- Separate desktop and mobile layouts with shared widget data
 - Pegboard-style background with custom wallpaper, blur, and overlay tuning
 - Built-in `Clock`, `Weather`, `Date`, `Calendar`, `Todo`, `Memo`, `Quick Link`, `Links`, and `Photo Frame`
+- Canvas-level quick open and search for saved links and recent activity
 - Separate persistence for widget layout and widget configuration
 - JSON import/export for backup and migration
 - Docker-first self-hosting workflow for local container deployment
@@ -152,6 +166,7 @@ These files use a versioned JSON envelope so future migrations remain explicit, 
 
 - [Deployment Guide](./docs/DEPLOY.md)
 - [User Guide](./docs/USER_GUIDE_EN.md)
+- [Changelog](./changelog.md)
 - [Chinese README](./README.md)
 
 ## Demo Mode
