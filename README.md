@@ -9,7 +9,7 @@
 **中文** | [English](./README_EN.md)
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Version](https://img.shields.io/badge/version-0.5.0-green.svg)
+![Version](https://img.shields.io/badge/version-0.6.0-green.svg)
 ![Next.js](https://img.shields.io/badge/Next.js-14-black.svg)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue.svg)
 ![Docker](https://img.shields.io/badge/Docker-ready-2496ed.svg)
