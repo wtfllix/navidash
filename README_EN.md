@@ -1,6 +1,10 @@
+<p align="center">
+  <img width="160" height="160" alt="NaviDash logo" src="https://github.com/user-attachments/assets/19ebe243-3f0c-4c48-b512-c9a98f23a0c3" />
+</p>
+
 # NaviDash
 
-> A customizable personal start page with a pegboard-inspired layout.
+> A lightweight, self-hostable start page for your links, searches, notes, and developer services.
 
 [中文](./README.md) | **English**
 
@@ -10,9 +14,53 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue.svg)
 ![Docker](https://img.shields.io/badge/Docker-ready-2496ed.svg)
 
-NaviDash is a customizable personal homepage for people who want a cleaner and more intentional browser start page. It combines a pegboard-inspired visual style with a draggable widget canvas and local-first self-hosting, making it a good fit for long-term use on personal devices or home setups.
+[Live Demo](https://navidash.vercel.app/en) · [Deployment Guide](./docs/DEPLOY.md) · [User Guide](./docs/USER_GUIDE_EN.md) · [中文](./README.md)
 
-Live demo: [navidash](https://navidash.vercel.app/en)
+NaviDash focuses on the first place you land after opening your browser: opening daily links, searching fast, capturing quick notes, or checking whether your local and self-hosted services are alive. It is not trying to become another full monitoring platform, RSS reader, or project management system. It is a focused, customizable workspace for daily use.
+
+## Why NaviDash
+
+Many start page projects drift toward one of two extremes: a pretty link collection, or an increasingly heavy dashboard. NaviDash aims for the middle ground: it keeps the visual freedom of a personal homepage while focusing the product around actions people actually repeat every day.
+
+- **Open faster**: keep daily links, project entry points, and local services in one place.
+- **Search faster**: search from the canvas and quickly match saved links.
+- **Capture faster**: use lightweight notes for temporary thoughts instead of opening a full document tool.
+- **Stay in control**: self-host with Docker and keep data on your own machine or NAS.
+- **Keep clear boundaries**: improve the start page experience without replacing specialized tools.
+
+## Who It's For
+
+| User type | What you may care about | What NaviDash provides |
+| --- | --- | --- |
+| Productivity users | Fast access, clear entry points, low setup cost | Links, search, notes, quick open |
+| Visual users | A polished personal homepage with your own style | Wallpaper, pegboard layout, themes, visual configuration |
+| Developers and self-hosters | Deployability, control, extensibility, service visibility | Docker deployment, persisted data, developer-oriented widget direction |
+
+## Core Capabilities
+
+### Core: Daily Entry Points
+
+- Freely arranged widget canvas with drag, reflow, and size adjustment
+- Separate desktop and mobile layouts with shared widget data
+- Built-in `Quick Link`, `Links`, `Memo`, `Todo`, and other high-frequency widgets
+- Canvas-level quick open and search for saved links and recent activity
+- JSON import/export for backup and migration
+
+### Theme: Personal Homepage
+
+- Pegboard-inspired background
+- Custom wallpaper, blur, and overlay tuning
+- Built-in `Clock`, `Weather`, `Date`, `Calendar`, and `Photo Frame`
+- Works well as a browser start page, personal homepage, or home-device dashboard
+
+### Dev Pack: Developers and Self-Hosting
+
+These are the technical extensions under active consideration. The goal is to keep a start-page point of view: show the key status and provide the fastest entry point.
+
+- Local / LAN IP, public IP, and one-click copy
+- Service status checks for `localhost:3000`, VPS targets, and API health endpoints
+- Port shortcuts such as `3000`, `5432`, `6379`, and `8080`
+- Lightweight Docker service status and port links
 
 ## Recent Updates
 
@@ -26,23 +74,16 @@ Current version: `0.6.0`
 
 See [changelog.md](./changelog.md) for the full change history.
 
-## Who It's For
+## Roadmap
 
-- People who want a personal start page with frequently used links and lightweight widgets
-- Self-hosting users who prefer to keep data on their own machine or NAS
-- Users who want a clean UI without giving up layout and appearance control
+The roadmap is intentionally scoped: NaviDash favors making daily actions fast over adding every possible widget.
 
-## Current Features
-
-- Freely arranged widget canvas with drag, reflow, and size adjustment
-- Separate desktop and mobile layouts with shared widget data
-- Pegboard-style background with custom wallpaper, blur, and overlay tuning
-- Built-in `Clock`, `Weather`, `Date`, `Calendar`, `Todo`, `Memo`, `Quick Link`, `Links`, and `Photo Frame`
-- Canvas-level quick open and search for saved links and recent activity
-- Separate persistence for widget layout and widget configuration
-- JSON import/export for backup and migration
-- Docker-first self-hosting workflow for local container deployment
-- Read-only demo mode for online preview
+| Stage | Direction |
+| --- | --- |
+| Current focus | Links, search, notes, mobile layout, template experience |
+| Next | Dev Pack: IP, service status, port shortcuts, lightweight Docker service visibility |
+| Later | RSS recent updates, read-only iCal calendar, GitHub repository status |
+| Not planned | Full monitoring and alerting platform, full RSS reader, two-way calendar sync, project management system |
 
 ## Quick Start
 
@@ -77,18 +118,7 @@ cp .env.example .env
 
 4. Add weather configuration if you want the Weather widget
 
-The current weather integration uses QWeather (HeWeather).
-
-Recommended `apikey` mode:
-
-The simplest way to get one is:
-
-1. Sign in to the QWeather console
-2. Create a project or app and enable the weather APIs you need
-3. Generate an `API Key` from the project credentials page and put it into `QWEATHER_API_KEY`
-4. Use the API Host provided by QWeather for `QWEATHER_API_HOST`; the default available host is `https://devapi.qweather.com`
-
-If you are not using another QWeather-provided endpoint, set `QWEATHER_API_HOST` to the default value `https://devapi.qweather.com`.
+The current weather integration uses QWeather (HeWeather). Recommended `apikey` mode:
 
 ```bash
 QWEATHER_API_KEY=your_qweather_key
@@ -162,13 +192,6 @@ The main persisted files are:
 
 These files use a versioned JSON envelope so future migrations remain explicit, while legacy raw JSON is still readable for backward compatibility.
 
-## Documentation
-
-- [Deployment Guide](./docs/DEPLOY.md)
-- [User Guide](./docs/USER_GUIDE_EN.md)
-- [Changelog](./changelog.md)
-- [Chinese README](./README.md)
-
 ## Demo Mode
 
 NaviDash supports a read-only demo mode, which works well for Vercel deployments and public previews.
@@ -178,18 +201,16 @@ NaviDash supports a read-only demo mode, which works well for Vercel deployments
 - Write APIs return read-only errors and do not persist data
 - Recommended setup: enable both `DEMO_MODE=true` and `NEXT_PUBLIC_DEMO_MODE=true`
 
-## Product Direction
+## Documentation
 
-The current direction is:
-
-- a customizable personal start page
-- a pegboard-inspired homepage experience
-- local container deployment first
-- gradual expansion toward widgets useful for home and self-hosted setups
+- [Deployment Guide](./docs/DEPLOY.md)
+- [User Guide](./docs/USER_GUIDE_EN.md)
+- [Changelog](./changelog.md)
+- [Chinese README](./README.md)
 
 ## Contributing
 
-Issues and pull requests are welcome.
+Issues and pull requests are welcome. Feedback is especially useful when it is tied to a real workflow: link organization, search habits, note-taking, templates, or self-hosted usage.
 
 ## License
 
