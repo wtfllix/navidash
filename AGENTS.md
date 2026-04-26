@@ -24,6 +24,18 @@ reply me in Chinese
 - Components and files for React views use PascalCase (for example `WidgetPicker.tsx`); hooks/stores use camelCase with `use` prefix (for example `useWidgetStore.ts`).
 - Prefer path alias imports via `@/*` for `src/*`.
 
+## Minimal Development Guidelines
+- Keep changes small and local first. Prefer modifying existing modules over introducing new abstractions or rewriting files.
+- Add abstraction only after duplication or branching logic becomes clearly hard to maintain. Do not pre-abstract for possible future needs.
+- Page and route components should focus on composition and page structure. Shared business logic goes to `src/lib/`; shared state goes to `src/store/`.
+- Use local component state by default. Add Zustand only when state is shared across distant components, needs cross-widget coordination, or must survive view switching.
+- Keep API contracts, storage schema, import/export structures, and widget configuration data explicit and stable. When changing them, also consider compatibility and migration paths.
+- For user-visible UI work, prioritize typography, spacing, and layout hierarchy. Avoid adding decorative containers, unnecessary card layouts, or dashboard-style wrappers by default.
+- Add brief comments only for non-obvious constraints, compatibility branches, or tricky interaction logic. Do not comment obvious code.
+- When a change affects schema, store behavior, widget rendering, import/export, or cross-device layout behavior, add or update tests together with the implementation.
+- Before merging, the minimum bar is that `npm run lint`, `npm test`, and `npm run build` should be able to pass for the final state.
+- If a rule does not clearly improve readability, maintainability, or delivery speed, prefer not adding it.
+
 ## Testing Guidelines
 - Framework: Jest + Testing Library (`jest.setup.js` loads `@testing-library/jest-dom`).
 - Put unit tests in `src/__tests__/` with `*.test.ts` suffix.
