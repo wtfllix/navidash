@@ -16,17 +16,21 @@
 
 [Live Demo](https://navidash.vercel.app/en) · [Deployment Guide](./docs/DEPLOY.md) · [User Guide](./docs/USER_GUIDE_EN.md) · [中文](./README.md)
 
-NaviDash focuses on the first place you land after opening your browser: opening daily links, searching fast, capturing quick notes, or checking whether your local and self-hosted services are alive. It is not trying to become another full monitoring platform, RSS reader, or project management system. It is a focused, customizable workspace for daily use.
+NaviDash is a personal browser start page. It puts a few everyday things in one place: links you open often, quick search, temporary notes, and small bits of status from local development or self-hosted services.
+
+It is not trying to become a full monitoring platform, RSS reader, or project management tool. There are already good tools for those jobs. NaviDash is meant to stay closer to a lightweight entry page.
 
 ## Why NaviDash
 
-Many start page projects drift toward one of two extremes: a pretty link collection, or an increasingly heavy dashboard. NaviDash aims for the middle ground: it keeps the visual freedom of a personal homepage while focusing the product around actions people actually repeat every day.
+The original problem was simple: a browser homepage is often either empty, or just a pile of bookmarks. Once you start adding notes, todos, weather, project links, or service shortcuts, it can quickly turn into a heavy dashboard.
 
-- **Open faster**: keep daily links, project entry points, and local services in one place.
-- **Search faster**: search from the canvas and quickly match saved links.
-- **Capture faster**: use lightweight notes for temporary thoughts instead of opening a full document tool.
-- **Stay in control**: self-host with Docker and keep data on your own machine or NAS.
-- **Keep clear boundaries**: improve the start page experience without replacing specialized tools.
+NaviDash keeps some layout freedom and personal style, but the core stays around everyday use. It is not meant to collect every possible widget.
+
+- Keep common links and project entry points in one place.
+- Search directly from the homepage and match saved links quickly.
+- Drop temporary notes without opening a full document tool.
+- Self-host with Docker and keep data on your own machine or NAS.
+- Keep the scope small enough that it does not become another heavy all-in-one panel.
 
 ## Who It's For
 
@@ -55,7 +59,7 @@ Many start page projects drift toward one of two extremes: a pretty link collect
 
 ### Dev Pack: Developers and Self-Hosting
 
-These are the technical extensions under active consideration. The goal is to keep a start-page point of view: show the key status and provide the fastest entry point.
+These are technical extensions I would like to explore next. They are meant to be quick-glance information on the homepage, not a full operations system.
 
 - Local / LAN IP, public IP, and one-click copy
 - Service status checks for `localhost:3000`, VPS targets, and API health endpoints
@@ -76,7 +80,7 @@ See [changelog.md](./changelog.md) for the full change history.
 
 ## Roadmap
 
-The roadmap is intentionally scoped: NaviDash favors making daily actions fast over adding every possible widget.
+This is the current direction, without fixed dates. Since this is a personal project, priorities may change based on real usage and feedback.
 
 | Stage | Direction |
 | --- | --- |
