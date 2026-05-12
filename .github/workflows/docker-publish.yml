@@ -1,41 +1,34 @@
 name: Docker
 
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-
 on:
   push:
     branches: [ "master", "main" ]
-    # Publish semver tags as releases.
+    # 发布符合语义化版本标签的 Release
     tags: [ 'v*.*.*' ]
   pull_request:
     branches: [ "master", "main" ]
-  workflow_dispatch: # Allow manual trigger
+  workflow_dispatch: # 允许手动触发
 
 env:
-  # Use docker.io for Docker Hub if empty
+  # 如果为空则使用 docker.io (Docker Hub)
   REGISTRY: ghcr.io
-  # github.repository as <account>/<repo>
+  # 格式为 <account>/<repo>
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
-      # This is used to complete the identity challenge
-      # with sigstore/fullscreen-action
+      # 用于 sigstore 的身份挑战
       id-token: write
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Install the cosign tool except on PR
+      # 安装 cosign 工具（非 PR 时运行）
       # https://github.com/sigstore/cosign-installer
       - name: Install cosign
         if: github.event_name != 'pull_request'
@@ -43,11 +36,15 @@ jobs:
         with:
           cosign-release: 'v2.2.4'
 
+      # 【关键：支持多架构】设置 QEMU，用于模拟不同架构的处理器
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      # 设置 Docker Buildx
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # Login against a Docker registry except on PR
-      # https://github.com/docker/login-action
+      # 登录 Docker 注册表（非 PR 时运行）
       - name: Log into registry ${{ env.REGISTRY }}
         if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
@@ -56,8 +53,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Extract metadata (tags, labels) for Docker
-      # https://github.com/docker/metadata-action
+      # 提取 Docker 元数据（标签、标签）
       - name: Extract Docker metadata
         id: meta
         uses: docker/metadata-action@v5
@@ -68,24 +64,21 @@ jobs:
             type=ref,event=tag
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' }}
 
-      # Build and push Docker image with Buildx (don't push on PR)
-      # https://github.com/docker/build-push-action
+      # 构建并推送 Docker 镜像（使用 Buildx）
       - name: Build and push Docker image
         id: build-and-push
         uses: docker/build-push-action@v5
         with:
           context: .
+          # 【关键：指定构建架构】同时构建 AMD64 和 ARM64
+          platforms: linux/amd64,linux/arm64
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # Sign the resulting Docker image digest except on PRs.
-      # This will only write to the public Rekor transparency log when the Docker
-      # repository is public to avoid leaking data.  If you would like to publish
-      # transparency data even for private images, pass --force to cosign below.
-      # https://github.com/sigstore/cosign
+      # 签署发布的 Docker 镜像（非 PR 时运行）
       - name: Sign the published Docker image
         if: ${{ github.event_name != 'pull_request' }}
         env:
