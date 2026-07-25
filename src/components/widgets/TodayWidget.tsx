@@ -198,7 +198,7 @@ export default function TodayWidget({ widget, previewDate }: TodayWidgetProps) {
 
           <div className="grid min-h-0 grid-cols-[1.12fr_1fr] pt-2.5">
             <div className="flex min-w-0 flex-col justify-center overflow-hidden pr-3">
-              <div className="whitespace-nowrap font-handwriting text-[1.75rem] font-normal leading-[1.15] tracking-[-0.04em] text-[var(--today-accent)]">
+              <div className="whitespace-nowrap font-handwriting text-[2.15rem] font-normal leading-none tracking-[-0.04em] text-[var(--today-accent)]">
                 {monthLabel} {dayLabel}
               </div>
               <div className="mt-1.5 truncate pl-0.5 font-outfit text-[9px] font-normal uppercase tracking-[0.26em] text-[#58707b]">
