@@ -13,7 +13,7 @@
 ![Docker](https://img.shields.io/badge/Docker-ready-2496ed.svg)
 
 [在线体验](https://navidash.vercel.app/zh) · [开始部署](./docs/DEPLOY.md) ·
-[使用指南](./docs/USER_GUIDE.md)
+[使用指南](./docs/USER_GUIDE.md) · [Telegram 群组](https://t.me/+5iPcqd4_AvE0ZGY0)
 
 每天打开浏览器时，你真正需要的通常只有几件事：进入最常用的网站、搜索一个内容、看一眼
 时间和天气，或者临时记下一段信息。NaviDash 把它们放在一张安静、自由、属于你的首页上。

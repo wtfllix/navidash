@@ -13,7 +13,7 @@
 ![Docker](https://img.shields.io/badge/Docker-ready-2496ed.svg)
 
 [Try the Demo](https://navidash.vercel.app/en) · [Deploy NaviDash](./docs/DEPLOY.md) ·
-[User Guide](./docs/USER_GUIDE_EN.md)
+[User Guide](./docs/USER_GUIDE_EN.md) · [Telegram Group](https://t.me/+5iPcqd4_AvE0ZGY0)
 
 When you open a browser, you usually need only a few things: visit a familiar site, search for
 something, glance at the time and weather, or keep a temporary note. NaviDash brings them together
