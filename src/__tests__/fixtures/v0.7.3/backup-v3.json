@@ -1,0 +1,76 @@
+{
+  "widgetLayoutsByMode": {
+    "desktop": [
+      {
+        "id": "baseline-links",
+        "type": "links",
+        "size": { "w": 2, "h": 1 },
+        "position": { "x": 3, "y": 0 }
+      }
+    ],
+    "mobile": [
+      {
+        "id": "baseline-links",
+        "type": "links",
+        "size": { "w": 2, "h": 1 },
+        "position": { "x": 0, "y": 2 }
+      }
+    ]
+  },
+  "widgetConfigs": [
+    {
+      "id": "baseline-links",
+      "type": "links",
+      "config": {
+        "title": "Daily Flow",
+        "bookmarkIds": ["baseline-github", "baseline-chatgpt"],
+        "showLabels": true,
+        "iconSize": "lg"
+      }
+    }
+  ],
+  "bookmarks": [
+    {
+      "id": "baseline-github",
+      "title": "GitHub",
+      "url": "https://github.com/"
+    },
+    {
+      "id": "baseline-chatgpt",
+      "title": "ChatGPT",
+      "url": "https://chatgpt.com/"
+    }
+  ],
+  "launcherUsage": {
+    "version": 1,
+    "links": {
+      "https://github.com/": {
+        "canonicalUrl": "https://github.com/",
+        "totalCount": 3,
+        "globalScore": 3,
+        "globalScoreUpdatedAt": 1721952000000,
+        "lastOpenedAt": 1721952000000,
+        "queryStats": {
+          "g": {
+            "count": 2,
+            "score": 2,
+            "scoreUpdatedAt": 1721952000000,
+            "lastUsedAt": 1721952000000
+          }
+        }
+      }
+    }
+  },
+  "settings": {
+    "backgroundImage": "radial-gradient(#d1d5db 2px, transparent 2px)",
+    "backgroundBlur": 0,
+    "backgroundOpacity": 0,
+    "backgroundSize": "24px 24px",
+    "backgroundRepeat": "repeat",
+    "customFavicon": "/favicon.svg",
+    "customTitle": "NaviDash",
+    "language": "en"
+  },
+  "exportDate": "2026-07-26T00:00:00.000Z",
+  "version": 3
+}

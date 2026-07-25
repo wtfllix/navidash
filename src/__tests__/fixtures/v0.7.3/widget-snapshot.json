@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 2,
+  "revision": 18,
+  "layoutsByMode": {
+    "desktop": [
+      {
+        "id": "baseline-today",
+        "type": "today",
+        "size": { "w": 2, "h": 2 },
+        "position": { "x": 0, "y": 0 }
+      },
+      {
+        "id": "baseline-links",
+        "type": "links",
+        "size": { "w": 2, "h": 1 },
+        "position": { "x": 3, "y": 0 }
+      },
+      {
+        "id": "baseline-memo",
+        "type": "memo",
+        "size": { "w": 2, "h": 1 },
+        "position": { "x": 3, "y": 1 }
+      },
+      {
+        "id": "baseline-poster",
+        "type": "photo-frame",
+        "size": { "w": 2, "h": 2 },
+        "position": { "x": 5, "y": 0 }
+      }
+    ],
+    "mobile": [
+      {
+        "id": "baseline-today",
+        "type": "today",
+        "size": { "w": 2, "h": 2 },
+        "position": { "x": 0, "y": 0 }
+      },
+      {
+        "id": "baseline-links",
+        "type": "links",
+        "size": { "w": 2, "h": 1 },
+        "position": { "x": 0, "y": 2 }
+      },
+      {
+        "id": "baseline-memo",
+        "type": "memo",
+        "size": { "w": 2, "h": 1 },
+        "position": { "x": 0, "y": 3 }
+      },
+      {
+        "id": "baseline-poster",
+        "type": "photo-frame",
+        "size": { "w": 2, "h": 2 },
+        "position": { "x": 0, "y": 4 }
+      }
+    ]
+  },
+  "configs": [
+    {
+      "id": "baseline-today",
+      "type": "today",
+      "config": {
+        "city": "Shenzhen",
+        "lat": 22.5431,
+        "lon": 114.0579
+      }
+    },
+    {
+      "id": "baseline-links",
+      "type": "links",
+      "config": {
+        "title": "Daily Flow",
+        "bookmarkIds": ["baseline-github", "baseline-chatgpt"],
+        "showLabels": true,
+        "iconSize": "lg"
+      }
+    },
+    {
+      "id": "baseline-memo",
+      "type": "memo",
+      "config": {
+        "content": "Compatibility baseline",
+        "bgColor": "#fef08a",
+        "textColor": "#713f12"
+      }
+    },
+    {
+      "id": "baseline-poster",
+      "type": "photo-frame",
+      "config": {
+        "images": ["https://example.com/poster.jpg"],
+        "autoplay": false,
+        "interval": 5000,
+        "shuffle": false
+      }
+    }
+  ],
+  "bookmarks": [
+    {
+      "id": "baseline-github",
+      "title": "GitHub",
+      "url": "https://github.com/"
+    },
+    {
+      "id": "baseline-chatgpt",
+      "title": "ChatGPT",
+      "url": "https://chatgpt.com/"
+    }
+  ]
+}

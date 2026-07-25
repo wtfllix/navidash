@@ -169,6 +169,11 @@ docker compose ps
 升级不会主动清空挂载目录。旧版 `widgets.json`、`widget-layouts.json` 和
 `widget-configs.json` 仍可作为迁移来源读取；新数据写入 `widget-snapshot.json`。
 
+`0.7.3` 是 NaviDash 正式承诺持久化数据向前兼容的起点。后续版本会通过固定测试夹具验证
+Snapshot、Settings 和应用内备份的迁移。更早版本仍会尽力读取可识别数据，但旧组件与旧
+画布不保证完整保留；从 `0.6.x` 或更早版本升级时，请先备份整个数据目录，并预期重新配置
+首页布局。
+
 ## 备份与恢复
 
 ### 应用内备份

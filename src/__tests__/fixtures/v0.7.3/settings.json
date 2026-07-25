@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "data": {
+    "backgroundImage": "radial-gradient(#d1d5db 2px, transparent 2px)",
+    "backgroundBlur": 0,
+    "backgroundOpacity": 0,
+    "backgroundSize": "24px 24px",
+    "backgroundRepeat": "repeat",
+    "customFavicon": "/favicon.svg",
+    "customTitle": "NaviDash",
+    "language": "en"
+  }
+}
