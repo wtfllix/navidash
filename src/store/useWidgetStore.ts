@@ -24,7 +24,12 @@ import {
   mergeWidgetsForLayoutMode,
 } from '@/lib/widgetLayouts';
 import { canPlaceWidget } from '@/lib/layoutEngine';
-import { DEMO_DATA_VERSION, DEMO_WIDGETS, isClientDemoMode } from '@/lib/demo';
+import {
+  DEMO_DATA_VERSION,
+  DEMO_WIDGETS,
+  DEMO_WIDGET_SNAPSHOT,
+  isClientDemoMode,
+} from '@/lib/demo';
 
 type WidgetUpdate = Partial<Pick<Widget, 'size' | 'position' | 'config'>>;
 
@@ -209,14 +214,23 @@ function getMobileLayoutSessionState(
 }
 
 function getInitialLayoutsByMode() {
+  if (isClientDemoMode) {
+    return ensureLayoutsByMode(DEMO_WIDGET_SNAPSHOT.layoutsByMode);
+  }
   return ensureLayoutsByMode(initialWidgets, initialWidgets);
 }
 
 function getInitialWidgetConfigs(): WidgetConfigEntry[] {
+  if (isClientDemoMode) {
+    return WidgetConfigsArraySchema.parse(DEMO_WIDGET_SNAPSHOT.configs);
+  }
   return migrateWidgetConfigsToBookmarks(splitWidgets(initialWidgets).configs).configs;
 }
 
 function getInitialBookmarks(): Bookmark[] {
+  if (isClientDemoMode) {
+    return BookmarkSchema.array().parse(DEMO_WIDGET_SNAPSHOT.bookmarks);
+  }
   return migrateWidgetConfigsToBookmarks(splitWidgets(initialWidgets).configs).bookmarks;
 }
 
@@ -410,14 +424,14 @@ export const useWidgetStore = create<WidgetState>()(
         }),
       fetchWidgets: async () => {
         if (isClientDemoMode) {
-          const demoLayoutsByMode = ensureLayoutsByMode(splitWidgets(DEMO_WIDGETS).layouts, DEMO_WIDGETS);
-          const demoData = migrateWidgetConfigsToBookmarks(splitWidgets(DEMO_WIDGETS).configs);
-          const demoWidgetConfigs = demoData.configs;
+          const demoLayoutsByMode = ensureLayoutsByMode(DEMO_WIDGET_SNAPSHOT.layoutsByMode);
+          const demoWidgetConfigs = WidgetConfigsArraySchema.parse(DEMO_WIDGET_SNAPSHOT.configs);
+          const demoBookmarks = BookmarkSchema.array().parse(DEMO_WIDGET_SNAPSHOT.bookmarks);
 
           set((state) => ({
             layoutsByMode: demoLayoutsByMode,
             widgetConfigs: demoWidgetConfigs,
-            bookmarks: demoData.bookmarks,
+            bookmarks: demoBookmarks,
             widgets: hydrateWidgets(
               state.activeLayoutMode,
               demoLayoutsByMode,

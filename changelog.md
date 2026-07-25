@@ -9,6 +9,13 @@
 
 ## 2026-07-26
 
+### refactor: Demo 同步当前首页体验
+- 做了什么：将 Demo 从旧 Widget 数组迁移为正式 Snapshot v2，按当前测试配置整理桌面与手机布局、点阵背景、书签库和多尺寸 Links；清理私人内容、旧内联链接与无效手机引用，并提升 Demo 数据版本确保客户端刷新
+- 影响范围：公开 Demo 首页、Demo 设置、桌面与手机演示布局、书签和启动器演示数据
+- 涉及模块：`src/lib/demo.ts`、`src/lib/server/storage.ts`、`src/store/useWidgetStore.ts`、`src/__tests__/`
+- 是否有兼容性影响：无；只影响只读 Demo 模式，普通用户的 `data/` 配置不变
+- 后续待补充：将 Poster 的外部演示图片替换为仓库内本地资产
+
 ### refactor: Today 默认日期字体切换为 Kaushan Script
 - 做了什么：以笔触更舒展、更接近签名手写感的 Kaushan Script 替换 Yellowtail，并随项目附带 Google Fonts 官方字体文件与 SIL Open Font License 1.1
 - 影响范围：Today 信息面板日期视觉、字体加载和公开部署

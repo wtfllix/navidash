@@ -1,88 +1,226 @@
-import { Settings, Widget } from '@/types';
+import { mergeWidgets } from '@/lib/schemas';
+import { Settings, Widget, WidgetSnapshot } from '@/types';
 
-export const DEMO_DATA_VERSION = 1;
+export const DEMO_DATA_VERSION = 2;
 
 export const isClientDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
 
 export const isServerDemoMode =
   process.env.DEMO_MODE === 'true' || process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
 
-export const DEMO_WIDGETS: Widget[] = [
-  {
-    id: 'demo-today',
-    type: 'today',
-    size: { w: 2, h: 2 },
-    position: { x: 0, y: 0 },
-    config: {
-      city: 'Hangzhou',
-      lat: 30.2741,
-      lon: 120.1551,
+export const DEMO_WIDGET_SNAPSHOT: WidgetSnapshot = {
+  schemaVersion: 2,
+  revision: DEMO_DATA_VERSION,
+  bookmarks: [
+    { id: 'demo-github', title: 'GitHub', url: 'https://github.com/' },
+    { id: 'demo-chatgpt', title: 'ChatGPT', url: 'https://chatgpt.com/' },
+    { id: 'demo-youtube', title: 'YouTube', url: 'https://youtube.com/' },
+    { id: 'demo-gmail', title: 'Gmail', url: 'https://mail.google.com/' },
+    { id: 'demo-figma', title: 'Figma', url: 'https://figma.com/' },
+    { id: 'demo-notion', title: 'Notion', url: 'https://notion.so/' },
+    { id: 'demo-linear', title: 'Linear', url: 'https://linear.app/' },
+    { id: 'demo-vercel', title: 'Vercel', url: 'https://vercel.com/' },
+    { id: 'demo-spotify', title: 'Spotify', url: 'https://open.spotify.com/' },
+    { id: 'demo-bilibili', title: 'Bilibili', url: 'https://bilibili.com/' },
+    { id: 'demo-reddit', title: 'Reddit', url: 'https://reddit.com/' },
+    { id: 'demo-medium', title: 'Medium', url: 'https://medium.com/' },
+  ],
+  configs: [
+    {
+      id: 'demo-today',
+      type: 'today',
+      config: {
+        city: 'Shenzhen',
+        lat: 22.5431,
+        lon: 114.0579,
+      },
     },
-  },
-  {
-    id: 'demo-links',
-    type: 'links',
-    size: { w: 3, h: 1 },
-    position: { x: 2, y: 0 },
-    config: {
-      title: 'Daily Flow',
-      showLabels: true,
-      iconSize: 'md',
-      links: [
-        { id: 'figma', title: 'Figma', url: 'https://figma.com' },
-        { id: 'github', title: 'GitHub', url: 'https://github.com' },
-        { id: 'linear', title: 'Linear', url: 'https://linear.app' },
-        { id: 'vercel', title: 'Vercel', url: 'https://vercel.com' },
-        { id: 'notion', title: 'Notion', url: 'https://notion.so' },
-        { id: 'openai', title: 'OpenAI', url: 'https://openai.com' },
-      ],
+    {
+      id: 'demo-daily-links',
+      type: 'links',
+      config: {
+        title: 'Daily Flow',
+        bookmarkIds: [
+          'demo-github',
+          'demo-chatgpt',
+          'demo-youtube',
+          'demo-gmail',
+          'demo-figma',
+        ],
+        showLabels: true,
+        iconSize: 'lg',
+      },
     },
-  },
-  {
-    id: 'demo-inbox',
-    type: 'links',
-    size: { w: 1, h: 1 },
-    position: { x: 5, y: 0 },
-    config: {
-      links: [{ id: 'inbox', title: 'Inbox', url: 'https://mail.google.com/' }],
-      showLabels: true,
-      iconSize: 'lg',
+    {
+      id: 'demo-poster',
+      type: 'photo-frame',
+      config: {
+        images: [
+          'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80',
+        ],
+        autoplay: false,
+        interval: 5000,
+        shuffle: false,
+      },
     },
-  },
-  {
-    id: 'demo-memo',
-    type: 'memo',
-    size: { w: 2, h: 1 },
-    position: { x: 2, y: 1 },
-    config: {
-      content: 'Ship the focused homepage.\nKeep links practical and the wall personal.',
-      bgColor: '#fef08a',
-      textColor: '#713f12',
+    {
+      id: 'demo-memo',
+      type: 'memo',
+      config: {
+        content: 'Keep the homepage focused.\nMake the wall feel personal.',
+        bgColor: '#fef08a',
+        textColor: '#713f12',
+      },
     },
-  },
-  {
-    id: 'demo-photo',
-    type: 'photo-frame',
-    size: { w: 2, h: 2 },
-    position: { x: 6, y: 0 },
-    config: {
-      images: [
-        'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80',
-      ],
-      autoplay: false,
-      interval: 5000,
-      shuffle: false,
+    {
+      id: 'demo-focus-link',
+      type: 'links',
+      config: {
+        bookmarkIds: ['demo-chatgpt'],
+        showLabels: true,
+        iconSize: 'lg',
+      },
     },
+    {
+      id: 'demo-workflow-links',
+      type: 'links',
+      config: {
+        title: 'Workflow',
+        bookmarkIds: [
+          'demo-github',
+          'demo-chatgpt',
+          'demo-gmail',
+          'demo-figma',
+          'demo-notion',
+          'demo-linear',
+        ],
+        showLabels: true,
+        iconSize: 'lg',
+      },
+    },
+    {
+      id: 'demo-inspiration-links',
+      type: 'links',
+      config: {
+        title: 'Inspiration',
+        bookmarkIds: [
+          'demo-youtube',
+          'demo-spotify',
+          'demo-bilibili',
+          'demo-reddit',
+          'demo-medium',
+          'demo-figma',
+          'demo-notion',
+          'demo-vercel',
+        ],
+        showLabels: true,
+        iconSize: 'md',
+      },
+    },
+  ],
+  layoutsByMode: {
+    desktop: [
+      {
+        id: 'demo-today',
+        type: 'today',
+        size: { w: 2, h: 2 },
+        position: { x: 0, y: 0 },
+      },
+      {
+        id: 'demo-daily-links',
+        type: 'links',
+        size: { w: 2, h: 1 },
+        position: { x: 3, y: 0 },
+      },
+      {
+        id: 'demo-poster',
+        type: 'photo-frame',
+        size: { w: 2, h: 2 },
+        position: { x: 5, y: 0 },
+      },
+      {
+        id: 'demo-memo',
+        type: 'memo',
+        size: { w: 2, h: 1 },
+        position: { x: 3, y: 1 },
+      },
+      {
+        id: 'demo-workflow-links',
+        type: 'links',
+        size: { w: 3, h: 1 },
+        position: { x: 0, y: 2 },
+      },
+      {
+        id: 'demo-focus-link',
+        type: 'links',
+        size: { w: 1, h: 1 },
+        position: { x: 3, y: 2 },
+      },
+      {
+        id: 'demo-inspiration-links',
+        type: 'links',
+        size: { w: 2, h: 2 },
+        position: { x: 4, y: 3 },
+      },
+    ],
+    mobile: [
+      {
+        id: 'demo-today',
+        type: 'today',
+        size: { w: 2, h: 2 },
+        position: { x: 0, y: 0 },
+      },
+      {
+        id: 'demo-daily-links',
+        type: 'links',
+        size: { w: 2, h: 1 },
+        position: { x: 0, y: 2 },
+      },
+      {
+        id: 'demo-memo',
+        type: 'memo',
+        size: { w: 2, h: 1 },
+        position: { x: 0, y: 3 },
+      },
+      {
+        id: 'demo-poster',
+        type: 'photo-frame',
+        size: { w: 2, h: 2 },
+        position: { x: 0, y: 4 },
+      },
+      {
+        id: 'demo-workflow-links',
+        type: 'links',
+        size: { w: 2, h: 1 },
+        position: { x: 0, y: 6 },
+      },
+      {
+        id: 'demo-focus-link',
+        type: 'links',
+        size: { w: 1, h: 1 },
+        position: { x: 0, y: 7 },
+      },
+      {
+        id: 'demo-inspiration-links',
+        type: 'links',
+        size: { w: 2, h: 2 },
+        position: { x: 0, y: 8 },
+      },
+    ],
   },
-];
+};
+
+export const DEMO_WIDGETS: Widget[] = mergeWidgets(
+  DEMO_WIDGET_SNAPSHOT.layoutsByMode.desktop,
+  DEMO_WIDGET_SNAPSHOT.configs
+);
 
 export const DEMO_SETTINGS: Settings = {
-  backgroundImage:
-    'radial-gradient(circle at top left, rgba(15,118,110,0.12), transparent 34%), radial-gradient(circle at bottom right, rgba(245,158,11,0.14), transparent 30%), linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%)',
+  backgroundImage: 'radial-gradient(#d1d5db 2px, transparent 2px)',
   backgroundBlur: 0,
   backgroundOpacity: 0,
-  backgroundSize: 'cover',
-  backgroundRepeat: 'no-repeat',
+  backgroundSize: '24px 24px',
+  backgroundRepeat: 'repeat',
   customFavicon: '/favicon.svg',
   customTitle: 'NaviDash Demo',
   language: 'en',

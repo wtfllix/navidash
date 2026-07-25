@@ -206,18 +206,13 @@ describe('storage versioned files', () => {
 
     const { getSettings, getWidgetSnapshot, getSettingsLastModified } =
       await import('@/lib/server/storage');
-    const { DEMO_DATA_VERSION, DEMO_SETTINGS, DEMO_WIDGETS } = await import('@/lib/demo');
-    const { ensureLayoutsByMode } = await import('@/lib/widgetLayouts');
-    const { migrateWidgetConfigsToBookmarks, splitWidgets } = await import('@/lib/schemas');
+    const { DEMO_DATA_VERSION, DEMO_SETTINGS, DEMO_WIDGET_SNAPSHOT } =
+      await import('@/lib/demo');
+    const { normalizeWidgetSnapshot } = await import('@/lib/schemas');
 
-    const { layouts, configs } = splitWidgets(DEMO_WIDGETS);
-    const migrated = migrateWidgetConfigsToBookmarks(configs);
-    await expect(getWidgetSnapshot()).resolves.toEqual({
-      schemaVersion: 2,
-      revision: DEMO_DATA_VERSION,
-      layoutsByMode: ensureLayoutsByMode(layouts, DEMO_WIDGETS),
-      ...migrated,
-    });
+    await expect(getWidgetSnapshot()).resolves.toEqual(
+      normalizeWidgetSnapshot(DEMO_WIDGET_SNAPSHOT)
+    );
     await expect(getSettings()).resolves.toEqual(DEMO_SETTINGS);
     await expect(getSettingsLastModified()).resolves.toBe(DEMO_DATA_VERSION);
   });

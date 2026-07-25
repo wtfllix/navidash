@@ -27,7 +27,12 @@ import {
 } from '@/types';
 import { logger } from '@/lib/logger';
 import { ensureLayoutsByMode } from '@/lib/widgetLayouts';
-import { DEMO_DATA_VERSION, DEMO_SETTINGS, DEMO_WIDGETS, isServerDemoMode } from '@/lib/demo';
+import {
+  DEMO_DATA_VERSION,
+  DEMO_SETTINGS,
+  DEMO_WIDGET_SNAPSHOT,
+  isServerDemoMode,
+} from '@/lib/demo';
 
 const DATA_FILE_VERSION = 1;
 const DEFAULT_DIR = '/app/data';
@@ -113,14 +118,7 @@ let snapshotWriteQueue: Promise<void> = Promise.resolve();
 
 export async function getWidgetSnapshot(): Promise<WidgetSnapshot> {
   if (IS_DEMO_MODE) {
-    const { layouts, configs } = splitWidgets(DEMO_WIDGETS);
-    const migrated = migrateWidgetConfigsToBookmarks(configs);
-    return {
-      schemaVersion: 2,
-      revision: DEMO_DATA_VERSION,
-      layoutsByMode: ensureLayoutsByMode(layouts, DEMO_WIDGETS),
-      ...migrated,
-    };
+    return normalizeWidgetSnapshot(DEMO_WIDGET_SNAPSHOT);
   }
 
   await ensureDataDir();
@@ -177,7 +175,7 @@ export function saveWidgetSnapshot(
 
 export async function getWidgetLayoutsByMode(): Promise<WidgetLayoutsByMode | null> {
   if (IS_DEMO_MODE) {
-    return ensureLayoutsByMode(splitWidgets(DEMO_WIDGETS).layouts, DEMO_WIDGETS);
+    return ensureLayoutsByMode(DEMO_WIDGET_SNAPSHOT.layoutsByMode);
   }
 
   try {
@@ -202,7 +200,7 @@ export async function getWidgetLayoutsByMode(): Promise<WidgetLayoutsByMode | nu
 
 export async function getWidgetConfigs(): Promise<WidgetConfigEntry[] | null> {
   if (IS_DEMO_MODE) {
-    return splitWidgets(DEMO_WIDGETS).configs;
+    return WidgetConfigsArraySchema.parse(DEMO_WIDGET_SNAPSHOT.configs);
   }
 
   try {
