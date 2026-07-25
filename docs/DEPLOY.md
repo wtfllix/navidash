@@ -1,225 +1,306 @@
-# Deployment Guide
+# NaviDash 部署指南
 
-This document focuses on the deployment paths that best match NaviDash today.
+本文档面向长期自托管使用。推荐方案是 Docker Compose，并将运行数据挂载到仓库之外。
 
-Current recommendation:
+## 部署前准备
 
-- local Docker deployment first
-- persistent host-mounted data directory
-- environment variables for weather and demo mode
+你需要：
 
-## Recommended: Docker Compose
+- Docker Engine
+- Docker Compose v2
+- 一个可写的宿主机数据目录
 
-This is the preferred way to run NaviDash for long-term personal use.
+确认 Compose 可用：
 
-### 1. Clone the repository
+```bash
+docker compose version
+```
+
+如果系统只提供旧版 `docker-compose`，可以在下文命令中使用它替代 `docker compose`。
+
+## 推荐：Docker Compose
+
+### 1. 获取项目
 
 ```bash
 git clone https://github.com/wtfllix/navidash.git
 cd navidash
 ```
 
-### 2. Prepare a persistent data directory
+### 2. 准备持久化目录
+
+默认使用 `/opt/navidash-data`：
 
 ```bash
 sudo mkdir -p /opt/navidash-data
 ```
 
-By default, [`docker-compose.yml`](/Users/lx/projects/navidash/docker-compose.yml) mounts:
+容器启动时会修正挂载目录权限。不要把重要运行数据只保存在容器内部。
 
-- host: `/opt/navidash-data`
-- container: `/app/data`
+如果需要其他位置，在 `.env` 中设置：
 
-Keeping runtime data outside the repository is strongly recommended.
-
-If you want a different host path:
-
-```bash
-export NAVIDASH_DATA_DIR=/your/data/path
+```env
+NAVIDASH_DATA_DIR=/your/data/path
 ```
 
-### 3. Copy environment variables
+### 3. 创建环境配置
 
 ```bash
 cp .env.example .env
 ```
 
-### 4. Configure weather if needed
+个人部署可以保持所有可选项为空。常用变量如下：
 
-If you want weather information in `Today`, set:
+| 变量 | 默认值 | 说明 |
+| --- | --- | --- |
+| `NAVIDASH_DATA_DIR` | `/opt/navidash-data` | 宿主机数据目录 |
+| `NAVIDASH_ACCESS_PASSWORD` | 空 | 启用单用户访问保护 |
+| `QWEATHER_API_KEY` | 空 | 和风天气 API Key 或 JWT |
+| `QWEATHER_API_HOST` | 空 | 自定义和风天气兼容 Host |
+| `QWEATHER_AUTH_TYPE` | `apikey` | `apikey` 或 `jwt` |
 
-```bash
+#### 可选：单用户访问保护
+
+```env
+NAVIDASH_ACCESS_PASSWORD=replace-with-a-long-private-password
+```
+
+留空表示关闭。密码只存在于服务端环境变量中，不会写入 Widget、运行数据或导出备份。
+
+这是一层轻量的私人实例保护，不替代公网环境中的 HTTPS、访问限速或完整身份系统。
+
+#### 可选：Today 天气
+
+API Key 模式：
+
+```env
 QWEATHER_API_KEY=your_qweather_key
-QWEATHER_API_HOST=your_qweather_host
+QWEATHER_API_HOST=your-project-host.re.qweatherapi.com
 QWEATHER_AUTH_TYPE=apikey
 ```
 
-If your weather provider setup uses JWT:
+JWT 模式：
 
-```bash
+```env
 QWEATHER_API_KEY=your_qweather_jwt
-QWEATHER_API_HOST=your_qweather_host
+QWEATHER_API_HOST=your-project-host.re.qweatherapi.com
 QWEATHER_AUTH_TYPE=jwt
 ```
 
-### 5. Start the container
+`QWEATHER_API_HOST` 可以包含或省略 `https://`。修改天气配置后需要重启容器。
+
+### 4. 启动
 
 ```bash
-docker-compose up -d
+docker compose pull
+docker compose up -d
 ```
 
-### 6. Open the app
+检查状态和日志：
 
-Visit:
+```bash
+docker compose ps
+docker compose logs --tail=100 navidash
+```
+
+浏览器打开：
 
 ```text
 http://localhost:3000
 ```
 
-### Optional: protect a private instance
+### 5. 局域网访问
 
-Set a password to require login before pages and APIs can be accessed:
+同一局域网中的设备使用宿主机 IP：
 
-```bash
-NAVIDASH_ACCESS_PASSWORD=choose-a-long-private-password
+```text
+http://192.168.x.x:3000
 ```
 
-Leave it empty to keep access protection disabled. The password remains server-side and is not
-stored in homepage backups.
+如果无法访问，依次检查：
 
-## Upgrade
+1. `docker compose ps` 中是否显示 `0.0.0.0:3000->3000/tcp`。
+2. 手机与服务器是否连接同一局域网，且没有启用访客网络隔离。
+3. 宿主机防火墙是否允许 TCP `3000`。
+4. 路由器或系统防火墙是否阻止设备之间互访。
 
-For a normal Docker Compose deployment:
+## HTTPS 与反向代理
 
-```bash
-git pull
-docker-compose pull
-docker-compose up -d
+如果实例通过公网或域名访问，建议使用 Caddy、Nginx、Traefik 等反向代理提供 HTTPS。
+
+Nginx 最小示例：
+
+```nginx
+server {
+    listen 443 ssl http2;
+    server_name start.example.com;
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
 ```
 
-As long as your host data directory stays mounted, your saved layout and settings remain intact.
+当反向代理与 NaviDash 位于同一台机器时，可以把 Compose 端口映射收紧为：
 
-## Runtime Data
+```yaml
+ports:
+  - "127.0.0.1:3000:3000"
+```
 
-NaviDash stores runtime data under `/app/data`.
+修改后运行 `docker compose up -d` 使配置生效。
 
-Current persisted files include:
+## 升级
+
+升级前建议先备份数据：
+
+```bash
+git pull --ff-only
+docker compose pull
+docker compose up -d --remove-orphans
+docker compose ps
+```
+
+升级不会主动清空挂载目录。旧版 `widgets.json`、`widget-layouts.json` 和
+`widget-configs.json` 仍可作为迁移来源读取；新数据写入 `widget-snapshot.json`。
+
+## 备份与恢复
+
+### 应用内备份
+
+在“设置 → 数据工具”中导出 JSON，适合迁移首页布局、配置、书签和设置。
+
+### 数据目录备份
+
+为保证文件状态一致，先暂停容器：
+
+```bash
+docker compose stop navidash
+sudo tar -C /opt -czf "navidash-data-$(date +%F).tar.gz" navidash-data
+docker compose start navidash
+```
+
+如果使用了自定义 `NAVIDASH_DATA_DIR`，请相应替换路径。
+
+恢复时建议先保留当前目录，再把备份解压到新的空目录中：
+
+```bash
+docker compose down
+sudo mv /opt/navidash-data /opt/navidash-data.before-restore
+sudo tar -C /opt -xzf navidash-data-YYYY-MM-DD.tar.gz
+docker compose up -d
+```
+
+确认恢复成功后，再自行处理 `.before-restore` 目录。
+
+## 运行数据
+
+容器内数据目录为 `/app/data`，主要文件包括：
 
 - `settings.json`
 - `widget-snapshot.json`
 
-Older `widgets.json`, `widget-layouts.json`, and `widget-configs.json` files remain readable as
-migration sources. New widget changes are written only to the revisioned atomic snapshot.
+Widget 布局、配置和书签通过带 revision 的原子快照一起保存。天气密钥、访问密码和启动器
+本地学习记录不在该快照中：
 
-## Environment Variables
+- 天气密钥与访问密码来自服务端环境变量。
+- 启动器学习记录默认保存在使用它的浏览器中。
 
-Start from:
+## 其他运行方式
 
-```bash
-cp .env.example .env
-```
-
-Most important variables:
-
-- `NEXT_PUBLIC_DEMO_MODE`
-  Enables read-only demo mode when set to `true`
-- `NAVIDASH_ACCESS_PASSWORD`
-  Optional single-user password; empty means access protection is disabled
-- `QWEATHER_API_KEY`
-  Weather API key or JWT used by the server-side weather proxy
-- `QWEATHER_API_HOST`
-  Optional custom host for weather requests
-- `QWEATHER_AUTH_TYPE`
-  Supported values: `apikey`, `jwt`
-- `PORT`
-  Server port, default `3000`
-
-Notes:
-
-- weather requests go through `/api/weather`
-- weather credentials should live in environment variables, not widget config
-- for local container deployment, `DEMO_MODE` and `NEXT_PUBLIC_DEMO_MODE` should normally stay `false`
-
-## Alternative: Docker Run
-
-If you prefer a single `docker run` command instead of Compose:
+### Docker Run
 
 ```bash
 docker run -d \
-  -p 3000:3000 \
-  -v /opt/navidash-data:/app/data \
-  -e NODE_ENV=production \
-  -e DEMO_MODE=false \
-  -e NEXT_PUBLIC_DEMO_MODE=false \
-  -e DATA_DIR=/app/data \
-  -e QWEATHER_API_KEY=your_qweather_key \
-  -e QWEATHER_API_HOST=your_qweather_host \
-  -e QWEATHER_AUTH_TYPE=apikey \
   --name navidash \
   --restart unless-stopped \
+  -p 3000:3000 \
+  -v /opt/navidash-data:/app/data \
+  -e DATA_DIR=/app/data \
+  -e NAVIDASH_ACCESS_PASSWORD= \
+  -e QWEATHER_API_KEY= \
+  -e QWEATHER_API_HOST= \
+  -e QWEATHER_AUTH_TYPE=apikey \
   ghcr.io/wtfllix/navidash:latest
 ```
 
-This is fine for simple setups, but `docker-compose.yml` is easier to maintain over time.
-
-## Alternative: Build Locally
-
-If you want to build the image yourself:
+### 本地构建镜像
 
 ```bash
-docker build -t navidash .
+docker build -t navidash:local .
 docker run -d \
-  -p 3000:3000 \
-  -v /opt/navidash-data:/app/data \
   --name navidash \
   --restart unless-stopped \
-  navidash
+  -p 3000:3000 \
+  -v /opt/navidash-data:/app/data \
+  -e DATA_DIR=/app/data \
+  navidash:local
 ```
 
-## Non-Docker Deployment
+### 直接运行 Node.js
 
-NaviDash can also run directly with Node.js, but this is not the primary recommendation.
-
-Requirements:
-
-- Node.js 18+
-- npm
-
-Basic flow:
+需要 Node.js 18+，推荐 Node.js 20：
 
 ```bash
-npm install
-cp .env.example .env
+npm ci
+cp .env.example .env.local
 npm run build
-npm start
+DATA_DIR=/absolute/path/to/navidash-data npm start
 ```
 
-If you run without Docker, make sure the process has write access to the runtime data directory.
+确保运行用户对 `DATA_DIR` 有读写权限。生产环境建议使用 systemd、PM2 或其他进程管理器。
 
-## Demo Deployment
+## 常见问题
 
-NaviDash supports a read-only demo mode.
+### 页面可以打开，但刷新后修改消失
 
-Set:
+- 确认没有启用 `DEMO_MODE`。
+- 检查 Compose 是否实际挂载了 `/app/data`。
+- 查看 `docker compose logs navidash` 中是否有权限或写入错误。
+
+### Today 没有天气
+
+- 检查 `.env` 中的 Key、Host 和认证方式。
+- 执行 `docker compose up -d` 重新创建容器。
+- 在设置页的“天气服务”中刷新状态并测试连接。
+- 确认宿主机可以访问天气服务地址。
+
+### 手机无法通过局域网打开
+
+- 不要使用手机上的 `localhost`，应使用运行 NaviDash 的电脑或服务器 IP。
+- 确认端口映射为 `0.0.0.0:3000`，而不是仅绑定 `127.0.0.1`。
+- 检查防火墙和 Wi-Fi 客户端隔离。
+
+### 容器启动失败
 
 ```bash
-NEXT_PUBLIC_DEMO_MODE=true
+docker compose ps
+docker compose logs --tail=200 navidash
 ```
 
-In demo mode:
+重点检查数据目录权限、端口 `3000` 是否被占用，以及环境变量格式是否正确。
 
-- the UI remains interactive
-- refresh restores curated demo content
-- write requests are blocked
+### 端口 3000 已被占用
 
-This is useful for preview environments such as Vercel, but not for long-term personal usage with persistent data.
+修改 `docker-compose.yml` 的宿主机端口：
 
-## GitHub Actions Image Publishing
+```yaml
+ports:
+  - "8080:3000"
+```
 
-The repository includes a GitHub Actions workflow at:
+随后访问 `http://localhost:8080`。
 
-- [`.github/workflows/docker-publish.yml`](/Users/lx/projects/navidash/.github/workflows/docker-publish.yml)
+## 镜像发布
 
-It builds and publishes Docker images to GHCR on `main`, `master`, and version tags.
+仓库中的 [Docker 发布工作流](../.github/workflows/docker-publish.yml)会在 `master`、`main`
+和版本标签更新时构建 GHCR 镜像。Compose 默认使用：
 
-For most users, this just means you can pull and run the published image directly instead of building your own.
+```text
+ghcr.io/wtfllix/navidash:latest
+```
