@@ -9,6 +9,13 @@
 
 ## 2026-07-26
 
+### refactor: Today 默认日期字体切换为 Yellowtail
+- 做了什么：将 Today 的默认手写日期字体替换为 Yellowtail，并随项目附带 Google Fonts 官方字体文件与 Apache 2.0 许可证，使公开部署和不同设备获得一致效果
+- 影响范围：Today 信息面板日期视觉、字体加载和公开部署
+- 涉及模块：`src/app/globals.css`、`tailwind.config.ts`、`public/fonts/`、`README*.md`
+- 是否有兼容性影响：无；组件配置与数据结构不变，字体加载失败时仍回退到系统手写字体
+- 后续待补充：无
+
 ### docs: 重写公开 README 与部署指南
 - 做了什么：从用户收益出发重写 README，突出更快打开常用网站、越用越顺手、信息克制、自由布置和数据自持，并只保留最短启动命令；把配置与运维细节统一移入部署指南，补充 Compose、局域网、HTTPS、升级、备份恢复和故障排查
 - 影响范围：首次了解项目、Docker 自托管、升级维护与部署排障

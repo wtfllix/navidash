@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 @font-face {
-  font-family: 'Eagle Horizon';
-  src: url('/fonts/eagle-horizon-personal-use.regular.ttf') format('truetype');
+  font-family: 'Yellowtail';
+  src: url('/fonts/Yellowtail-Regular.ttf') format('truetype');
   font-display: swap;
   font-style: normal;
   font-weight: 400;

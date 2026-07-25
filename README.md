@@ -66,10 +66,9 @@ npm run dev
 
 ## 字体与致谢
 
-Today 的手写日期使用 [Eagle Horizon](https://www.myfonts.com/collections/eagle-horizon-font-letterara/)
-设计，由 Thomas Aradea 创作、Letterara 发行。字体文件受独立许可约束，不随本项目分发；
-未安装时会自动使用系统手写字体。公开部署如需保持相同效果，请从正规渠道取得合适的
-Webfont 授权。
+Today 的手写日期使用 [Yellowtail](https://fonts.google.com/specimen/Yellowtail)，由
+Astigmatic 设计，并依据 Apache License 2.0 随项目分发。许可证全文见
+[`public/fonts/Yellowtail-LICENSE.txt`](./public/fonts/Yellowtail-LICENSE.txt)。
 
 ## License
 

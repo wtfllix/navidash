@@ -13,7 +13,7 @@ const config: Config = {
         sans: ['var(--font-inter)'],
         outfit: ['var(--font-outfit)'],
         handwriting: [
-          'Eagle Horizon',
+          'Yellowtail',
           'Segoe Print',
           'Bradley Hand',
           'Comic Sans MS',

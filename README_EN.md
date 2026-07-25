@@ -69,11 +69,9 @@ npm run dev
 ## Typeface credit
 
 The handwritten date in Today uses
-[Eagle Horizon](https://www.myfonts.com/collections/eagle-horizon-font-letterara/), designed by
-Thomas Aradea and published by Letterara. The font is separately licensed and is not distributed
-with this project; NaviDash falls back to system handwriting fonts when it is unavailable. Obtain
-an appropriate Webfont license from an authorized source if you want the same appearance in a
-public deployment.
+[Yellowtail](https://fonts.google.com/specimen/Yellowtail), designed by Astigmatic and distributed
+with NaviDash under the Apache License 2.0. See
+[`public/fonts/Yellowtail-LICENSE.txt`](./public/fonts/Yellowtail-LICENSE.txt) for the full license.
 
 ## License
 
