@@ -66,6 +66,15 @@ npm run dev
 - [Changelog](./changelog.md)
 - [Chinese README](./README.md)
 
+## Typeface credit
+
+The handwritten date in Today uses
+[Eagle Horizon](https://www.myfonts.com/collections/eagle-horizon-font-letterara/), designed by
+Thomas Aradea and published by Letterara. The font is separately licensed and is not distributed
+with this project; NaviDash falls back to system handwriting fonts when it is unavailable. Obtain
+an appropriate Webfont license from an authorized source if you want the same appearance in a
+public deployment.
+
 ## License
 
 MIT
