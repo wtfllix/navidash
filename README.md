@@ -66,9 +66,9 @@ npm run dev
 
 ## 字体与致谢
 
-Today 的手写日期使用 [Yellowtail](https://fonts.google.com/specimen/Yellowtail)，由
-Astigmatic 设计，并依据 Apache License 2.0 随项目分发。许可证全文见
-[`public/fonts/Yellowtail-LICENSE.txt`](./public/fonts/Yellowtail-LICENSE.txt)。
+Today 的手写日期使用 [Kaushan Script](https://fonts.google.com/specimen/Kaushan+Script)，
+由 Impallari Type 设计，并依据 SIL Open Font License 1.1 随项目分发。许可证全文见
+[`public/fonts/KaushanScript-LICENSE.txt`](./public/fonts/KaushanScript-LICENSE.txt)。
 
 ## License
 

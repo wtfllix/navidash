@@ -9,6 +9,13 @@
 
 ## 2026-07-26
 
+### refactor: Today 默认日期字体切换为 Kaushan Script
+- 做了什么：以笔触更舒展、更接近签名手写感的 Kaushan Script 替换 Yellowtail，并随项目附带 Google Fonts 官方字体文件与 SIL Open Font License 1.1
+- 影响范围：Today 信息面板日期视觉、字体加载和公开部署
+- 涉及模块：`src/app/globals.css`、`tailwind.config.ts`、`public/fonts/`、`README*.md`
+- 是否有兼容性影响：无；组件配置、字号与数据结构不变，字体加载失败时仍回退到系统手写字体
+- 后续待补充：根据实际页面预览判断是否需要微调字距
+
 ### refactor: Today 默认日期字体切换为 Yellowtail
 - 做了什么：将 Today 的默认手写日期字体替换为 Yellowtail，并随项目附带 Google Fonts 官方字体文件与 Apache 2.0 许可证，使公开部署和不同设备获得一致效果；针对 Yellowtail 较小的字面高度放大日期字号并收紧行高
 - 影响范围：Today 信息面板日期视觉、字体加载和公开部署

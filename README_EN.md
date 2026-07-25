@@ -69,9 +69,10 @@ npm run dev
 ## Typeface credit
 
 The handwritten date in Today uses
-[Yellowtail](https://fonts.google.com/specimen/Yellowtail), designed by Astigmatic and distributed
-with NaviDash under the Apache License 2.0. See
-[`public/fonts/Yellowtail-LICENSE.txt`](./public/fonts/Yellowtail-LICENSE.txt) for the full license.
+[Kaushan Script](https://fonts.google.com/specimen/Kaushan+Script), designed by Impallari Type and
+distributed with NaviDash under the SIL Open Font License 1.1. See
+[`public/fonts/KaushanScript-LICENSE.txt`](./public/fonts/KaushanScript-LICENSE.txt) for the full
+license.
 
 ## License
 
