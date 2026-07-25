@@ -30,6 +30,7 @@ interface CanvasWidgetItemProps {
   hasPreviewTarget: boolean;
   isDragging: boolean;
   isBeingPushed: boolean;
+  isPreviewValid: boolean;
   onEdit: (widget: Widget) => void;
   onDragHandlePointerDown: (widget: Widget, event: React.PointerEvent<HTMLDivElement>) => void;
 }
@@ -47,6 +48,7 @@ function WidgetItemContent({
   const { isEditing } = useUIStore();
   const t = useTranslations('Widgets');
   const canEdit = isEditing;
+  const isPoster = widget.type === 'photo-frame';
 
   const renderContent = () => {
     const Component = widgetComponentRegistry[widget.type];
@@ -59,11 +61,6 @@ function WidgetItemContent({
     );
   };
 
-  const isTransparent =
-    !canEdit &&
-    widget.type === 'clock' &&
-    false;
-
   return (
     <div className="w-full h-full relative group">
       {canEdit && (
@@ -75,7 +72,7 @@ function WidgetItemContent({
                 e.stopPropagation();
                 onEdit(widget);
               }}
-              className="p-1.5 bg-white shadow-sm border border-gray-100 rounded-full hover:bg-blue-50 text-gray-500 hover:text-blue-600 transition-colors"
+              className="rounded-xl bg-white/90 p-1.5 text-slate-500 shadow-[0_4px_12px_rgba(15,23,42,0.10)] transition-colors hover:bg-[rgba(var(--primary-color),0.1)] hover:text-[rgb(var(--primary-color))]"
               title={t('edit_widget')}
               aria-label={t('edit_widget')}
             >
@@ -87,7 +84,7 @@ function WidgetItemContent({
                 e.stopPropagation();
                 removeWidget(widget.id);
               }}
-              className="p-1.5 rounded-full border border-red-100 bg-red-50 text-red-600 shadow-sm hover:bg-red-100 hover:text-red-700 transition-colors"
+              className="rounded-xl bg-red-50/95 p-1.5 text-red-600 shadow-[0_4px_12px_rgba(15,23,42,0.08)] transition-colors hover:bg-red-100 hover:text-red-700"
               title={t('remove_widget')}
               aria-label={t('remove_widget')}
             >
@@ -95,7 +92,7 @@ function WidgetItemContent({
             </button>
           </div>
           <div
-            className="absolute top-2 left-2 z-10 text-gray-600 cursor-grab active:cursor-grabbing draggable-handle bg-white/90 p-1.5 rounded-lg shadow-sm border border-gray-200 hover:bg-white hover:shadow-md hover:border-blue-300 transition-all duration-150 touch-none select-none"
+            className="draggable-handle absolute left-2 top-2 z-10 cursor-grab select-none rounded-xl bg-white/90 p-1.5 text-slate-500 shadow-[0_4px_12px_rgba(15,23,42,0.10)] transition-all duration-150 hover:bg-white hover:text-[rgb(var(--primary-color))] hover:shadow-[0_6px_16px_rgba(15,23,42,0.12)] active:cursor-grabbing touch-none"
             aria-hidden="true"
             onPointerDown={(event) => onDragHandlePointerDown(widget, event)}
           >
@@ -106,12 +103,11 @@ function WidgetItemContent({
 
       <div
         className={cn(
-          'w-full h-full transition-all duration-300',
+          'h-full w-full transition-all duration-300',
+          isPoster ? 'poster-surface' : 'widget-surface',
           canEdit
-            ? 'overflow-hidden rounded-xl border border-blue-400 border-dashed ring-4 ring-blue-50 bg-gray-50/50 scale-[0.98]'
-            : isTransparent
-              ? ''
-              : 'overflow-hidden rounded-xl border border-gray-200 shadow-sm bg-white hover:shadow-md'
+            ? 'widget-surface-editing scale-[0.985]'
+            : ''
         )}
       >
         <div className={cn('w-full h-full', canEdit && 'pointer-events-none opacity-80 blur-[0.5px]')}>
@@ -133,6 +129,7 @@ export default function CanvasWidgetItem({
   hasPreviewTarget,
   isDragging,
   isBeingPushed,
+  isPreviewValid,
   onEdit,
   onDragHandlePointerDown,
 }: CanvasWidgetItemProps) {
@@ -143,7 +140,12 @@ export default function CanvasWidgetItem({
     <>
       {canEdit && hasPreviewTarget && (
         <div
-          className="absolute z-10 pointer-events-none rounded-2xl border border-blue-300/80 border-dashed bg-blue-100/25 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.65)] transition-[left,top,width,height,opacity] duration-200 ease-out"
+          className={cn(
+            'pointer-events-none absolute z-10 rounded-[var(--radius-widget)] border border-dashed shadow-[inset_0_0_0_1px_rgba(255,255,255,0.65)] transition-[left,top,width,height,opacity] duration-200 ease-out',
+            isPreviewValid
+              ? 'border-blue-300/80 bg-blue-100/25'
+              : 'border-red-400/90 bg-red-100/35'
+          )}
           style={{
             left: `${layoutRect.left}px`,
             top: `${layoutRect.top}px`,

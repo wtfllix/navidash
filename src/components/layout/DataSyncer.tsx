@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useWidgetStore } from '@/store/useWidgetStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { isClientDemoMode } from '@/lib/demo';
@@ -8,67 +8,62 @@ import { isClientDemoMode } from '@/lib/demo';
 export default function DataSyncer() {
   const { fetchWidgets } = useWidgetStore();
   const { fetchSettings } = useSettingsStore();
+  const syncInFlightRef = useRef<Promise<void> | null>(null);
+  const lastSyncStartedAtRef = useRef(0);
   const fetchAll = useCallback(
-    (forceSettings = false) => {
-      fetchWidgets();
-      fetchSettings(forceSettings);
+    async (forceSettings = false) => {
+      await Promise.all([fetchWidgets(), fetchSettings(forceSettings)]);
     },
     [fetchSettings, fetchWidgets]
   );
+  const requestSync = useCallback(
+    (forceSettings = false, bypassThrottle = false) => {
+      if (syncInFlightRef.current) {
+        return;
+      }
+
+      const now = Date.now();
+      if (!bypassThrottle && now - lastSyncStartedAtRef.current < 1000) {
+        return;
+      }
+
+      lastSyncStartedAtRef.current = now;
+      const sync = fetchAll(forceSettings).finally(() => {
+        if (syncInFlightRef.current === sync) {
+          syncInFlightRef.current = null;
+        }
+      });
+      syncInFlightRef.current = sync;
+    },
+    [fetchAll]
+  );
 
   useEffect(() => {
-    fetchAll(true);
+    requestSync(true, true);
 
     if (isClientDemoMode) {
       return;
     }
 
-    // Polling logic
-    let interval: NodeJS.Timeout | null = null;
-
-    const startPolling = () => {
-      if (!interval) {
-        interval = setInterval(fetchAll, 5000);
-      }
-    };
-
-    const stopPolling = () => {
-      if (interval) {
-        clearInterval(interval);
-        interval = null;
-      }
-    };
-
-    // Handle visibility change
     const handleVisibilityChange = () => {
-      if (document.hidden) {
-        stopPolling();
-      } else {
-        fetchAll(true); // Immediate fetch on resume
-        startPolling();
+      if (!document.hidden) {
+        requestSync(true);
       }
     };
 
     const handleFocus = () => {
       if (!document.hidden) {
-        fetchAll(true);
+        requestSync(true);
       }
     };
 
     const handlePageShow = () => {
-      fetchAll(true);
-      startPolling();
+      requestSync(true);
     };
 
     const handleOnline = () => {
-      fetchAll(true);
-      startPolling();
+      requestSync(true);
     };
-
-    // Start polling initially if visible
-    if (!document.hidden) {
-      startPolling();
-    }
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('focus', handleFocus);
@@ -76,13 +71,12 @@ export default function DataSyncer() {
     window.addEventListener('online', handleOnline);
 
     return () => {
-      stopPolling();
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', handleFocus);
       window.removeEventListener('pageshow', handlePageShow);
       window.removeEventListener('online', handleOnline);
     };
-  }, [fetchAll]);
+  }, [requestSync]);
 
   return null;
 }

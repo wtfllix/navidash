@@ -51,7 +51,7 @@ export default function PhotoFrameConfigEditor({ config, setConfig }: WidgetConf
       <div className="grid grid-cols-2 gap-3">
         <FormField label={t('autoplay')}>
           <SelectInput
-            value={String(config.autoplay ?? true)}
+            value={String(config.autoplay ?? false)}
             onChange={(e) =>
               setConfig((current) => ({ ...current, autoplay: e.target.value === 'true' }))
             }

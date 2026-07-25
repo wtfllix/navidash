@@ -6,30 +6,35 @@ This guide reflects the current product shape of NaviDash and focuses on the rea
 
 NaviDash currently has three main areas:
 
-1. Top bar
-   Includes search, widget store toggle, edit mode toggle, and global settings.
-2. Left widget store
-   Used to browse, search, and add widgets.
-3. Main canvas
+1. Main canvas
    Your homepage area where widgets are placed and used daily.
+2. Floating bottom toolbar
+   Provides quick launcher, widget store, edit mode, and global settings entry points.
+3. Bottom widget shelf
+   Opens above the floating toolbar for horizontal browsing, searching, and adding widgets.
 
 ## Basic Usage
 
-### Search
+### Quick Launcher
 
-- Use the top search bar to search with the selected search engine
-- You can switch between supported engines
-- `Ctrl + K` focuses the search input
+- While not editing and with no input focused, start typing, press `Ctrl/⌘ + K`, or use the bottom search button
+- Use the arrow keys to change selection, `Enter` to open, and `Escape` to close
+- When no link matches, press `Enter` to search the web with the engine selected in the launcher
+- The launcher learns the relationship between what you type and the link you ultimately open
+- Frequently selected results gradually move ahead of other links matching the same query
+- Learning data never moves canvas widgets and is not uploaded by default
+- Inspect or clear learning data under Settings and Data Tools
 
 ### Edit Mode
 
-- Use the top bar button to switch between customize and done states
+- Use the bottom toolbar to switch between customize and done states
 - In edit mode, you can move widgets, open widget settings, and remove widgets
 
 ### Open the Widget Store
 
-- Click the widget store button in the top bar
-- Search for widgets or add them directly
+- Click the widget store button in the bottom toolbar
+- Browse horizontally or search; clicking a widget adds it and closes the shelf
+- You can also drag a widget upward onto the canvas; the shelf moves away when dragging starts
 - Some widgets open their settings right after creation for first-time setup
 
 ## Widget Actions
@@ -40,17 +45,14 @@ NaviDash currently has three main areas:
 2. Find the widget you want
 3. Click to add it, or drag it onto the canvas where supported
 
-Built-in widgets currently include:
+The widget store currently lets you add:
 
-- `Clock`
-- `Weather`
-- `Date`
-- `Calendar`
-- `Todo`
-- `Memo`
-- `Quick Link`
-- `Links`
-- `Photo Frame`
+- `Links`: frequent destinations
+- `Today`: a combined time, date, and weather panel
+- `Memo`: quick pasted information
+- `Poster`: frameless visual decoration
+
+Legacy `Clock`, `Weather`, `Date`, `Quick Link`, `Todo`, and `Calendar` widgets have been retired. When older layouts or backups are read, those entries are filtered while Today, Links, Memo, and Poster are preserved.
 
 ### Move a Widget
 
@@ -65,8 +67,7 @@ If the target area is already occupied, NaviDash automatically reflows nearby wi
 Different widgets support different editing flows:
 
 - `Memo` can be edited directly inside the widget and saves automatically
-- `Todo` supports adding, toggling, and deleting tasks directly inside the widget
-- `Clock`, `Weather`, `Links`, `Quick Link`, and `Photo Frame` are mainly configured through the settings modal
+- `Today`, `Links`, and `Poster` are configured through the settings modal
 
 ### Open Widget Settings
 
@@ -76,23 +77,20 @@ Different widgets support different editing flows:
 
 ## Common Widget Notes
 
-### Clock
+### Today
 
-- Displays the current time
-- Supports multiple visual styles
-- Density and layout vary depending on widget size
-
-### Weather
-
+- Combines time, English date labels, and live weather in a `2×2` information panel
 - Uses the server-side `/api/weather` proxy
-- Weather service credentials are best configured through environment variables
-- At the widget level, you usually only need a city or coordinates
+- Shows weather configuration status and connection testing under global Settings
+- Stores only the selected city or coordinates in Today
+- Reads API keys, hosts, and authentication modes only from server-side environment variables
 
 If weather does not appear, check:
 
 - whether `QWEATHER_API_KEY` is set in `.env`
 - whether the container or dev server has been restarted
-- whether the city or coordinates are valid
+- whether the connection test in global Settings succeeds
+- whether the city or coordinates in Today are valid
 
 ### Memo
 
@@ -100,25 +98,20 @@ If weather does not appear, check:
 - Supports lightweight Markdown-like formatting such as headings, lists, links, and quotes
 - Saves automatically
 
-### Todo
+### Links
 
-- Add items directly in the widget
-- Mark items as completed
-- Delete items or clear completed ones
+- `1×1` is suitable for one frequent destination
+- Wider sizes work for a grouped collection of sites or services
+- The launcher records actual opens and gradually improves result ordering
 
-### Links / Quick Link
-
-- `Quick Link` is suitable for a single shortcut
-- `Links` is better for a grouped collection of frequently used destinations
-
-### Photo Frame
+### Poster
 
 - Supports one or multiple images
-- Supports autoplay and interval settings
+- Is frameless and static by default, with optional autoplay and interval settings
 
 ## Global Settings
 
-Use the settings button in the top bar to open the global settings modal.
+Use the settings button in the bottom toolbar to open the global settings modal.
 
 The main sections are:
 
@@ -134,9 +127,7 @@ You can customize:
 - custom background image
 - blur
 - overlay opacity
-- theme color
-- page title
-- favicon
+- page title and favicon under advanced options
 
 ### Language
 
@@ -146,11 +137,19 @@ You can customize:
 
 Available actions include:
 
+- apply the Blank, Focused, or Personal Wall homepage template
+- import bookmarks from a browser-exported HTML file
 - export current configuration as JSON
 - import configuration from JSON
-- reset local data
+- restore settings and widgets to defaults
 
-Importing overwrites the current state, so exporting a backup first is recommended.
+Applying a template or restoring a backup replaces the current widgets and layouts after
+confirmation. Exporting a backup first is recommended.
+
+Bookmarks in the Dock manages the complete link library, which is searched by the quick launcher.
+Frequent Links widgets reference only the bookmarks pinned to the homepage. Removing a bookmark
+from a widget or deleting the widget does not delete it from the library. Browser HTML imports add
+bookmarks without changing the canvas.
 
 ## Data Persistence
 
@@ -184,13 +183,14 @@ Usually one of these is true:
 - the app is running in demo mode
 - the persistence directory is not mounted correctly or is not writable
 
-### Why does the Weather widget show no data?
+### Why does Today show no weather data?
 
 Check:
 
 - whether `QWEATHER_API_KEY` is configured
 - whether the container has been restarted
-- whether the city or coordinates are valid
+- whether the weather connection test in global Settings succeeds
+- whether the city or coordinates in Today are valid
 - whether the weather service is reachable from your environment
 
 ### How do I back up my homepage completely?

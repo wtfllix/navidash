@@ -6,7 +6,10 @@ import { FormField, TextInput } from './FormControls';
 import { parseOptionalNumber, PRESET_CITIES, trimToUndefined } from './shared';
 import { WidgetConfigEditorProps } from './types';
 
-export default function WeatherConfigEditor({ config, setConfig }: WidgetConfigEditorProps<'weather'>) {
+export default function TodayConfigEditor({
+  config,
+  setConfig,
+}: WidgetConfigEditorProps<'today'>) {
   const t = useTranslations('Widgets');
   const [citySearch, setCitySearch] = useState(config.city || '');
   const [showCityList, setShowCityList] = useState(false);
@@ -19,7 +22,9 @@ export default function WeatherConfigEditor({ config, setConfig }: WidgetConfigE
 
   const filteredCities = useMemo(
     () =>
-      PRESET_CITIES.filter((city) => city.name.toLowerCase().includes(citySearch.toLowerCase())).slice(0, 12),
+      PRESET_CITIES.filter((city) =>
+        city.name.toLowerCase().includes(citySearch.toLowerCase())
+      ).slice(0, 12),
     [citySearch]
   );
 
@@ -41,8 +46,8 @@ export default function WeatherConfigEditor({ config, setConfig }: WidgetConfigE
           <TextInput
             type="text"
             value={showCityList ? citySearch : config.city || citySearch}
-            onChange={(e) => {
-              const nextValue = e.target.value;
+            onChange={(event) => {
+              const nextValue = event.target.value;
               setCitySearch(nextValue);
               setShowCityList(true);
               setConfig((current) => ({ ...current, city: nextValue }));
@@ -62,21 +67,23 @@ export default function WeatherConfigEditor({ config, setConfig }: WidgetConfigE
           />
 
           {showCityList ? (
-            <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+            <div className="absolute z-50 mt-1 max-h-60 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg">
               {filteredCities.length > 0 ? (
                 filteredCities.map((city) => (
                   <button
                     key={city.name}
                     type="button"
-                    onMouseDown={(e) => e.preventDefault()}
+                    onMouseDown={(event) => event.preventDefault()}
                     onClick={() => selectCity(city)}
-                    className="w-full text-left px-4 py-2 text-sm hover:bg-blue-50 text-gray-700 transition-colors"
+                    className="w-full px-4 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-blue-50"
                   >
                     <span className="font-medium">{city.name}</span>
                   </button>
                 ))
               ) : (
-                <div className="px-4 py-3 text-sm text-gray-500 text-center">{t('no_city_matches')}</div>
+                <div className="px-4 py-3 text-center text-sm text-gray-500">
+                  {t('no_city_matches')}
+                </div>
               )}
             </div>
           ) : null}
@@ -88,7 +95,12 @@ export default function WeatherConfigEditor({ config, setConfig }: WidgetConfigE
           <TextInput
             type="number"
             value={config.lat ?? ''}
-            onChange={(e) => setConfig((current) => ({ ...current, lat: parseOptionalNumber(e.target.value) }))}
+            onChange={(event) =>
+              setConfig((current) => ({
+                ...current,
+                lat: parseOptionalNumber(event.target.value),
+              }))
+            }
             aria-label={t('latitude')}
           />
         </FormField>
@@ -96,7 +108,12 @@ export default function WeatherConfigEditor({ config, setConfig }: WidgetConfigE
           <TextInput
             type="number"
             value={config.lon ?? ''}
-            onChange={(e) => setConfig((current) => ({ ...current, lon: parseOptionalNumber(e.target.value) }))}
+            onChange={(event) =>
+              setConfig((current) => ({
+                ...current,
+                lon: parseOptionalNumber(event.target.value),
+              }))
+            }
             aria-label={t('longitude')}
           />
         </FormField>
@@ -104,7 +121,12 @@ export default function WeatherConfigEditor({ config, setConfig }: WidgetConfigE
 
       <p className="text-xs text-gray-500">
         {t('find_coords')}{' '}
-        <a href="https://www.latlong.net/" target="_blank" rel="noreferrer" className="text-blue-500 underline">
+        <a
+          href="https://www.latlong.net/"
+          target="_blank"
+          rel="noreferrer"
+          className="text-blue-500 underline"
+        >
           latlong.net
         </a>
       </p>

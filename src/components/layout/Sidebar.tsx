@@ -1,17 +1,18 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Sparkles, X } from 'lucide-react';
+import { Bookmark, Sparkles, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { useSidebarStore } from '@/store/useSidebarStore';
 import { useUIStore } from '@/store/useUIStore';
 import SettingsModal from '@/components/settings/SettingsModal';
 import WidgetStoreSidebar from './WidgetStoreSidebar';
+import BookmarkLibraryPanel from '@/components/bookmarks/BookmarkLibraryPanel';
 
 export default function Sidebar() {
   const { isOpen, close } = useSidebarStore();
-  const { isSettingsOpen, closeSettings } = useUIStore();
+  const { isSettingsOpen, closeSettings, isBookmarksOpen, closeBookmarks } = useUIStore();
   const t = useTranslations('Sidebar');
   const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
   const [mounted, setMounted] = useState(false);
@@ -21,48 +22,48 @@ export default function Sidebar() {
   }, []);
 
   if (!mounted) return null;
+  const isPanelOpen = isOpen || isBookmarksOpen;
+  const closePanel = () => {
+    close();
+    closeBookmarks();
+  };
 
   return (
     <>
       <div
         className={cn(
-          'fixed inset-0 z-40 bg-slate-950/28 backdrop-blur-[3px] transition-opacity duration-300',
-          isOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
+          'fixed inset-0 z-30 bg-slate-950/12 backdrop-blur-[1px] transition-opacity duration-300',
+          isPanelOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
         )}
-        onClick={close}
+        onClick={closePanel}
         aria-hidden="true"
       />
 
       <aside
         className={cn(
-          'fixed left-0 top-0 z-50 flex h-screen w-full max-w-[340px] flex-col overflow-hidden border-r border-slate-200/80 bg-white/96 shadow-2xl shadow-slate-900/10 backdrop-blur-xl',
-          'transition-transform duration-300 ease-in-out',
-          isOpen ? 'translate-x-0' : '-translate-x-full'
+          'fixed bottom-[5.75rem] left-1/2 z-50 flex w-[calc(100%_-_1.5rem)] max-w-6xl -translate-x-1/2 flex-col overflow-hidden rounded-[2rem] bg-white/78 shadow-[0_24px_70px_rgba(15,23,42,0.22),inset_0_1px_0_rgba(255,255,255,0.8)] backdrop-blur-2xl',
+          isBookmarksOpen ? 'h-[min(68vh,600px)]' : 'h-[220px]',
+          'origin-bottom transition-all duration-300 ease-out',
+          isPanelOpen
+            ? 'pointer-events-auto translate-y-0 scale-100 opacity-100'
+            : 'pointer-events-none translate-y-[calc(100%+7rem)] scale-[0.98] opacity-0'
         )}
-        aria-label={t('widget_store')}
+        aria-label={isBookmarksOpen ? t('bookmarks') : t('widget_store')}
       >
-        <div className="relative shrink-0 border-b border-slate-200/70 px-4 pb-3 pt-4">
-          <div
-            className="pointer-events-none absolute inset-x-0 top-0 h-20 opacity-80"
-            style={{
-              background:
-                'linear-gradient(180deg, rgba(var(--primary-color), 0.12) 0%, rgba(var(--primary-color), 0.03) 55%, rgba(255,255,255,0) 100%)',
-            }}
-          />
-
+        <div className="relative shrink-0 px-5 py-3">
           <div className="relative flex items-start justify-between gap-3">
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <span className="inline-flex h-8 w-8 items-center justify-center rounded-2xl bg-slate-900 text-white shadow-sm">
-                  <Sparkles size={15} />
+                <span className="inline-flex h-8 w-8 items-center justify-center rounded-2xl bg-[rgb(var(--primary-color))] text-white shadow-sm">
+                  {isBookmarksOpen ? <Bookmark size={15} /> : <Sparkles size={15} />}
                 </span>
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">
-                    NaviDash
-                  </p>
-                  <h2 className="text-base font-semibold tracking-tight text-slate-900">
-                    {t('widget_store')}
+                  <h2 className="text-sm font-semibold tracking-tight text-slate-900">
+                    {isBookmarksOpen ? t('bookmarks') : t('widget_store')}
                   </h2>
+                  <p className="text-xs text-slate-500">
+                    {isBookmarksOpen ? t('bookmarks_desc') : t('widget_store_desc')}
+                  </p>
                 </div>
               </div>
             </div>
@@ -74,23 +75,18 @@ export default function Sidebar() {
                 </span>
               )}
               <button
-                onClick={close}
+                onClick={closePanel}
                 className="relative z-10 rounded-xl p-2 text-slate-400 transition-colors hover:bg-white hover:text-slate-700"
-                aria-label={t('toggle_sidebar')}
+                aria-label={isBookmarksOpen ? t('close_bookmarks') : t('toggle_sidebar')}
               >
                 <X size={18} />
               </button>
             </div>
           </div>
 
-          {isDemoMode && (
-            <p className="relative mt-3 text-sm leading-6 text-slate-500">
-              Demo 预置了一套展示内容。你可以自由拖拽和调整，但刷新页面后会恢复为默认布局。
-            </p>
-          )}
         </div>
 
-        <WidgetStoreSidebar />
+        {isBookmarksOpen ? <BookmarkLibraryPanel /> : <WidgetStoreSidebar />}
       </aside>
 
       <SettingsModal isOpen={isSettingsOpen} onClose={closeSettings} />

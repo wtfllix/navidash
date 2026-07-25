@@ -33,6 +33,7 @@ export default function WidgetSettingsModal({
   const { updateWidget, saveWidgetConfigs } = useWidgetStore();
   const [size, setSize] = useState<WidgetSize>({ w: 1, h: 1 });
   const [config, setConfig] = useState<WidgetConfig>({});
+  const [saveError, setSaveError] = useState<string | null>(null);
   const t = useTranslations('Widgets');
 
   useEffect(() => {
@@ -42,6 +43,7 @@ export default function WidgetSettingsModal({
     const isAllowed = presetKey ? allowedPresets.some((preset) => preset.key === presetKey) : false;
     setSize(isAllowed ? widget.size : getDefaultAllowedSize(widget.type));
     setConfig(widget.config || {});
+    setSaveError(null);
   }, [widget]);
 
   if (!widget) return null;
@@ -67,20 +69,28 @@ export default function WidgetSettingsModal({
       return;
     }
 
-    updateWidget(widget.id, { size, config });
-    await saveWidgetConfigs();
+    setSaveError(null);
+    if (!updateWidget(widget.id, { size, config })) {
+      setSaveError(t('placement_invalid'));
+      return;
+    }
+
+    if (!(await saveWidgetConfigs())) {
+      setSaveError(t('widget_save_failed'));
+      return;
+    }
+
     onClose();
   };
 
   const renderEditor = () => {
-    if (widget.type === 'clock') {
-      const ClockEditor = widgetConfigEditors.clock;
-      return <ClockEditor config={config as never} setConfig={handleConfigChange as never} setSize={setSize} />;
-    }
-
-    const GenericEditor = widgetConfigEditors[widget.type as Exclude<EditableWidgetType, 'clock'>];
+    const GenericEditor = widgetConfigEditors[widget.type as EditableWidgetType];
     return GenericEditor ? (
-      <GenericEditor config={config as never} setConfig={handleConfigChange as never} />
+      <GenericEditor
+        config={config as never}
+        setConfig={handleConfigChange as never}
+        size={size}
+      />
     ) : (
       <p className="text-sm text-gray-500">{t('no_config')}</p>
     );
@@ -111,6 +121,8 @@ export default function WidgetSettingsModal({
           <h4 className="text-sm font-medium text-gray-900 mb-3">{t('configuration')}</h4>
           {renderEditor()}
         </div>
+
+        {saveError && <p className="text-sm text-red-600">{saveError}</p>}
 
         <div className="flex justify-end pt-4">
           <div className="mr-auto flex items-center text-xs text-gray-400">

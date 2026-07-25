@@ -1,19 +1,30 @@
 import fs from 'fs/promises';
 import fsSync from 'fs';
 import path from 'path';
+import { randomUUID } from 'crypto';
 import { z } from 'zod';
 import {
-  mergeWidgets,
+  migrateWidgetConfigsToBookmarks,
   normalizeSettings,
+  normalizeWidgetSnapshot,
   SettingsNormalizationSchema,
   SettingsSchema,
   splitWidgets,
   WidgetConfigsArraySchema,
   WidgetLayoutsArraySchema,
   WidgetLayoutsByModeSchema,
+  StoredWidgetSnapshotSchema,
+  WidgetSnapshotSchema,
   WidgetsArraySchema,
 } from '@/lib/schemas';
-import { Settings, Widget, WidgetConfigEntry, WidgetLayout, WidgetLayoutsByMode } from '@/types';
+import {
+  Settings,
+  Widget,
+  WidgetConfigEntry,
+  WidgetLayout,
+  WidgetLayoutsByMode,
+  WidgetSnapshot,
+} from '@/types';
 import { logger } from '@/lib/logger';
 import { ensureLayoutsByMode } from '@/lib/widgetLayouts';
 import { DEMO_DATA_VERSION, DEMO_SETTINGS, DEMO_WIDGETS, isServerDemoMode } from '@/lib/demo';
@@ -25,6 +36,7 @@ const DATA_DIR = process.env.DATA_DIR || (fsSync.existsSync(DEFAULT_DIR) ? DEFAU
 const WIDGETS_FILE = path.join(DATA_DIR, 'widgets.json');
 const WIDGET_LAYOUTS_FILE = path.join(DATA_DIR, 'widget-layouts.json');
 const WIDGET_CONFIGS_FILE = path.join(DATA_DIR, 'widget-configs.json');
+const WIDGET_SNAPSHOT_FILE = path.join(DATA_DIR, 'widget-snapshot.json');
 const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
 
 // 检查是否为演示模式（兼容服务端与客户端环境变量）
@@ -79,7 +91,7 @@ async function readJsonFile(filePath: string, schema: z.ZodTypeAny): Promise<unk
 }
 
 async function writeJsonFileAtomic(filePath: string, data: unknown): Promise<void> {
-  const tempFilePath = `${filePath}.${process.pid}.${Date.now()}.tmp`;
+  const tempFilePath = `${filePath}.${process.pid}.${randomUUID()}.tmp`;
 
   try {
     await fs.writeFile(tempFilePath, JSON.stringify(data, null, 2), 'utf-8');
@@ -90,102 +102,77 @@ async function writeJsonFileAtomic(filePath: string, data: unknown): Promise<voi
   }
 }
 
-/**
- * 读取小组件配置数据
- * 从 JSON 文件中读取小组件列表，如果文件不存在则返回 null
- * @returns {Promise<Widget[] | null>} 小组件列表或 null
- */
-export async function getWidgets(): Promise<Widget[] | null> {
+export class WidgetSnapshotConflictError extends Error {
+  constructor(public readonly currentSnapshot: WidgetSnapshot) {
+    super('Widget snapshot revision conflict');
+    this.name = 'WidgetSnapshotConflictError';
+  }
+}
+
+let snapshotWriteQueue: Promise<void> = Promise.resolve();
+
+export async function getWidgetSnapshot(): Promise<WidgetSnapshot> {
   if (IS_DEMO_MODE) {
-    logger.info('Demo mode: returning demo widgets');
-    return DEMO_WIDGETS;
+    const { layouts, configs } = splitWidgets(DEMO_WIDGETS);
+    const migrated = migrateWidgetConfigsToBookmarks(configs);
+    return {
+      schemaVersion: 2,
+      revision: DEMO_DATA_VERSION,
+      layoutsByMode: ensureLayoutsByMode(layouts, DEMO_WIDGETS),
+      ...migrated,
+    };
   }
 
-  try {
-    await ensureDataDir();
-    const layouts = await readJsonFile(
-      WIDGET_LAYOUTS_FILE,
-      z.union([WidgetLayoutsByModeSchema, WidgetLayoutsArraySchema])
-    );
-    const configs = await readJsonFile(WIDGET_CONFIGS_FILE, WidgetConfigsArraySchema);
+  await ensureDataDir();
+  const snapshot = await readJsonFile(WIDGET_SNAPSHOT_FILE, StoredWidgetSnapshotSchema);
+  if (snapshot) {
+    return normalizeWidgetSnapshot(snapshot);
+  }
 
-    if (layouts) {
-      const layoutsByMode = ensureLayoutsByMode(layouts as WidgetLayoutsByMode | WidgetLayout[], []);
+  const layoutsByMode = (await getWidgetLayoutsByMode()) ?? {
+    desktop: [],
+    mobile: [],
+  };
+  const legacyConfigs = (await getWidgetConfigs()) ?? [];
+  const migrated = migrateWidgetConfigsToBookmarks(legacyConfigs);
+  const hasLegacyData =
+    layoutsByMode.desktop.length > 0 ||
+    layoutsByMode.mobile.length > 0 ||
+    legacyConfigs.length > 0;
 
-      return mergeWidgets(layoutsByMode.desktop, (configs as WidgetConfigEntry[] | null) ?? [], []);
+  return {
+    schemaVersion: 2,
+    revision: hasLegacyData ? 1 : 0,
+    layoutsByMode,
+    ...migrated,
+  };
+}
+
+export function saveWidgetSnapshot(
+  expectedRevision: number,
+  data: Pick<WidgetSnapshot, 'schemaVersion' | 'layoutsByMode' | 'configs' | 'bookmarks'>
+): Promise<WidgetSnapshot> {
+  let result!: WidgetSnapshot;
+
+  const operation = snapshotWriteQueue.then(async () => {
+    const current = await getWidgetSnapshot();
+    if (current.revision !== expectedRevision) {
+      throw new WidgetSnapshotConflictError(current);
     }
 
-    const widgets = await readJsonFile(WIDGETS_FILE, WidgetsArraySchema);
-    return widgets ? (widgets as Widget[]) : null;
-  } catch (error) {
-    logger.error('Failed to read widgets', error);
-    return null;
-  }
-}
-
-/**
- * 获取小组件文件的最后修改时间
- * @returns {Promise<number>} 时间戳 (ms)
- */
-export async function getWidgetsLastModified(): Promise<number> {
-  if (IS_DEMO_MODE) return DEMO_DATA_VERSION;
-
-  try {
-    await ensureDataDir();
-    const candidates = [WIDGET_LAYOUTS_FILE, WIDGET_CONFIGS_FILE, WIDGETS_FILE];
-    const mtimes = await Promise.all(
-      candidates.map(async (filePath) => {
-        try {
-          const stats = await fs.stat(filePath);
-          return stats.mtimeMs;
-        } catch (error) {
-          if ((error as NodeJS.ErrnoException).code === 'ENOENT') return 0;
-          throw error;
-        }
-      })
-    );
-    return Math.max(...mtimes, 0);
-  } catch (error) {
-    logger.error('Failed to get widgets stats', error);
-    return 0;
-  }
-}
-
-/**
- * 保存小组件配置数据
- * 将小组件列表写入 JSON 文件
- * @param {Widget[]} widgets - 要保存的小组件列表
- * @returns {Promise<void>}
- * @throws {Error} 如果写入失败则抛出错误
- */
-export async function saveWidgets(widgets: Widget[]): Promise<void> {
-  if (IS_DEMO_MODE) {
-    logger.info('Demo mode: save skipped');
-    return;
-  }
-
-  try {
-    await ensureDataDir();
-    const parsedWidgets = WidgetsArraySchema.parse(widgets);
-    const { layouts, configs } = splitWidgets(parsedWidgets);
-    await writeJsonFileAtomic(WIDGET_LAYOUTS_FILE, {
-      version: DATA_FILE_VERSION,
-      data: WidgetLayoutsArraySchema.parse(layouts),
+    result = WidgetSnapshotSchema.parse({
+      ...data,
+      revision: current.revision + 1,
     });
-    await writeJsonFileAtomic(WIDGET_CONFIGS_FILE, {
-      version: DATA_FILE_VERSION,
-      data: WidgetConfigsArraySchema.parse(configs),
-    });
-    logger.info('Widgets saved successfully');
-  } catch (error) {
-    logger.error('Failed to save widgets', error);
-    throw error;
-  }
-}
+    await writeJsonFileAtomic(WIDGET_SNAPSHOT_FILE, result);
+  });
 
-export async function getWidgetLayouts(): Promise<WidgetLayout[] | null> {
-  const layouts = await getWidgetLayoutsByMode();
-  return layouts?.desktop ?? null;
+  snapshotWriteQueue = operation.then(
+    () => undefined,
+    () => undefined
+  );
+
+  return operation.then(() => result);
 }
 
 export async function getWidgetLayoutsByMode(): Promise<WidgetLayoutsByMode | null> {
@@ -229,46 +216,6 @@ export async function getWidgetConfigs(): Promise<WidgetConfigEntry[] | null> {
   } catch (error) {
     logger.error('Failed to read widget configs', error);
     return null;
-  }
-}
-
-export async function saveWidgetLayouts(layouts: WidgetLayoutsByMode | WidgetLayout[]): Promise<void> {
-  if (IS_DEMO_MODE) {
-    logger.info('Demo mode: save layouts skipped');
-    return;
-  }
-
-  try {
-    await ensureDataDir();
-    const parsedLayouts = ensureLayoutsByMode(layouts, []);
-    await writeJsonFileAtomic(WIDGET_LAYOUTS_FILE, {
-      version: DATA_FILE_VERSION,
-      data: WidgetLayoutsByModeSchema.parse(parsedLayouts),
-    });
-    logger.info('Widget layouts saved successfully');
-  } catch (error) {
-    logger.error('Failed to save widget layouts', error);
-    throw error;
-  }
-}
-
-export async function saveWidgetConfigs(configs: WidgetConfigEntry[]): Promise<void> {
-  if (IS_DEMO_MODE) {
-    logger.info('Demo mode: save configs skipped');
-    return;
-  }
-
-  try {
-    await ensureDataDir();
-    const parsedConfigs = WidgetConfigsArraySchema.parse(configs);
-    await writeJsonFileAtomic(WIDGET_CONFIGS_FILE, {
-      version: DATA_FILE_VERSION,
-      data: parsedConfigs,
-    });
-    logger.info('Widget configs saved successfully');
-  } catch (error) {
-    logger.error('Failed to save widget configs', error);
-    throw error;
   }
 }
 

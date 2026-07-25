@@ -6,8 +6,8 @@ import { useTranslations } from 'next-intl';
 import Modal from '@/components/ui/Modal';
 import { cn } from '@/lib/utils';
 import { LauncherLinkItem } from '@/lib/linkLauncher';
+import { SEARCH_ENGINES, SearchEngine } from '@/lib/searchEngines';
 import {
-  LauncherOpenedLinkHistoryItem,
   LauncherSearchHistoryItem,
 } from '@/lib/linkLauncherHistory';
 
@@ -21,13 +21,24 @@ export interface CanvasLauncherListItem {
   query?: string;
 }
 
+function getRankingReasonLabel(
+  reason: LauncherLinkItem['rankingReason'],
+  t: ReturnType<typeof useTranslations<'Widgets'>>
+) {
+  if (reason === 'learned') return t('launcher_reason_learned');
+  if (reason === 'frequent') return t('launcher_reason_frequent');
+  if (reason === 'recent') return t('launcher_reason_recent');
+  return null;
+}
+
 interface CanvasLinkLauncherProps {
   isOpen: boolean;
   query: string;
   items: CanvasLauncherListItem[];
   selectedIndex: number;
   searchHistory: LauncherSearchHistoryItem[];
-  openedLinks: LauncherOpenedLinkHistoryItem[];
+  searchEngine: SearchEngine;
+  onSearchEngineChange: (engine: SearchEngine) => void;
   onClose: () => void;
   onSelect: (item: CanvasLauncherListItem) => void;
 }
@@ -38,7 +49,8 @@ export default function CanvasLinkLauncher({
   items,
   selectedIndex,
   searchHistory,
-  openedLinks,
+  searchEngine,
+  onSearchEngineChange,
   onClose,
   onSelect,
 }: CanvasLinkLauncherProps) {
@@ -47,7 +59,7 @@ export default function CanvasLinkLauncher({
 
   const resultSummary = useMemo(() => {
     if (showHistory) {
-      if (searchHistory.length === 0 && openedLinks.length === 0) {
+      if (items.length === 0) {
         return t('launcher_ready');
       }
 
@@ -55,14 +67,14 @@ export default function CanvasLinkLauncher({
     }
 
     return t('launcher_results', { count: items.length });
-  }, [items.length, openedLinks.length, searchHistory.length, showHistory, t]);
+  }, [items.length, showHistory, t]);
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
       title={t('launcher_title')}
-      className="max-w-lg"
+      className="launcher-fly-in max-w-lg"
       bodyClassName="px-0 py-0"
     >
       <div className="border-b border-gray-100 px-6 py-4">
@@ -132,11 +144,11 @@ export default function CanvasLinkLauncher({
               </div>
             ) : null}
 
-            {showHistory && openedLinks.length > 0 ? (
+            {showHistory && items.some((item) => item.kind === 'link') ? (
               <div>
                 <div className="mb-2 flex items-center gap-2 px-3 text-[11px] font-medium uppercase tracking-[0.08em] text-gray-400">
                   <Clock3 size={12} />
-                  {t('launcher_recent_links')}
+                  {t('launcher_frequent_links')}
                 </div>
                 <div className="space-y-1">
                   {items
@@ -221,13 +233,27 @@ export default function CanvasLinkLauncher({
                     {item.subtitle}
                   </div>
                 </div>
-                <div
-                  className={cn(
-                    'shrink-0 text-[11px]',
-                    index === selectedIndex ? 'text-white/75' : 'text-gray-400'
+                <div className="flex shrink-0 flex-col items-end gap-1">
+                  {item.link?.rankingReason && index === 0 && (
+                    <span
+                      className={cn(
+                        'rounded-full px-2 py-0.5 text-[10px] font-medium',
+                        index === selectedIndex
+                          ? 'bg-white/15 text-white'
+                          : 'bg-blue-50 text-blue-600'
+                      )}
+                    >
+                      {getRankingReasonLabel(item.link.rankingReason, t)}
+                    </span>
                   )}
-                >
-                  {item.sourceLabel}
+                  <span
+                    className={cn(
+                      'text-[11px]',
+                      index === selectedIndex ? 'text-white/75' : 'text-gray-400'
+                    )}
+                  >
+                    {item.sourceLabel}
+                  </span>
                 </div>
               </button>
             )) : null}
@@ -245,7 +271,26 @@ export default function CanvasLinkLauncher({
 
       <div className="border-t border-gray-100 px-6 py-3 text-xs text-gray-500">
         <div className="flex items-center justify-between gap-4">
-          <span>{t('launcher_hint_type')}</span>
+          <label className="inline-flex items-center gap-2">
+            <span>{t('launcher_search_engine')}</span>
+            <select
+              value={searchEngine.name}
+              onChange={(event) => {
+                const nextEngine = SEARCH_ENGINES.find(
+                  (engine) => engine.name === event.target.value
+                );
+                if (nextEngine) onSearchEngineChange(nextEngine);
+              }}
+              className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 outline-none"
+              aria-label={t('launcher_search_engine')}
+            >
+              {SEARCH_ENGINES.map((engine) => (
+                <option key={engine.name} value={engine.name}>
+                  {engine.name}
+                </option>
+              ))}
+            </select>
+          </label>
           <span className="inline-flex items-center gap-1">
             <CornerDownLeft size={12} />
             {t('launcher_hint_enter')}

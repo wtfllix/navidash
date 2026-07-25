@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { v4 as uuidv4 } from 'uuid';
 import { useWidgetStore } from '@/store/useWidgetStore';
 import { useUIStore } from '@/store/useUIStore';
+import { useSidebarStore } from '@/store/useSidebarStore';
 import { buildPlacementResult, WidgetCreatedDetail } from '@/lib/widgetPlacement';
 import { widgetMeta, widgetTypesRequiringSetup } from '@/components/widgets/registry';
 import DraggableWidgetItem from './DraggableWidgetItem';
@@ -14,6 +15,7 @@ import { isClientDemoMode } from '@/lib/demo';
 export default function WidgetStoreSidebar() {
   const { widgets, addWidgetWithLayout } = useWidgetStore();
   const currentCanvasCols = useUIStore((state) => state.currentCanvasCols);
+  const closeWidgetStore = useSidebarStore((state) => state.close);
   const t = useTranslations('Widgets');
   const [searchQuery, setSearchQuery] = useState('');
   const isDemoMode = isClientDemoMode;
@@ -27,7 +29,12 @@ export default function WidgetStoreSidebar() {
       cols: currentCanvasCols,
     });
 
-    addWidgetWithLayout(placement.newWidget, placement.positionUpdates);
+    if (
+      !placement.isValid ||
+      !addWidgetWithLayout(placement.newWidget, placement.positionUpdates)
+    ) {
+      return;
+    }
     window.dispatchEvent(
       new CustomEvent<WidgetCreatedDetail>('widget-created', {
         detail: {
@@ -36,6 +43,7 @@ export default function WidgetStoreSidebar() {
         },
       })
     );
+    closeWidgetStore();
   };
 
   const filteredWidgets = useMemo(() => {
@@ -50,19 +58,9 @@ export default function WidgetStoreSidebar() {
   }, [searchQuery, t]);
 
   return (
-    <div className="flex h-full flex-col bg-white/92">
-      <div className="shrink-0 border-b border-slate-200/80 bg-white/60 px-4 py-3 backdrop-blur-2xl shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
-        <h2 className="text-base font-semibold tracking-[0.01em] text-slate-900">
-          {t('store_title')}
-        </h2>
-
-        {isDemoMode && (
-          <p className="mt-2 text-sm leading-6 text-slate-500">
-            当前为 demo 模式。你可以拖拽、添加和调整组件，但刷新页面后会恢复为预置内容。
-          </p>
-        )}
-
-        <div className="relative mt-2.5">
+    <div className="flex h-full min-h-0 flex-col bg-white/70">
+      <div className="flex shrink-0 items-center gap-3 px-4 py-2">
+        <div className="relative w-full max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
           {searchQuery && (
             <button
@@ -77,39 +75,45 @@ export default function WidgetStoreSidebar() {
           <input
             type="text"
             placeholder={t('search_widgets')}
-            className="w-full rounded-xl border border-white/70 bg-white/80 py-2.5 pl-9 pr-8 text-sm text-slate-700 shadow-sm outline-none transition-all focus:border-slate-300 focus:ring-4 focus:ring-[rgba(var(--primary-color),0.12)]"
+            className="w-full rounded-xl border border-slate-200/80 bg-white/88 py-2 pl-9 pr-8 text-sm text-slate-700 shadow-sm outline-none transition-all focus:border-[rgba(var(--primary-color),0.4)] focus:ring-4 focus:ring-[rgba(var(--primary-color),0.12)]"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             aria-label={t('search_widgets')}
           />
         </div>
+        {isDemoMode && (
+          <span className="hidden shrink-0 text-xs text-amber-700 sm:inline">
+            Demo 刷新后恢复
+          </span>
+        )}
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 pb-5">
+      <div className="min-h-0 flex-1 overflow-x-auto overflow-y-hidden px-4 pb-4 scrollbar-hide">
         {filteredWidgets.length > 0 ? (
-          <div className="grid grid-cols-1 gap-3 pt-3">
+          <div className="flex w-max gap-3 pt-1">
             {filteredWidgets.map((meta) => (
               <DraggableWidgetItem
                 key={meta.type}
                 meta={meta}
+                compact
                 onClick={() => handleAddWidget(meta.type, meta.defaultSize)}
               />
             ))}
           </div>
         ) : (
-          <div className="flex h-full min-h-[220px] flex-col items-center justify-center rounded-3xl border border-dashed border-slate-200 bg-slate-50/70 px-6 text-center">
-            <div className="rounded-2xl bg-white p-3 shadow-sm ring-1 ring-slate-200">
-              <Search size={18} className="text-slate-400" />
-            </div>
-            <p className="mt-4 text-sm font-semibold text-slate-900">{t('empty_state_title')}</p>
-            <p className="mt-2 text-sm leading-6 text-slate-500">
+          <div className="flex h-full items-center justify-center gap-3 rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 px-6 text-center">
+            <Search size={18} className="text-slate-400" />
+            <div className="text-left">
+              <p className="text-sm font-semibold text-slate-900">{t('empty_state_title')}</p>
+              <p className="mt-1 text-xs text-slate-500">
               {searchQuery.trim() ? t('no_search_results') : t('no_widgets')}
-            </p>
+              </p>
+            </div>
             {searchQuery.trim() && (
               <button
                 type="button"
                 onClick={() => setSearchQuery('')}
-                className="mt-4 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-100"
+                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-100"
               >
                 {t('clear_search')}
               </button>

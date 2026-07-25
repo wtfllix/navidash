@@ -31,14 +31,8 @@ export function useCanvasMetrics({ rowHeight, margin, forcedCols }: UseCanvasMet
   }, []);
 
   const currentCols = useMemo(() => {
-    if (forcedCols) return forcedCols;
-    if (!width) return 8;
-    if (width >= 1600) return 10;
-    if (width >= 1200) return 8;
-    if (width >= 900) return 6;
-    if (width >= 600) return 4;
-    return 2;
-  }, [forcedCols, width]);
+    return forcedCols ?? 8;
+  }, [forcedCols]);
 
   const cellWidth = useMemo(() => {
     if (!width) return 0;

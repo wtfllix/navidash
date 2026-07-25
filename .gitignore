@@ -26,3 +26,6 @@ Thumbs.db
 data/
 navidash-standalone.zip
 tsconfig.tsbuildinfo
+
+# Local preview font; the supplied file is licensed for personal use only.
+/public/fonts/eagle-horizon-personal-use.regular.ttf

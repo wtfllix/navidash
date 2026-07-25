@@ -10,14 +10,14 @@
 **中文** | [English](./README_EN.md)
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Version](https://img.shields.io/badge/version-0.6.0-green.svg)
+![Version](https://img.shields.io/badge/version-0.7.3-green.svg)
 ![Next.js](https://img.shields.io/badge/Next.js-14-black.svg)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue.svg)
 ![Docker](https://img.shields.io/badge/Docker-ready-2496ed.svg)
 
 [在线演示](https://navidash.vercel.app/zh) · [部署说明](./docs/DEPLOY.md) · [用户指南](./docs/USER_GUIDE.md) · [English](./README_EN.md)
 
-NaviDash 是一个个人用的浏览器起始页。我希望它能把几件每天都会碰到的事放在同一个地方：常用链接、快速搜索、临时便签，以及一些和本地开发、自托管服务有关的小状态。
+NaviDash 是一个注意力优先的个性化浏览器起始页。我希望它能让你在打开新标签页后尽快找到下一步，同时把常用链接、快速搜索、临时便签和少量日常信息组织成真正属于自己的首页。
 
 它不会刻意往完整监控平台、RSS 阅读器或项目管理工具的方向做。那些工具已经有很多成熟选择，NaviDash 更适合做一个轻量的入口页。
 
@@ -47,15 +47,16 @@ NaviDash 想保留一点自由布局和个人化，但核心还是围绕日常�
 
 - 自由布局的 widget 画布，支持拖拽、重排和尺寸调整
 - 桌面与手机双布局，分别编辑排布但共享同一套组件数据
-- 内置 `Quick Link`、`Links`、`Memo`、`Todo` 等高频组件
-- 画布级快速打开与搜索，支持命中已保存链接与最近访问记录
+- 组件架聚焦 `Links`、`Today`、`Memo` 和 `Poster`
+- Dock 书签库集中管理链接，画布级快速启动器可搜索全部书签和最近访问记录
 - 支持 JSON 导入导出，方便备份和迁移
 
 ### Theme：个人首页
 
 - 洞洞板风格背景
 - 自定义壁纸、模糊和遮罩透明度
-- 内置 `Clock`、`Weather`、`Date`、`Calendar`、`Photo Frame`
+- `Today` 统一呈现时间、英文日期和天气，`Poster` 用于无边框海报装饰
+- 已下线的旧组件不会进入当前运行代码；读取旧布局或备份时会过滤对应项并保留其他有效组件
 - 适合做成浏览器起始页、个人主页或家用设备首页
 
 ### Dev Pack：开发者与自托管方向
@@ -69,26 +70,14 @@ NaviDash 想保留一点自由布局和个人化，但核心还是围绕日常�
 
 ## 最近更新
 
-当前版本：`0.6.0`
+当前版本：`0.7.3`
 
-- 支持桌面与手机分离布局，组件数据共享，移动端适配更完整
-- 新增手机布局撤销与恢复能力，降低编辑时的误操作成本
-- 新增画布级快速打开与搜索面板，可直接检索已保存链接或走默认搜索
-- 主线已吸收 Demo 模式能力，可通过环境变量切换为只读演示站点
-- `Todo` 和 `Memo` 补充滚动提示阴影，长内容浏览更直观
+- 页面收敛为快速启动器、底部 Dock 和稳定自由画布
+- 全局书签库支持 HTML 与 Markdown 批量导入，Links 固定少量常用入口
+- Today、Links、Memo 和 Poster 构成当前私人数字墙核心组件
+- Widget 数据统一为带 revision 的原子快照，并增加可选单用户访问保护
 
 完整变更记录见 [changelog.md](./changelog.md)。
-
-## 路线图
-
-下面是目前比较明确的方向，不承诺具体时间。个人项目节奏会按真实使用反馈调整。
-
-| 阶段 | 方向 |
-| --- | --- |
-| 当前主力 | 链接、搜索、便签、移动端布局、模板体验 |
-| 接下来 | Dev Pack：IP、服务状态、端口快捷入口、轻量 Docker 服务展示 |
-| 以后考虑 | RSS 最近更新、只读 iCal 日历、GitHub 仓库状态 |
-| 暂不计划 | 完整监控告警平台、完整 RSS 阅读器、双向日历同步、项目管理系统 |
 
 ## 快速开始
 
@@ -121,7 +110,7 @@ export NAVIDASH_DATA_DIR=/your/data/path
 cp .env.example .env
 ```
 
-4. 如果需要天气组件，补充天气配置
+4. 如果需要 Today 显示天气，补充天气服务配置
 
 当前版本天气服务使用和风天气（QWeather）。推荐使用 `apikey`：
 
@@ -179,11 +168,12 @@ npm run build
 
 - `NEXT_PUBLIC_DEMO_MODE`：设为 `true` 时启用只读演示模式
 - `DEMO_MODE`：设为 `true` 时在服务端启用 Demo 数据和只读写入保护
+- `NAVIDASH_ACCESS_PASSWORD`：可选的单用户访问密码，留空表示关闭保护
 - `QWEATHER_API_KEY`：和风天气（QWeather）使用的 Key 或 JWT
 - `QWEATHER_API_HOST`：可选，自定义和风天气兼容 Host
 - `QWEATHER_AUTH_TYPE`：`apikey` 或 `jwt`
 
-当前版本天气请求通过服务端 `/api/weather` 代理发起，默认对接和风天气（QWeather）。推荐优先把天气相关参数放在环境变量里，而不是写进组件配置。
+当前版本天气请求通过服务端 `/api/weather` 代理发起，默认对接和风天气（QWeather）。API Key、Host 和认证方式只从服务端环境变量读取；组件配置只保存城市或经纬度。
 
 ## 数据与持久化
 
@@ -192,10 +182,10 @@ npm run build
 当前主要持久化文件包括：
 
 - `settings.json`
-- `widget-layouts.json`
-- `widget-configs.json`
+- `widget-snapshot.json`
 
-这些文件采用版本化 JSON 包装格式，新版本可以继续兼容迁移；旧格式也保留了读取兼容。
+Widget 布局与配置通过带 revision 的原子快照一起保存。旧
+`widgets.json`、`widget-layouts.json` 和 `widget-configs.json` 仍可作为迁移来源读取。
 
 ## 演示模式
 

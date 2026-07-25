@@ -61,7 +61,7 @@ describe('storage versioned files', () => {
   });
 
   it('reads legacy raw widget layout/config files for backward compatibility', async () => {
-    const { getWidgets } = await import('@/lib/server/storage');
+    const { getWidgetSnapshot } = await import('@/lib/server/storage');
 
     await fs.writeFile(
       path.join(tempDir, 'widget-layouts.json'),
@@ -96,66 +96,74 @@ describe('storage versioned files', () => {
       )
     );
 
-    await expect(getWidgets()).resolves.toEqual([
-      {
-        id: 'legacy-links',
-        type: 'links',
-        size: { w: 2, h: 1 },
-        position: { x: 0, y: 0 },
-        config: {
-          links: [{ id: 'l1', title: 'Legacy Link', url: 'https://legacy.example.com' }],
-        },
-      },
-    ]);
-  });
-
-  it('writes widget layouts grouped by desktop and mobile modes', async () => {
-    const { saveWidgetLayouts } = await import('@/lib/server/storage');
-
-    await saveWidgetLayouts({
-      desktop: [
-        {
-          id: 'clock-1',
-          type: 'clock',
-          size: { w: 2, h: 1 },
-          position: { x: 0, y: 0 },
-        },
-      ],
-      mobile: [
-        {
-          id: 'clock-1',
-          type: 'clock',
-          size: { w: 2, h: 1 },
-          position: { x: 0, y: 0 },
-        },
-      ],
-    });
-
-    const raw = JSON.parse(await fs.readFile(path.join(tempDir, 'widget-layouts.json'), 'utf-8'));
-    expect(raw).toEqual({
-      version: 1,
-      data: {
+    await expect(getWidgetSnapshot()).resolves.toEqual({
+      schemaVersion: 2,
+      revision: 1,
+      layoutsByMode: {
         desktop: [
           {
-            id: 'clock-1',
-            type: 'clock',
+            id: 'legacy-links',
+            type: 'links',
             size: { w: 2, h: 1 },
             position: { x: 0, y: 0 },
           },
         ],
         mobile: [
           {
-            id: 'clock-1',
-            type: 'clock',
+            id: 'legacy-links',
+            type: 'links',
             size: { w: 2, h: 1 },
             position: { x: 0, y: 0 },
           },
         ],
       },
+      configs: [
+        {
+          id: 'legacy-links',
+          type: 'links',
+          config: {
+            bookmarkIds: ['l1'],
+          },
+        },
+      ],
+      bookmarks: [
+        { id: 'l1', title: 'Legacy Link', url: 'https://legacy.example.com/' },
+      ],
     });
   });
 
-  it('reads legacy settings files and drops weather-specific fields', async () => {
+  it('writes one atomic widget snapshot and rejects stale revisions', async () => {
+    const {
+      getWidgetSnapshot,
+      saveWidgetSnapshot,
+      WidgetSnapshotConflictError,
+    } = await import('@/lib/server/storage');
+    const initial = await getWidgetSnapshot();
+
+    const saved = await saveWidgetSnapshot(initial.revision, {
+      schemaVersion: 2,
+      layoutsByMode: { desktop: [], mobile: [] },
+      configs: [],
+      bookmarks: [],
+    });
+
+    expect(saved.revision).toBe(initial.revision + 1);
+    await expect(
+      saveWidgetSnapshot(initial.revision, {
+        schemaVersion: 2,
+        layoutsByMode: { desktop: [], mobile: [] },
+        configs: [],
+        bookmarks: [],
+      })
+    ).rejects.toBeInstanceOf(WidgetSnapshotConflictError);
+
+    const raw = JSON.parse(
+      await fs.readFile(path.join(tempDir, 'widget-snapshot.json'), 'utf-8')
+    );
+    expect(raw).toEqual(saved);
+  });
+
+  it('reads legacy settings files and drops removed theme and weather fields', async () => {
     const { getSettings } = await import('@/lib/server/storage');
 
     await fs.writeFile(
@@ -185,7 +193,6 @@ describe('storage versioned files', () => {
       backgroundOpacity: 0,
       backgroundSize: '24px 24px',
       backgroundRepeat: 'repeat',
-      themeColor: '#22c55e',
       customFavicon: '/favicon.svg',
       customTitle: 'Legacy Settings',
       language: 'zh',
@@ -197,13 +204,21 @@ describe('storage versioned files', () => {
     process.env.NEXT_PUBLIC_DEMO_MODE = 'true';
     jest.resetModules();
 
-    const { getSettings, getWidgets, getSettingsLastModified, getWidgetsLastModified } =
+    const { getSettings, getWidgetSnapshot, getSettingsLastModified } =
       await import('@/lib/server/storage');
     const { DEMO_DATA_VERSION, DEMO_SETTINGS, DEMO_WIDGETS } = await import('@/lib/demo');
+    const { ensureLayoutsByMode } = await import('@/lib/widgetLayouts');
+    const { migrateWidgetConfigsToBookmarks, splitWidgets } = await import('@/lib/schemas');
 
-    await expect(getWidgets()).resolves.toEqual(DEMO_WIDGETS);
+    const { layouts, configs } = splitWidgets(DEMO_WIDGETS);
+    const migrated = migrateWidgetConfigsToBookmarks(configs);
+    await expect(getWidgetSnapshot()).resolves.toEqual({
+      schemaVersion: 2,
+      revision: DEMO_DATA_VERSION,
+      layoutsByMode: ensureLayoutsByMode(layouts, DEMO_WIDGETS),
+      ...migrated,
+    });
     await expect(getSettings()).resolves.toEqual(DEMO_SETTINGS);
-    await expect(getWidgetsLastModified()).resolves.toBe(DEMO_DATA_VERSION);
     await expect(getSettingsLastModified()).resolves.toBe(DEMO_DATA_VERSION);
   });
 });

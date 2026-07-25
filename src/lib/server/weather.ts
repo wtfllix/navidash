@@ -2,13 +2,12 @@ import { z } from 'zod';
 import { getDemoWeather, isServerDemoMode } from '@/lib/demo';
 
 export type WeatherAuthType = 'apikey' | 'jwt';
+export const DEFAULT_QWEATHER_HOST = 'https://devapi.qweather.com';
 
 export interface WeatherRequestParams {
   lat: number;
   lon: number;
   locale: string;
-  host?: string;
-  authType?: WeatherAuthType;
 }
 
 const qWeatherNowSchema = z.object({
@@ -36,17 +35,9 @@ function normalizeWeatherAuthType(value: string | undefined): WeatherAuthType {
 }
 
 export function getWeatherServerConfig() {
-  const apiKey =
-    process.env.QWEATHER_API_KEY?.trim() ||
-    process.env.NEXT_PUBLIC_QWEATHER_API_KEY?.trim() ||
-    '';
-  const host =
-    process.env.QWEATHER_API_HOST?.trim() ||
-    process.env.NEXT_PUBLIC_QWEATHER_API_HOST?.trim() ||
-    '';
-  const authType = normalizeWeatherAuthType(
-    process.env.QWEATHER_AUTH_TYPE?.trim() || process.env.NEXT_PUBLIC_QWEATHER_AUTH_TYPE?.trim()
-  );
+  const apiKey = process.env.QWEATHER_API_KEY?.trim() || '';
+  const host = process.env.QWEATHER_API_HOST?.trim() || '';
+  const authType = normalizeWeatherAuthType(process.env.QWEATHER_AUTH_TYPE?.trim());
 
   return {
     apiKey,
@@ -55,12 +46,33 @@ export function getWeatherServerConfig() {
   };
 }
 
+export function getWeatherPublicConfig() {
+  const { apiKey, host, authType } = getWeatherServerConfig();
+  const configuredHost = host || DEFAULT_QWEATHER_HOST;
+  let publicHost = DEFAULT_QWEATHER_HOST;
+
+  try {
+    const url = new URL(
+      /^https?:\/\//i.test(configuredHost) ? configuredHost : `https://${configuredHost}`
+    );
+    publicHost = url.origin;
+  } catch {
+    // Keep the documented default when a configured host cannot be safely represented.
+  }
+
+  return {
+    provider: 'QWeather' as const,
+    configured: isServerDemoMode || Boolean(apiKey),
+    host: publicHost,
+    authType,
+    demo: isServerDemoMode,
+  };
+}
+
 export async function fetchServerWeather({
   lat,
   lon,
   locale,
-  host,
-  authType,
 }: WeatherRequestParams) {
   if (isServerDemoMode) {
     return getDemoWeather();
@@ -73,8 +85,8 @@ export async function fetchServerWeather({
     throw new Error('Missing QWeather API key');
   }
 
-  const effectiveHost = host?.trim() || serverConfig.host || 'https://devapi.qweather.com';
-  const effectiveAuthType = authType || serverConfig.authType;
+  const effectiveHost = serverConfig.host || DEFAULT_QWEATHER_HOST;
+  const effectiveAuthType = serverConfig.authType;
   const lang = locale === 'zh' ? 'zh' : 'en';
   const location = `${Math.round(lon * 100) / 100},${Math.round(lat * 100) / 100}`;
 

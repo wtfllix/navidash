@@ -1,11 +1,13 @@
 import { z } from 'zod';
 import {
+  Bookmark,
   DEFAULT_SETTINGS,
   Settings,
   Widget,
   WidgetConfigEntry,
   WidgetLayout,
   WidgetLayoutsByMode,
+  WidgetSnapshot,
 } from '@/types';
 
 function normalizeLinkUrl(url: string): string {
@@ -22,20 +24,14 @@ function normalizeLinkUrl(url: string): string {
   return `https://${trimmed}`;
 }
 
-function normalizeWeatherAuthType(value: string | undefined): 'apikey' | 'jwt' | undefined {
-  if (!value) {
-    return undefined;
+function canonicalBookmarkUrl(value: string) {
+  try {
+    const url = new URL(normalizeLinkUrl(value));
+    url.hash = '';
+    return url.toString();
+  } catch {
+    return normalizeLinkUrl(value);
   }
-
-  if (value === 'apikey' || value === 'param') {
-    return 'apikey';
-  }
-
-  if (value === 'jwt' || value === 'bearer') {
-    return 'jwt';
-  }
-
-  return undefined;
 }
 
 const widgetSizeSchema = z.object({
@@ -48,22 +44,16 @@ const widgetPositionSchema = z.object({
   y: z.number().int().min(0),
 });
 
-const emptyConfigSchema = z.object({}).strict().default({});
-
-const linkItemSchema = z.object({
-  id: z.string().min(1),
-  title: z.string().min(1),
-  url: z.string().min(1).transform(normalizeLinkUrl),
-});
-
-const clockWidgetConfigSchema = z
+export const BookmarkSchema = z
   .object({
-    clockStyle: z.enum(['glass', 'minimal', 'bento', 'digital', 'analog', 'flip', 'apple']).optional(),
+    id: z.string().min(1),
+    title: z.string().min(1),
+    url: z.string().min(1).transform(canonicalBookmarkUrl),
+    folder: z.string().min(1).optional(),
   })
-  .strict()
-  .default({});
+  .strict();
 
-const weatherWidgetConfigSchema = z
+const todayWidgetConfigSchema = z
   .object({
     apiKey: z.string().optional(),
     city: z.string().optional(),
@@ -78,32 +68,14 @@ const weatherWidgetConfigSchema = z
     city: config.city,
     lat: config.lat,
     lon: config.lon,
-    weatherSub: config.weatherSub,
-    weatherCustomHost: config.weatherCustomHost?.trim() || undefined,
-    weatherAuthType: normalizeWeatherAuthType(config.weatherAuthType),
   }))
-  .default({});
-
-const dateWidgetConfigSchema = z
-  .object({
-    style: z.enum(['classic', 'minimal', 'glass', 'bauhaus']).optional(),
-    color: z.string().optional(),
-  })
-  .strict()
-  .default({});
-
-const quickLinkWidgetConfigSchema = z
-  .object({
-    title: z.string().optional(),
-    url: z.string().optional(),
-  })
-  .strict()
   .default({});
 
 const linksWidgetConfigSchema = z
   .object({
     title: z.string().optional(),
-    links: z.array(linkItemSchema).optional(),
+    bookmarkIds: z.array(z.string().min(1)).optional(),
+    links: z.array(BookmarkSchema).optional(),
     showLabels: z.boolean().optional(),
     iconSize: z.enum(['sm', 'md', 'lg']).optional(),
   })
@@ -115,21 +87,6 @@ const memoWidgetConfigSchema = z
     content: z.string().optional(),
     bgColor: z.string().optional(),
     textColor: z.string().optional(),
-  })
-  .strict()
-  .default({});
-
-const todoWidgetConfigSchema = z
-  .object({
-    todos: z
-      .array(
-        z.object({
-          id: z.string().min(1),
-          text: z.string(),
-          completed: z.boolean(),
-        })
-      )
-      .optional(),
   })
   .strict()
   .default({});
@@ -152,7 +109,7 @@ const photoWidgetConfigSchema = z
       ...config,
       images,
       imageUrl: config.imageUrl?.trim() || images?.[0],
-      autoplay: config.autoplay ?? true,
+      autoplay: config.autoplay ?? false,
       interval: config.interval ?? 5000,
       shuffle: config.shuffle ?? false,
     };
@@ -174,23 +131,8 @@ const widgetLayoutBaseShape = {
 export const WidgetSchema = z.discriminatedUnion('type', [
   z.object({
     ...widgetBaseShape,
-    type: z.literal('clock'),
-    config: clockWidgetConfigSchema,
-  }),
-  z.object({
-    ...widgetBaseShape,
-    type: z.literal('weather'),
-    config: weatherWidgetConfigSchema,
-  }),
-  z.object({
-    ...widgetBaseShape,
-    type: z.literal('date'),
-    config: dateWidgetConfigSchema,
-  }),
-  z.object({
-    ...widgetBaseShape,
-    type: z.literal('quick-link'),
-    config: quickLinkWidgetConfigSchema,
+    type: z.literal('today'),
+    config: todayWidgetConfigSchema,
   }),
   z.object({
     ...widgetBaseShape,
@@ -204,49 +146,40 @@ export const WidgetSchema = z.discriminatedUnion('type', [
   }),
   z.object({
     ...widgetBaseShape,
-    type: z.literal('todo'),
-    config: todoWidgetConfigSchema,
-  }),
-  z.object({
-    ...widgetBaseShape,
     type: z.literal('photo-frame'),
     config: photoWidgetConfigSchema,
   }),
-  z.object({
-    ...widgetBaseShape,
-    type: z.literal('calendar'),
-    config: emptyConfigSchema,
-  }),
-  z.object({
-    ...widgetBaseShape,
-    type: z.literal('rss'),
-    config: emptyConfigSchema,
-  }),
-  z.object({
-    ...widgetBaseShape,
-    type: z.literal('monitor'),
-    config: emptyConfigSchema,
-  }),
 ]);
 
-export const WidgetsArraySchema = z.array(WidgetSchema);
+const removedWidgetTypes = new Set([
+  'clock',
+  'weather',
+  'date',
+  'quick-link',
+  'todo',
+  'calendar',
+  'rss',
+  'monitor',
+]);
+
+function filterUnsupportedWidgetEntries(value: unknown) {
+  if (!Array.isArray(value)) return value;
+  return value.filter((entry) => {
+    if (!entry || typeof entry !== 'object') return true;
+    const type = (entry as { type?: unknown }).type;
+    return typeof type !== 'string' || !removedWidgetTypes.has(type);
+  });
+}
+
+export const WidgetsArraySchema = z.preprocess(
+  filterUnsupportedWidgetEntries,
+  z.array(WidgetSchema)
+);
 
 export const WidgetLayoutSchema = z.discriminatedUnion('type', [
   z.object({
     ...widgetLayoutBaseShape,
-    type: z.literal('clock'),
-  }),
-  z.object({
-    ...widgetLayoutBaseShape,
-    type: z.literal('weather'),
-  }),
-  z.object({
-    ...widgetLayoutBaseShape,
-    type: z.literal('date'),
-  }),
-  z.object({
-    ...widgetLayoutBaseShape,
-    type: z.literal('quick-link'),
+    type: z.literal('today'),
   }),
   z.object({
     ...widgetLayoutBaseShape,
@@ -258,27 +191,14 @@ export const WidgetLayoutSchema = z.discriminatedUnion('type', [
   }),
   z.object({
     ...widgetLayoutBaseShape,
-    type: z.literal('todo'),
-  }),
-  z.object({
-    ...widgetLayoutBaseShape,
     type: z.literal('photo-frame'),
-  }),
-  z.object({
-    ...widgetLayoutBaseShape,
-    type: z.literal('calendar'),
-  }),
-  z.object({
-    ...widgetLayoutBaseShape,
-    type: z.literal('rss'),
-  }),
-  z.object({
-    ...widgetLayoutBaseShape,
-    type: z.literal('monitor'),
   }),
 ]);
 
-export const WidgetLayoutsArraySchema = z.array(WidgetLayoutSchema);
+export const WidgetLayoutsArraySchema = z.preprocess(
+  filterUnsupportedWidgetEntries,
+  z.array(WidgetLayoutSchema)
+);
 
 export const WidgetLayoutsByModeSchema = z
   .object({
@@ -290,23 +210,8 @@ export const WidgetLayoutsByModeSchema = z
 export const WidgetConfigEntrySchema = z.discriminatedUnion('type', [
   z.object({
     id: z.string().min(1),
-    type: z.literal('clock'),
-    config: clockWidgetConfigSchema,
-  }),
-  z.object({
-    id: z.string().min(1),
-    type: z.literal('weather'),
-    config: weatherWidgetConfigSchema,
-  }),
-  z.object({
-    id: z.string().min(1),
-    type: z.literal('date'),
-    config: dateWidgetConfigSchema,
-  }),
-  z.object({
-    id: z.string().min(1),
-    type: z.literal('quick-link'),
-    config: quickLinkWidgetConfigSchema,
+    type: z.literal('today'),
+    config: todayWidgetConfigSchema,
   }),
   z.object({
     id: z.string().min(1),
@@ -320,32 +225,112 @@ export const WidgetConfigEntrySchema = z.discriminatedUnion('type', [
   }),
   z.object({
     id: z.string().min(1),
-    type: z.literal('todo'),
-    config: todoWidgetConfigSchema,
-  }),
-  z.object({
-    id: z.string().min(1),
     type: z.literal('photo-frame'),
     config: photoWidgetConfigSchema,
   }),
-  z.object({
-    id: z.string().min(1),
-    type: z.literal('calendar'),
-    config: emptyConfigSchema,
-  }),
-  z.object({
-    id: z.string().min(1),
-    type: z.literal('rss'),
-    config: emptyConfigSchema,
-  }),
-  z.object({
-    id: z.string().min(1),
-    type: z.literal('monitor'),
-    config: emptyConfigSchema,
-  }),
 ]);
 
-export const WidgetConfigsArraySchema = z.array(WidgetConfigEntrySchema);
+export const WidgetConfigsArraySchema = z.preprocess(
+  filterUnsupportedWidgetEntries,
+  z.array(WidgetConfigEntrySchema)
+);
+
+const WidgetSnapshotV1Schema = z
+  .object({
+    schemaVersion: z.literal(1),
+    revision: z.number().int().nonnegative(),
+    layoutsByMode: WidgetLayoutsByModeSchema,
+    configs: WidgetConfigsArraySchema,
+  })
+  .strict();
+
+export const WidgetSnapshotSchema = z
+  .object({
+    schemaVersion: z.literal(2),
+    revision: z.number().int().nonnegative(),
+    layoutsByMode: WidgetLayoutsByModeSchema,
+    configs: WidgetConfigsArraySchema,
+    bookmarks: z.array(BookmarkSchema),
+  })
+  .strict();
+
+export const StoredWidgetSnapshotSchema = z.union([
+  WidgetSnapshotSchema,
+  WidgetSnapshotV1Schema,
+]);
+
+export const WidgetSnapshotWriteSchema = WidgetSnapshotSchema.omit({
+  revision: true,
+}).extend({
+  expectedRevision: z.number().int().nonnegative(),
+});
+
+export function migrateWidgetConfigsToBookmarks(
+  configs: WidgetConfigEntry[],
+  initialBookmarks: Bookmark[] = []
+) {
+  const bookmarks = BookmarkSchema.array().parse(initialBookmarks) as Bookmark[];
+  const usedIds = new Set(bookmarks.map((bookmark) => bookmark.id));
+  const bookmarkIdByUrl = new Map(
+    bookmarks.map((bookmark) => [canonicalBookmarkUrl(bookmark.url), bookmark.id])
+  );
+
+  const createUniqueId = (preferred: string) => {
+    let candidate = preferred;
+    let suffix = 2;
+    while (usedIds.has(candidate)) {
+      candidate = `${preferred}-${suffix}`;
+      suffix += 1;
+    }
+    usedIds.add(candidate);
+    return candidate;
+  };
+
+  const migratedConfigs = configs.map((entry): WidgetConfigEntry => {
+    if (entry.type !== 'links') return entry;
+
+    const { links = [], bookmarkIds = [], ...presentation } = entry.config;
+    const nextIds = bookmarkIds.filter((id) => usedIds.has(id));
+
+    for (const link of links) {
+      const canonicalUrl = canonicalBookmarkUrl(link.url);
+      let bookmarkId = bookmarkIdByUrl.get(canonicalUrl);
+
+      if (!bookmarkId) {
+        bookmarkId = createUniqueId(link.id || `bookmark-${bookmarks.length + 1}`);
+        bookmarks.push({ ...link, id: bookmarkId, url: canonicalUrl });
+        bookmarkIdByUrl.set(canonicalUrl, bookmarkId);
+      }
+
+      if (!nextIds.includes(bookmarkId)) nextIds.push(bookmarkId);
+    }
+
+    return {
+      ...entry,
+      config: {
+        ...presentation,
+        bookmarkIds: nextIds,
+      },
+    };
+  });
+
+  return { configs: migratedConfigs, bookmarks };
+}
+
+export function normalizeWidgetSnapshot(value: unknown): WidgetSnapshot {
+  const snapshot = StoredWidgetSnapshotSchema.parse(value);
+  const migrated = migrateWidgetConfigsToBookmarks(
+    snapshot.configs as WidgetConfigEntry[],
+    snapshot.schemaVersion === 2 ? (snapshot.bookmarks as Bookmark[]) : []
+  );
+
+  return WidgetSnapshotSchema.parse({
+    schemaVersion: 2,
+    revision: snapshot.revision,
+    layoutsByMode: snapshot.layoutsByMode,
+    ...migrated,
+  }) as WidgetSnapshot;
+}
 
 const settingsShape = {
   backgroundImage: z.string(),
@@ -353,7 +338,6 @@ const settingsShape = {
   backgroundOpacity: z.number().min(0),
   backgroundSize: z.string(),
   backgroundRepeat: z.string(),
-  themeColor: z.string(),
   customFavicon: z.string(),
   customTitle: z.string(),
   language: z.string(),
@@ -367,9 +351,11 @@ export const PartialSettingsSchema = SettingsNormalizationSchema;
 
 export const WidgetStorePersistedStateSchema = z
   .object({
-    widgets: WidgetsArraySchema,
+    widgets: WidgetsArraySchema.optional(),
     widgetConfigs: WidgetConfigsArraySchema.optional(),
     layoutsByMode: WidgetLayoutsByModeSchema.optional(),
+    bookmarks: z.array(BookmarkSchema).optional(),
+    revision: z.number().finite().nonnegative().optional(),
     dataVersion: z.number().finite().nonnegative().optional(),
   })
   .strict();

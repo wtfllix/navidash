@@ -1,68 +1,56 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ExternalLink, Link2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
-import { LinkItem, WidgetOfType } from '@/types';
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const getFaviconUrl = (url: string) => {
-  try {
-    const domain = new URL(url.startsWith('http') ? url : `https://${url}`).hostname;
-    return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
-  } catch {
-    return null;
-  }
-};
-
-const getValidUrl = (url: string) =>
-  url.startsWith('http://') || url.startsWith('https://') ? url : `https://${url}`;
-
-// ─── Icon sizes ───────────────────────────────────────────────────────────────
+import { cn } from '@/lib/utils';
+import { Bookmark, WidgetOfType } from '@/types';
+import { useWidgetStore } from '@/store/useWidgetStore';
+import { recordLauncherLinkOpen } from '@/lib/linkLauncherUsage';
+import { getFaviconUrl } from './editors/shared';
 
 const SIZE_MAP = {
-  sm: { box: 'w-8 h-8', img: 'w-5 h-5', item: 'w-12', label: 'text-[10px] w-full' },
-  md: { box: 'w-10 h-10', img: 'w-6 h-6', item: 'w-16', label: 'text-[11px] w-full' },
-  lg: { box: 'w-12 h-12', img: 'w-7 h-7', item: 'w-[4.5rem]', label: 'text-xs w-full' },
+  md: { box: 'h-11 w-11', img: 'h-6 w-6', label: 'text-[11px]' },
+  hero: { box: 'h-16 w-16', img: 'h-10 w-10', label: 'text-sm' },
 } as const;
 
-const getGridColumnsClass = (width: number, height: number) => {
-  if (width === 2 && height === 2) return 'grid-cols-4';
-  if (width === 3 && height === 1) return 'grid-cols-6';
-  return 'grid-cols-4';
-};
+function getValidUrl(url: string) {
+  return url.startsWith('http://') || url.startsWith('https://') ? url : `https://${url}`;
+}
 
-const getColumnCount = (width: number, height: number) => {
-  if (width === 3 && height === 1) return 6;
-  return 4;
-};
+function getCapacity(width: number, height: number) {
+  if (width === 1 && height === 1) return 1;
+  if (height === 1) return width === 3 ? 6 : 4;
+  return 8;
+}
 
-const chunkLinks = (links: LinkItem[], chunkSize: number) => {
-  const rows: LinkItem[][] = [];
-
-  for (let index = 0; index < links.length; index += chunkSize) {
-    rows.push(links.slice(index, index + chunkSize));
+function paginateBookmarks(bookmarks: Bookmark[], pageSize: number) {
+  const pages: Bookmark[][] = [];
+  for (let index = 0; index < bookmarks.length; index += pageSize) {
+    pages.push(bookmarks.slice(index, index + pageSize));
   }
+  return pages;
+}
 
-  return rows;
-};
-
-// ─── LinkIcon ─────────────────────────────────────────────────────────────────
-
-function LinkIcon({ link, sizeKey }: { link: LinkItem; sizeKey: 'sm' | 'md' | 'lg' }) {
+function LinkIcon({
+  bookmark,
+  sizeKey,
+}: {
+  bookmark: Bookmark;
+  sizeKey: keyof typeof SIZE_MAP;
+}) {
   const [failed, setFailed] = useState(false);
-  const faviconUrl = getFaviconUrl(link.url);
-  const { box, img } = SIZE_MAP[sizeKey];
+  const faviconUrl = getFaviconUrl(bookmark.url, sizeKey === 'hero' ? 64 : 32);
+  const size = SIZE_MAP[sizeKey];
 
   return (
     <div
       className={cn(
-        box,
-        'bg-white rounded-xl border border-gray-100 shadow-sm',
-        'flex items-center justify-center overflow-hidden',
-        'transition-all duration-200 group-hover/link:scale-110 group-hover/link:shadow-md'
+        size.box,
+        'flex items-center justify-center overflow-hidden transition-all duration-200 group-hover/link:-translate-y-0.5',
+        sizeKey === 'hero'
+          ? 'rounded-none bg-transparent'
+          : 'rounded-[0.95rem] bg-white/[0.62] shadow-[0_3px_12px_rgba(15,23,42,0.06),inset_0_1px_0_rgba(255,255,255,0.88)] ring-1 ring-slate-900/[0.035] group-hover/link:shadow-[0_8px_20px_rgba(15,23,42,0.10)]'
       )}
     >
       {faviconUrl && !failed ? (
@@ -70,119 +58,135 @@ function LinkIcon({ link, sizeKey }: { link: LinkItem; sizeKey: 'sm' | 'md' | 'l
         <img
           src={faviconUrl}
           alt=""
-          className={cn(img, 'object-contain')}
+          className={cn(size.img, 'object-contain')}
           onError={() => setFailed(true)}
         />
       ) : (
-        <ExternalLink size={16} className="text-blue-400" />
+        <ExternalLink
+          size={sizeKey === 'hero' ? 24 : 16}
+          className="text-[rgb(var(--primary-color))]"
+        />
       )}
     </div>
   );
 }
 
-// ─── LinksWidget ──────────────────────────────────────────────────────────────
+function BookmarkLink({
+  bookmark,
+  showLabel,
+}: {
+  bookmark: Bookmark;
+  showLabel: boolean;
+}) {
+  return (
+    <a
+      href={getValidUrl(bookmark.url)}
+      target="_blank"
+      rel="noreferrer"
+      title={bookmark.title}
+      className="group/link flex min-w-0 flex-col items-center gap-1.5 rounded-2xl px-1 py-1.5 transition-colors hover:bg-slate-900/[0.035]"
+      onClick={(event) => {
+        event.stopPropagation();
+        recordLauncherLinkOpen(getValidUrl(bookmark.url));
+      }}
+    >
+      <LinkIcon bookmark={bookmark} sizeKey="md" />
+      {showLabel && (
+        <span className="w-full truncate text-center text-[11px] font-medium leading-tight text-slate-600">
+          {bookmark.title}
+        </span>
+      )}
+    </a>
+  );
+}
 
 export default function LinksWidget({ widget }: { widget: WidgetOfType<'links'> }) {
   const t = useTranslations('Widgets');
-  const { title, links = [], showLabels = true, iconSize = 'md' } = widget.config;
-
-  const size = SIZE_MAP[iconSize ?? 'md'];
+  const bookmarks = useWidgetStore((state) => state.bookmarks);
+  const bookmarkMap = useMemo(
+    () => new Map(bookmarks.map((bookmark) => [bookmark.id, bookmark])),
+    [bookmarks]
+  );
+  const links = useMemo(
+    () =>
+      (widget.config.bookmarkIds ?? [])
+        .map((id) => bookmarkMap.get(id))
+        .filter((bookmark): bookmark is Bookmark => Boolean(bookmark)),
+    [bookmarkMap, widget.config.bookmarkIds]
+  );
+  const capacity = getCapacity(widget.size.w, widget.size.h);
+  const pages = paginateBookmarks(links, capacity);
+  const isSingle = widget.size.w === 1 && widget.size.h === 1;
   const isSingleRow = widget.size.h === 1;
-  const columnCount = getColumnCount(widget.size.w, widget.size.h);
-  const gridColumnsClass = getGridColumnsClass(widget.size.w, widget.size.h);
-  const linkRows = isSingleRow ? chunkLinks(links, columnCount) : [];
+  const columns = isSingleRow ? (widget.size.w === 3 ? 6 : 4) : 4;
+  const title = widget.config.title || t('links');
 
   if (links.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-2 text-gray-400">
-        <Link2 size={22} strokeWidth={1.5} />
-        <span className="text-xs">{t('links_empty')}</span>
+      <div className="flex h-full flex-col items-center justify-center gap-2 text-slate-400">
+        <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[rgba(var(--primary-color),0.07)]">
+          <Link2 size={20} strokeWidth={1.5} className="text-[rgb(var(--primary-color))]/75" />
+        </span>
+        <span className="text-ui-muted">{t('links_empty')}</span>
       </div>
     );
   }
 
+  if (isSingle) {
+    const bookmark = links[0];
+    return (
+      <a
+        href={getValidUrl(bookmark.url)}
+        target="_blank"
+        rel="noreferrer"
+        title={bookmark.title}
+        className="group/link flex h-full w-full flex-col items-center justify-center gap-2 p-2"
+        onClick={(event) => {
+          event.stopPropagation();
+          recordLauncherLinkOpen(getValidUrl(bookmark.url));
+        }}
+      >
+        <LinkIcon bookmark={bookmark} sizeKey="hero" />
+        <span className="w-full truncate px-2 text-center text-sm font-semibold tracking-tight text-slate-700">
+          {bookmark.title}
+        </span>
+      </a>
+    );
+  }
+
   return (
-    <div className="flex flex-col h-full p-3 gap-2 overflow-hidden">
-      <div className="shrink-0">
-        {title ? (
-          <p className="text-xs font-semibold text-gray-500 truncate">{title}</p>
-        ) : (
-          <p className="text-xs font-semibold text-gray-400">{t('links')}</p>
+    <div
+      className={cn(
+        'relative flex h-full flex-col',
+        isSingleRow ? 'gap-0.5 px-3 py-2.5' : 'gap-2 p-4'
+      )}
+    >
+      <p
+        className={cn(
+          'shrink-0 truncate font-semibold tracking-tight text-slate-700',
+          isSingleRow ? 'text-[11px]' : 'text-sm'
         )}
-      </div>
-      {isSingleRow ? (
-        <div className="hover-scrollbar flex-1 overflow-y-auto overflow-x-hidden pr-1 snap-y snap-mandatory">
-          <div className="space-y-3">
-            {linkRows.map((row, rowIndex) => (
-              <div
-                key={`row-${rowIndex}`}
-                className={cn('grid snap-start gap-x-2', gridColumnsClass)}
-              >
-                {row.map((link) => (
-                  <a
-                    key={link.id}
-                    href={getValidUrl(link.url)}
-                    target="_blank"
-                    rel="noreferrer"
-                    title={link.title}
-                    className={cn(
-                      'group/link flex min-w-0 flex-col items-center gap-1.5 p-0.5',
-                      showLabels && size.item
-                    )}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <LinkIcon link={link} sizeKey={iconSize ?? 'md'} />
-                    {showLabels && (
-                      <span
-                        className={cn(
-                          size.label,
-                          'text-gray-600 truncate text-center leading-tight'
-                        )}
-                      >
-                        {link.title}
-                      </span>
-                    )}
-                  </a>
-                ))}
-              </div>
+      >
+        {title}
+      </p>
+
+      <div className="hover-scrollbar min-h-0 flex-1 snap-y snap-mandatory overflow-y-auto overflow-x-hidden">
+        {pages.map((page, pageIndex) => (
+          <div
+            key={`page-${pageIndex}`}
+            className="grid min-h-full snap-start content-center gap-x-2 gap-y-2"
+            style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
+          >
+            {page.map((bookmark) => (
+              <BookmarkLink
+                key={bookmark.id}
+                bookmark={bookmark}
+                showLabel={widget.config.showLabels ?? true}
+              />
             ))}
           </div>
-        </div>
-      ) : (
-        <div
-          className={cn(
-            'hover-scrollbar grid flex-1 content-start gap-x-2 gap-y-3 overflow-y-auto overflow-x-hidden pr-1',
-            gridColumnsClass
-          )}
-        >
-          {links.map((link) => (
-            <a
-              key={link.id}
-              href={getValidUrl(link.url)}
-              target="_blank"
-              rel="noreferrer"
-              title={link.title}
-              className={cn(
-                'group/link flex min-w-0 flex-col items-center gap-1.5 p-0.5',
-                showLabels && 'w-full'
-              )}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <LinkIcon link={link} sizeKey={iconSize ?? 'md'} />
-              {showLabels && (
-                <span
-                  className={cn(
-                    size.label,
-                    'text-gray-600 truncate text-center leading-tight'
-                  )}
-                >
-                  {link.title}
-                </span>
-              )}
-            </a>
-          ))}
-        </div>
-      )}
+        ))}
+      </div>
     </div>
   );
 }

@@ -3,62 +3,42 @@
  *
  * 统一管理所有 Widget 的：
  *  1. 渲染组件（供 MainCanvas 使用）
- *  2. 选择器元数据（供 WidgetPicker 使用）
+ *  2. 组件库元数据（供 WidgetStoreSidebar 使用）
  *
  * 新增 Widget 类型时，只需在此文件添加一条记录，
- * 无需修改 MainCanvas 或 WidgetPicker。
+ * 无需修改 MainCanvas 或组件库实现。
  */
 
 import React from 'react';
 import {
-  Clock,
-  CloudSun,
-  Link as LinkIcon,
   LayoutGrid,
-  Calendar,
-  CheckSquare,
   Image as ImageIcon,
-  CalendarDays,
   StickyNote,
-  BarChart,
+  PanelTop,
   type LucideIcon,
 } from 'lucide-react';
 import { Widget, WidgetType } from '@/types';
 
-import ClockWidget from './ClockWidget';
 import LinksWidget from './LinksWidget';
-import WeatherWidget from './WeatherWidget';
-import DateWidget from './DateWidget';
-import QuickLinkWidget from './QuickLinkWidget';
-import TodoWidget from './TodoWidget';
 import MemoWidget from './MemoWidget';
-import CalendarWidget from './CalendarWidget';
 import PhotoWidget from './PhotoWidget';
+import TodayWidget from './TodayWidget';
 
 // ─── 渲染组件映射 ─────────────────────────────────────────────────────────────
 
 /**
- * 组件注册表。
- * undefined 表示该类型尚未实现，渲染时显示 "Coming Soon"。
+ * 当前组件的统一注册表。
  */
 type WidgetRenderer = React.ComponentType<{ widget: Widget }>;
 
 export const widgetComponentRegistry: Partial<Record<WidgetType, WidgetRenderer>> = {
-  clock: ClockWidget as WidgetRenderer,
-  weather: WeatherWidget as WidgetRenderer,
-  date: DateWidget as WidgetRenderer,
-  'quick-link': QuickLinkWidget as WidgetRenderer,
+  today: TodayWidget as WidgetRenderer,
   links: LinksWidget as WidgetRenderer,
-  todo: TodoWidget as WidgetRenderer,
   memo: MemoWidget as WidgetRenderer,
-  calendar: CalendarWidget as WidgetRenderer,
   'photo-frame': PhotoWidget as WidgetRenderer,
-  // rss、monitor 尚未实现，不注册
 };
 
-// ─── WidgetPicker 元数据 ───────────────────────────────────────────────────────
-
-export type WidgetCategory = 'system' | 'productivity' | 'custom';
+// ─── 组件库元数据 ──────────────────────────────────────────────────────────────
 
 export interface WidgetMeta {
   type: WidgetType;
@@ -69,67 +49,9 @@ export interface WidgetMeta {
   Icon: LucideIcon;
   iconClassName: string;
   defaultSize: { w: number; h: number };
-  category: WidgetCategory;
 }
 
 export const widgetMeta: WidgetMeta[] = [
-  // ── System ──
-  {
-    type: 'clock',
-    titleKey: 'clock',
-    descKey: 'clock_desc',
-    Icon: Clock,
-    iconClassName: 'text-blue-600',
-    defaultSize: { w: 2, h: 1 },
-    category: 'system',
-  },
-  {
-    type: 'weather',
-    titleKey: 'weather',
-    descKey: 'weather_desc',
-    Icon: CloudSun,
-    iconClassName: 'text-orange-500',
-    defaultSize: { w: 2, h: 1 },
-    category: 'system',
-  },
-  {
-    type: 'date',
-    titleKey: 'date',
-    descKey: 'date_desc',
-    Icon: CalendarDays,
-    iconClassName: 'text-red-500',
-    defaultSize: { w: 1, h: 1 },
-    category: 'system',
-  },
-  // ── Productivity ──
-  {
-    type: 'calendar',
-    titleKey: 'calendar',
-    descKey: 'calendar_desc',
-    Icon: Calendar,
-    iconClassName: 'text-purple-500',
-    defaultSize: { w: 2, h: 1 },
-    category: 'productivity',
-  },
-  {
-    type: 'todo',
-    titleKey: 'todo',
-    descKey: 'todo_desc',
-    Icon: CheckSquare,
-    iconClassName: 'text-indigo-500',
-    defaultSize: { w: 2, h: 2 },
-    category: 'productivity',
-  },
-  {
-    type: 'memo',
-    titleKey: 'memo',
-    descKey: 'memo_desc',
-    Icon: StickyNote,
-    iconClassName: 'text-yellow-500',
-    defaultSize: { w: 2, h: 2 },
-    category: 'productivity',
-  },
-  // ── Custom ──
   {
     type: 'links',
     titleKey: 'links',
@@ -137,16 +59,22 @@ export const widgetMeta: WidgetMeta[] = [
     Icon: LayoutGrid,
     iconClassName: 'text-violet-500',
     defaultSize: { w: 2, h: 1 },
-    category: 'custom',
   },
   {
-    type: 'quick-link',
-    titleKey: 'quick_link',
-    descKey: 'quick_link_desc',
-    Icon: LinkIcon,
-    iconClassName: 'text-green-500',
-    defaultSize: { w: 1, h: 1 },
-    category: 'custom',
+    type: 'today',
+    titleKey: 'today',
+    descKey: 'today_desc',
+    Icon: PanelTop,
+    iconClassName: 'text-sky-600',
+    defaultSize: { w: 2, h: 2 },
+  },
+  {
+    type: 'memo',
+    titleKey: 'memo',
+    descKey: 'memo_desc',
+    Icon: StickyNote,
+    iconClassName: 'text-amber-500',
+    defaultSize: { w: 2, h: 1 },
   },
   {
     type: 'photo-frame',
@@ -155,15 +83,11 @@ export const widgetMeta: WidgetMeta[] = [
     Icon: ImageIcon,
     iconClassName: 'text-pink-500',
     defaultSize: { w: 2, h: 2 },
-    category: 'custom',
   },
 ];
 
-/** 所有可用分类 key */
-export const widgetCategories: WidgetCategory[] = ['system', 'productivity', 'custom'];
-
 export const widgetTypesRequiringSetup: WidgetType[] = [
-  'quick-link',
+  'today',
   'photo-frame',
   'links',
 ];

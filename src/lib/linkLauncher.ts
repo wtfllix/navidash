@@ -1,4 +1,10 @@
-import { Widget } from '@/types';
+import { Bookmark, Widget } from '@/types';
+import {
+  canonicalizeLauncherUrl,
+  getDecayedLauncherScore,
+  LauncherUsageStore,
+  normalizeLauncherQuery,
+} from '@/lib/linkLauncherUsage';
 
 export interface LauncherLinkItem {
   id: string;
@@ -7,10 +13,10 @@ export interface LauncherLinkItem {
   hostname: string;
   keywords: string;
   sourceWidgetId: string;
-  sourceType: 'quick-link' | 'links';
+  rankingReason?: 'learned' | 'frequent' | 'recent' | 'match';
 }
 
-function normalizeUrl(url: string): string {
+export function normalizeLauncherUrl(url: string): string {
   if (/^[a-zA-Z][a-zA-Z\d+\-.]*:\/\//.test(url)) {
     return url;
   }
@@ -20,7 +26,7 @@ function normalizeUrl(url: string): string {
 
 function getHostname(url: string): string {
   try {
-    return new URL(normalizeUrl(url)).hostname.replace(/^www\./, '');
+    return new URL(normalizeLauncherUrl(url)).hostname.replace(/^www\./, '');
   } catch {
     return '';
   }
@@ -32,7 +38,7 @@ function isValidLinkCandidate(url?: string): url is string {
   }
 
   try {
-    new URL(normalizeUrl(url.trim()));
+    new URL(normalizeLauncherUrl(url.trim()));
     return true;
   } catch {
     return false;
@@ -50,28 +56,6 @@ export function collectLauncherLinks(widgets: Widget[]): LauncherLinkItem[] {
   const items: LauncherLinkItem[] = [];
 
   widgets.forEach((widget) => {
-    if (widget.type === 'quick-link') {
-      const url = widget.config.url?.trim();
-
-      if (!isValidLinkCandidate(url)) {
-        return;
-      }
-
-      const hostname = getHostname(url);
-      const title = widget.config.title?.trim() || hostname || url;
-
-      items.push({
-        id: `${widget.id}:quick-link`,
-        title,
-        url: normalizeUrl(url),
-        hostname,
-        keywords: createKeywords([title, hostname, url]),
-        sourceWidgetId: widget.id,
-        sourceType: 'quick-link',
-      });
-      return;
-    }
-
     if (widget.type === 'links') {
       (widget.config.links ?? []).forEach((link) => {
         const url = link.url?.trim();
@@ -86,17 +70,36 @@ export function collectLauncherLinks(widgets: Widget[]): LauncherLinkItem[] {
         items.push({
           id: `${widget.id}:${link.id}`,
           title,
-          url: normalizeUrl(url),
+          url: normalizeLauncherUrl(url),
           hostname,
           keywords: createKeywords([title, hostname, url]),
           sourceWidgetId: widget.id,
-          sourceType: 'links',
         });
       });
     }
   });
 
   return items;
+}
+
+export function collectLauncherBookmarks(bookmarks: Bookmark[]): LauncherLinkItem[] {
+  return bookmarks.flatMap((bookmark) => {
+    const url = bookmark.url?.trim();
+    if (!isValidLinkCandidate(url)) return [];
+    const hostname = getHostname(url);
+    const title = bookmark.title.trim() || hostname || url;
+
+    return [
+      {
+        id: bookmark.id,
+        title,
+        url: normalizeLauncherUrl(url),
+        hostname,
+        keywords: createKeywords([title, hostname, url, bookmark.folder]),
+        sourceWidgetId: 'bookmark-library',
+      },
+    ];
+  });
 }
 
 function getMatchScore(link: LauncherLinkItem, query: string): number {
@@ -144,20 +147,66 @@ function getMatchScore(link: LauncherLinkItem, query: string): number {
 export function searchLauncherLinks(
   links: LauncherLinkItem[],
   query: string,
-  limit = 8
+  limit = 8,
+  usage?: LauncherUsageStore,
+  now = Date.now()
 ): LauncherLinkItem[] {
-  const normalizedQuery = query.trim().toLowerCase();
-
-  if (!normalizedQuery) {
-    return links.slice(0, limit);
-  }
+  const normalizedQuery = normalizeLauncherQuery(query);
 
   return [...links]
-    .map((link) => ({ link, score: getMatchScore(link, normalizedQuery) }))
-    .filter((item) => item.score >= 0)
+    .map((link) => {
+      let usageRecord;
+      try {
+        usageRecord = usage?.links[canonicalizeLauncherUrl(link.url)];
+      } catch {
+        usageRecord = undefined;
+      }
+
+      const queryRecord = normalizedQuery ? usageRecord?.queryStats[normalizedQuery] : undefined;
+      const queryScore = queryRecord
+        ? getDecayedLauncherScore(queryRecord.score, queryRecord.scoreUpdatedAt, now)
+        : 0;
+      const globalScore = usageRecord
+        ? getDecayedLauncherScore(
+            usageRecord.globalScore,
+            usageRecord.globalScoreUpdatedAt,
+            now
+          )
+        : 0;
+      const matchScore = normalizedQuery ? getMatchScore(link, normalizedQuery) : 0;
+      const rankingReason: LauncherLinkItem['rankingReason'] =
+        queryScore > 0
+          ? 'learned'
+          : globalScore > 0
+            ? 'frequent'
+            : usageRecord?.lastOpenedAt
+              ? 'recent'
+              : 'match';
+
+      return {
+        link: { ...link, rankingReason },
+        matchScore,
+        queryScore,
+        globalScore,
+        lastOpenedAt: usageRecord?.lastOpenedAt ?? 0,
+      };
+    })
+    .filter((item) => !normalizedQuery || item.matchScore >= 0)
     .sort((a, b) => {
-      if (b.score !== a.score) {
-        return b.score - a.score;
+      if (normalizedQuery && b.queryScore !== a.queryScore) {
+        return b.queryScore - a.queryScore;
+      }
+
+      if (b.matchScore !== a.matchScore) {
+        return b.matchScore - a.matchScore;
+      }
+
+      if (b.globalScore !== a.globalScore) {
+        return b.globalScore - a.globalScore;
+      }
+
+      if (b.lastOpenedAt !== a.lastOpenedAt) {
+        return b.lastOpenedAt - a.lastOpenedAt;
       }
 
       return a.link.title.localeCompare(b.link.title);

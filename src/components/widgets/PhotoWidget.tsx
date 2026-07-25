@@ -13,7 +13,7 @@ export default function PhotoWidget({ widget }: PhotoWidgetProps) {
     const candidates = widget.config.images?.length ? widget.config.images : [widget.config.imageUrl];
     return candidates.map((item) => item?.trim()).filter(Boolean) as string[];
   }, [widget.config.imageUrl, widget.config.images]);
-  const autoplay = widget.config.autoplay ?? true;
+  const autoplay = widget.config.autoplay ?? false;
   const interval = widget.config.interval ?? 5000;
   const shuffle = widget.config.shuffle ?? false;
   const [currentIndex, setCurrentIndex] = React.useState(0);

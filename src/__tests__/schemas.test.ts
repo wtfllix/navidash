@@ -1,32 +1,24 @@
 import {
   createDefaultSettings,
   normalizeSettings,
+  normalizeWidgetSnapshot,
   normalizeWidgets,
   SettingsSchema,
   SettingsStorePersistedStateSchema,
+  WidgetConfigsArraySchema,
+  WidgetLayoutsArraySchema,
   WidgetSchema,
   WidgetStorePersistedStateSchema,
+  WidgetsArraySchema,
 } from '@/lib/schemas';
 import { Widget } from '@/types';
 
 describe('Zod Schemas', () => {
-  it('should validate a correct widget', () => {
+  it('should validate a today widget', () => {
     const widget = {
       id: 'w1',
-      type: 'clock',
-      size: { w: 1, h: 1 },
-      position: { x: 0, y: 0 },
-      config: {},
-    };
-    const result = WidgetSchema.safeParse(widget);
-    expect(result.success).toBe(true);
-  });
-
-  it('should validate a date widget', () => {
-    const widget = {
-      id: 'w2',
-      type: 'date',
-      size: { w: 1, h: 1 },
+      type: 'today',
+      size: { w: 2, h: 2 },
       position: { x: 0, y: 0 },
       config: {},
     };
@@ -54,6 +46,35 @@ describe('Zod Schemas', () => {
     expect(result.success).toBe(true);
   });
 
+  it('migrates schema v1 inline links into a deduplicated bookmark library', () => {
+    const snapshot = normalizeWidgetSnapshot({
+      schemaVersion: 1,
+      revision: 7,
+      layoutsByMode: { desktop: [], mobile: [] },
+      configs: [
+        {
+          id: 'work',
+          type: 'links',
+          config: {
+            links: [
+              { id: 'docs', title: 'Docs', url: 'example.com/docs#intro' },
+              { id: 'duplicate', title: 'Same Docs', url: 'https://example.com/docs#other' },
+            ],
+          },
+        },
+      ],
+    });
+
+    expect(snapshot.schemaVersion).toBe(2);
+    expect(snapshot.bookmarks).toEqual([
+      { id: 'docs', title: 'Docs', url: 'https://example.com/docs' },
+    ]);
+    expect(snapshot.configs[0]).toMatchObject({
+      type: 'links',
+      config: { bookmarkIds: ['docs'] },
+    });
+  });
+
   it('should normalize links without a protocol', () => {
     const result = WidgetSchema.safeParse({
       id: 'w3-normalized',
@@ -69,40 +90,21 @@ describe('Zod Schemas', () => {
     if (!result.success) return;
 
     expect((result.data.config as { links: Array<{ id: string; title: string; url: string }> }).links).toEqual([
-      { id: 'l1', title: 'Baidu', url: 'https://www.baidu.com' },
+      { id: 'l1', title: 'Baidu', url: 'https://www.baidu.com/' },
     ]);
   });
 
-  it('should validate quick-link, memo, todo and photo-frame widgets', () => {
+  it('should validate memo and photo-frame widgets', () => {
     const widgets = [
-      {
-        id: 'quick',
-        type: 'quick-link',
-        size: { w: 1, h: 1 },
-        position: { x: 0, y: 0 },
-        config: {
-          title: 'Docs',
-          url: 'https://example.com/docs',
-        },
-      },
       {
         id: 'memo',
         type: 'memo',
         size: { w: 1, h: 1 },
-        position: { x: 1, y: 0 },
+        position: { x: 0, y: 0 },
         config: {
           content: 'Review layout regression cases',
           bgColor: '#fef08a',
           textColor: '#111827',
-        },
-      },
-      {
-        id: 'todo',
-        type: 'todo',
-        size: { w: 1, h: 2 },
-        position: { x: 2, y: 0 },
-        config: {
-          todos: [{ id: 't1', text: 'Ship tests', completed: false }],
         },
       },
       {
@@ -123,41 +125,75 @@ describe('Zod Schemas', () => {
     }
   });
 
-  it('should validate widgets with strict empty configs', () => {
-    const widgets = [
+  it('should reject individual removed and unimplemented widget types', () => {
+    for (const type of [
+      'clock',
+      'weather',
+      'date',
+      'quick-link',
+      'todo',
+      'calendar',
+      'rss',
+      'monitor',
+    ]) {
+      expect(
+        WidgetSchema.safeParse({
+          id: type,
+          type,
+          size: { w: 1, h: 1 },
+          position: { x: 0, y: 0 },
+          config: {},
+        }).success
+      ).toBe(false);
+    }
+  });
+
+  it('should filter removed widgets from persisted arrays', () => {
+    const widgets = WidgetsArraySchema.parse([
       {
-        id: 'calendar',
-        type: 'calendar',
-        size: { w: 1, h: 2 },
+        id: 'today',
+        type: 'today',
+        size: { w: 2, h: 2 },
         position: { x: 0, y: 0 },
         config: {},
       },
       {
-        id: 'rss',
-        type: 'rss',
-        size: { w: 1, h: 1 },
-        position: { x: 1, y: 0 },
-        config: {},
-      },
-      {
-        id: 'monitor',
-        type: 'monitor',
+        id: 'weather',
+        type: 'weather',
         size: { w: 1, h: 1 },
         position: { x: 2, y: 0 },
         config: {},
       },
-    ] satisfies Widget[];
+    ]);
+    const layouts = WidgetLayoutsArraySchema.parse([
+      {
+        id: 'today',
+        type: 'today',
+        size: { w: 2, h: 2 },
+        position: { x: 0, y: 0 },
+      },
+      {
+        id: 'clock',
+        type: 'clock',
+        size: { w: 1, h: 1 },
+        position: { x: 2, y: 0 },
+      },
+    ]);
+    const configs = WidgetConfigsArraySchema.parse([
+      { id: 'today', type: 'today', config: {} },
+      { id: 'todo', type: 'todo', config: {} },
+    ]);
 
-    for (const widget of widgets) {
-      expect(WidgetSchema.safeParse(widget).success).toBe(true);
-    }
+    expect(widgets.map((widget) => widget.id)).toEqual(['today']);
+    expect(layouts.map((layout) => layout.id)).toEqual(['today']);
+    expect(configs.map((config) => config.id)).toEqual(['today']);
   });
 
-  it('should reject extra fields for widgets with strict empty configs', () => {
+  it('should reject extra fields in strict widget configs', () => {
     const result = WidgetSchema.safeParse({
-      id: 'calendar-bad',
-      type: 'calendar',
-      size: { w: 1, h: 2 },
+      id: 'memo-bad',
+      type: 'memo',
+      size: { w: 2, h: 1 },
       position: { x: 0, y: 0 },
       config: {
         title: 'Unexpected',
@@ -183,10 +219,10 @@ describe('Zod Schemas', () => {
     expect(result.success).toBe(false);
   });
 
-  it('should reject weather config with unsupported auth type', () => {
+  it('should reject today config with unsupported legacy auth type', () => {
     const widget = {
       id: 'w5',
-      type: 'weather',
+      type: 'today',
       size: { w: 2, h: 1 },
       position: { x: 0, y: 0 },
       config: {
@@ -199,14 +235,17 @@ describe('Zod Schemas', () => {
     expect(result.success).toBe(false);
   });
 
-  it('should normalize legacy weather auth types', () => {
+  it('should remove legacy weather connection settings', () => {
     const result = WidgetSchema.safeParse({
-      id: 'weather-legacy-auth',
-      type: 'weather',
+      id: 'today-legacy-auth',
+      type: 'today',
       size: { w: 2, h: 1 },
       position: { x: 0, y: 0 },
       config: {
         city: 'Shanghai',
+        apiKey: 'legacy-key',
+        weatherCustomHost: 'legacy.example.com',
+        weatherSub: 'custom',
         weatherAuthType: 'bearer',
       },
     });
@@ -214,15 +253,35 @@ describe('Zod Schemas', () => {
     expect(result.success).toBe(true);
     if (!result.success) return;
 
-    expect((result.data.config as { weatherAuthType?: 'apikey' | 'jwt' }).weatherAuthType).toBe(
-      'jwt'
-    );
+    expect(result.data.config).toEqual({
+      city: 'Shanghai',
+      lat: undefined,
+      lon: undefined,
+    });
+  });
+
+  it('should validate today with weather configuration', () => {
+    const result = WidgetSchema.safeParse({
+      id: 'today-panel',
+      type: 'today',
+      size: { w: 2, h: 1 },
+      position: { x: 0, y: 0 },
+      config: {
+        city: 'Shanghai',
+        lat: 31.2304,
+        lon: 121.4737,
+      },
+    });
+
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.data.type).toBe('today');
   });
 
   it('should strip legacy weather api keys from widget config', () => {
     const result = WidgetSchema.safeParse({
-      id: 'weather-legacy-key',
-      type: 'weather',
+      id: 'today-legacy-key',
+      type: 'today',
       size: { w: 2, h: 1 },
       position: { x: 0, y: 0 },
       config: {
@@ -240,9 +299,6 @@ describe('Zod Schemas', () => {
       city: 'Shanghai',
       lat: 31.2304,
       lon: 121.4737,
-      weatherAuthType: undefined,
-      weatherCustomHost: undefined,
-      weatherSub: undefined,
     });
   });
 
@@ -263,7 +319,7 @@ describe('Zod Schemas', () => {
     expect(result.data.config).toEqual({
       imageUrl: 'https://example.com/legacy.png',
       images: ['https://example.com/legacy.png'],
-      autoplay: true,
+      autoplay: false,
       interval: 5000,
       shuffle: false,
     });
@@ -276,7 +332,6 @@ describe('Zod Schemas', () => {
       backgroundOpacity: 0,
       backgroundSize: '24px 24px',
       backgroundRepeat: 'repeat',
-      themeColor: '#3b82f6',
       customFavicon: '/favicon.svg',
       customTitle: 'Navidash',
       language: 'en',
@@ -288,30 +343,25 @@ describe('Zod Schemas', () => {
 
   it('should merge partial settings with defaults', () => {
     const settings = normalizeSettings({
-      themeColor: '#22c55e',
       customTitle: 'Custom Dash',
       language: 'zh',
     });
 
     expect(settings).toEqual({
       ...createDefaultSettings(),
-      themeColor: '#22c55e',
       customTitle: 'Custom Dash',
       language: 'zh',
     });
   });
 
-  it('should ignore legacy weather fields in settings payloads', () => {
+  it('should ignore removed theme and legacy weather fields in settings payloads', () => {
     const settings = normalizeSettings({
       themeColor: '#22c55e',
       weatherApiKey: 'legacy-key',
       weatherCity: 'Shanghai',
     });
 
-    expect(settings).toEqual({
-      ...createDefaultSettings(),
-      themeColor: '#22c55e',
-    });
+    expect(settings).toEqual(createDefaultSettings());
   });
 
   it('should fall back to defaults when settings payload is invalid', () => {
@@ -322,7 +372,6 @@ describe('Zod Schemas', () => {
 
     const settings = normalizeSettings(
       {
-        themeColor: '#22c55e',
         backgroundBlur: -1,
       },
       fallback
@@ -335,8 +384,8 @@ describe('Zod Schemas', () => {
     const fallback: Widget[] = [
       {
         id: 'fallback',
-        type: 'clock',
-        size: { w: 1, h: 1 },
+        type: 'links',
+        size: { w: 2, h: 1 },
         position: { x: 0, y: 0 },
         config: {},
       },
@@ -346,7 +395,7 @@ describe('Zod Schemas', () => {
       [
         {
           id: 'bad',
-          type: 'clock',
+          type: 'links',
           size: { w: 0, h: 1 },
           position: { x: 0, y: 0 },
           config: {},
@@ -358,18 +407,27 @@ describe('Zod Schemas', () => {
     expect(widgets).toEqual(fallback);
   });
 
-  it('should validate persisted widget store state with version metadata', () => {
+  it('should validate the canonical persisted widget snapshot state', () => {
     const state = {
-      widgets: [
+      layoutsByMode: {
+        desktop: [
+          {
+            id: 'persisted',
+            type: 'today',
+            size: { w: 2, h: 2 },
+            position: { x: 0, y: 0 },
+          },
+        ],
+        mobile: [],
+      },
+      widgetConfigs: [
         {
           id: 'persisted',
-          type: 'clock',
-          size: { w: 2, h: 1 },
-          position: { x: 0, y: 0 },
+          type: 'today',
           config: {},
         },
       ],
-      dataVersion: 3,
+      revision: 3,
     };
 
     const result = WidgetStorePersistedStateSchema.safeParse(state);
@@ -378,8 +436,9 @@ describe('Zod Schemas', () => {
 
   it('should reject persisted widget store state when version is invalid', () => {
     const result = WidgetStorePersistedStateSchema.safeParse({
-      widgets: [],
-      dataVersion: -1,
+      layoutsByMode: { desktop: [], mobile: [] },
+      widgetConfigs: [],
+      revision: -1,
     });
 
     expect(result.success).toBe(false);

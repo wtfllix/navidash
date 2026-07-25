@@ -46,7 +46,7 @@ cp .env.example .env
 
 ### 4. Configure weather if needed
 
-If you want the `Weather` widget, set:
+If you want weather information in `Today`, set:
 
 ```bash
 QWEATHER_API_KEY=your_qweather_key
@@ -76,6 +76,17 @@ Visit:
 http://localhost:3000
 ```
 
+### Optional: protect a private instance
+
+Set a password to require login before pages and APIs can be accessed:
+
+```bash
+NAVIDASH_ACCESS_PASSWORD=choose-a-long-private-password
+```
+
+Leave it empty to keep access protection disabled. The password remains server-side and is not
+stored in homepage backups.
+
 ## Upgrade
 
 For a normal Docker Compose deployment:
@@ -95,10 +106,10 @@ NaviDash stores runtime data under `/app/data`.
 Current persisted files include:
 
 - `settings.json`
-- `widget-layouts.json`
-- `widget-configs.json`
+- `widget-snapshot.json`
 
-These files use a versioned JSON envelope so future migrations can stay explicit, while legacy raw JSON is still readable for backward compatibility.
+Older `widgets.json`, `widget-layouts.json`, and `widget-configs.json` files remain readable as
+migration sources. New widget changes are written only to the revisioned atomic snapshot.
 
 ## Environment Variables
 
@@ -112,6 +123,8 @@ Most important variables:
 
 - `NEXT_PUBLIC_DEMO_MODE`
   Enables read-only demo mode when set to `true`
+- `NAVIDASH_ACCESS_PASSWORD`
+  Optional single-user password; empty means access protection is disabled
 - `QWEATHER_API_KEY`
   Weather API key or JWT used by the server-side weather proxy
 - `QWEATHER_API_HOST`

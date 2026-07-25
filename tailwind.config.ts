@@ -11,9 +11,16 @@ const config: Config = {
     extend: {
       fontFamily: {
         sans: ['var(--font-inter)'],
-        serif: ['var(--font-dm-serif)'],
         outfit: ['var(--font-outfit)'],
-        bebas: ['var(--font-bebas)'],
+        handwriting: [
+          'Eagle Horizon',
+          'Segoe Print',
+          'Bradley Hand',
+          'Comic Sans MS',
+          'STKaiti',
+          'KaiTi',
+          'cursive',
+        ],
       },
       colors: {
         background: "hsl(var(--background))",

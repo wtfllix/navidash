@@ -5,8 +5,9 @@ import { cn } from '@/lib/utils';
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
-  title: string;
+  title: React.ReactNode;
   children: React.ReactNode;
+  overlayClassName?: string;
   className?: string;
   bodyClassName?: string;
   headerClassName?: string;
@@ -17,6 +18,7 @@ export default function Modal({
   onClose,
   title,
   children,
+  overlayClassName,
   className,
   bodyClassName,
   headerClassName,
@@ -42,24 +44,29 @@ export default function Modal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div 
+    <div
+      className={cn(
+        'fixed inset-0 z-50 flex items-center justify-center bg-slate-950/38 p-4 backdrop-blur-sm animate-in fade-in duration-200',
+        overlayClassName
+      )}
+    >
+      <div
         ref={modalRef}
         className={cn(
-          'bg-white rounded-xl shadow-xl w-full max-w-md flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200',
+          'flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-[var(--radius-dialog)] border border-white/80 bg-white/[0.98] shadow-[0_24px_70px_rgba(15,23,42,0.22),inset_0_1px_0_rgba(255,255,255,0.9)] backdrop-blur-xl animate-in zoom-in-95 duration-200',
           className
         )}
       >
         <div
           className={cn(
-            'flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0',
+            'flex flex-shrink-0 items-center justify-between border-b border-slate-100/80 px-6 py-4',
             headerClassName
           )}
         >
           <h3 className="font-semibold text-lg text-gray-800">{title}</h3>
-          <button 
+          <button
             onClick={onClose}
-            className="p-1 hover:bg-gray-100 rounded-full transition-colors text-gray-500 hover:text-gray-700"
+            className="rounded-xl p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
           >
             <X size={20} />
           </button>

@@ -5,11 +5,13 @@ import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { useTranslations } from 'next-intl';
 import { WidgetMeta } from '@/components/widgets/registry';
+import { cn } from '@/lib/utils';
 
 interface DraggableWidgetItemProps {
   meta: WidgetMeta;
   onClick?: () => void;
   disabled?: boolean;
+  compact?: boolean;
 }
 
 /**
@@ -20,6 +22,7 @@ export default function DraggableWidgetItem({
   meta,
   onClick,
   disabled = false,
+  compact = false,
 }: DraggableWidgetItemProps) {
   const t = useTranslations('Widgets');
   const justDraggedRef = useRef(false);
@@ -69,7 +72,8 @@ export default function DraggableWidgetItem({
       onClick={handleClick}
       disabled={disabled}
       className={`
-        flex items-start rounded-2xl border bg-white p-3.5
+        flex items-start rounded-2xl border bg-white text-left
+        ${compact ? 'h-[92px] w-[176px] shrink-0 p-3' : 'p-3.5'}
         text-left focus:outline-none focus:ring-2 focus:ring-[rgba(var(--primary-color),0.22)] group
         transition-all duration-150
         ${isDragging
@@ -82,14 +86,15 @@ export default function DraggableWidgetItem({
       aria-label={`${t('click_to_add')} ${t(meta.titleKey as any)}`}
     >
       <div className={`
-        mr-3 flex-shrink-0 rounded-2xl p-2.5 ring-1
+        mr-3 flex-shrink-0 rounded-2xl ring-1
+        ${compact ? 'p-2' : 'p-2.5'}
         transition-colors duration-150
         ${isDragging
           ? 'bg-[rgba(var(--primary-color),0.12)] ring-[rgba(var(--primary-color),0.16)]'
           : 'bg-slate-50 ring-slate-100 group-hover:bg-[rgba(var(--primary-color),0.08)] group-hover:ring-[rgba(var(--primary-color),0.12)]'
         }
       `}>
-        <meta.Icon size={24} className={meta.iconClassName} />
+        <meta.Icon size={compact ? 20 : 24} className={meta.iconClassName} />
       </div>
       <div className="flex-1 min-w-0">
         <h4 className={`
@@ -98,17 +103,19 @@ export default function DraggableWidgetItem({
         `}>
           {t(meta.titleKey as any)}
         </h4>
-        <p className="text-xs leading-relaxed text-slate-500">
+        <p className={cn('text-xs leading-relaxed text-slate-500', compact && 'line-clamp-2')}>
           {t(meta.descKey as any)}
         </p>
-        <div className="mt-3 flex items-center justify-between gap-2">
-          <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-medium text-slate-500">
-            {t('default_size')}: {meta.defaultSize.w} × {meta.defaultSize.h}
-          </span>
-          <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-slate-300">
-            {t('drag_hint')}
-          </span>
-        </div>
+        {!compact && (
+          <div className="mt-3 flex items-center justify-between gap-2">
+            <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-medium text-slate-500">
+              {t('default_size')}: {meta.defaultSize.w} × {meta.defaultSize.h}
+            </span>
+            <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-slate-300">
+              {t('drag_hint')}
+            </span>
+          </div>
+        )}
       </div>
     </button>
   );

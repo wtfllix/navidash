@@ -15,7 +15,6 @@ interface SettingsState extends Settings {
   setBackgroundOpacity: (opacity: number) => void;
   setBackgroundSize: (size: string) => void;
   setBackgroundRepeat: (repeat: string) => void;
-  setThemeColor: (color: string) => void;
   setCustomFavicon: (url: string) => void;
   setCustomTitle: (title: string) => void;
   setLanguage: (lang: string) => void;
@@ -41,7 +40,6 @@ function extractSettings(state: Settings): Settings {
     backgroundOpacity: state.backgroundOpacity,
     backgroundSize: state.backgroundSize,
     backgroundRepeat: state.backgroundRepeat,
-    themeColor: state.themeColor,
     customFavicon: state.customFavicon,
     customTitle: state.customTitle,
     language: state.language,
@@ -161,7 +159,6 @@ export const useSettingsStore = create<SettingsState>()(
         setBackgroundOpacity: (backgroundOpacity) => updateSettings({ backgroundOpacity }),
         setBackgroundSize: (backgroundSize) => updateSettings({ backgroundSize }),
         setBackgroundRepeat: (backgroundRepeat) => updateSettings({ backgroundRepeat }),
-        setThemeColor: (themeColor) => updateSettings({ themeColor }),
         setCustomFavicon: (customFavicon) => updateSettings({ customFavicon }),
         setCustomTitle: (customTitle) => updateSettings({ customTitle }),
         setLanguage: (language) => updateSettings({ language }),

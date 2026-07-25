@@ -8,8 +8,6 @@ const weatherQuerySchema = z.object({
   lat: z.coerce.number().finite(),
   lon: z.coerce.number().finite(),
   locale: z.string().optional(),
-  host: z.string().optional(),
-  authType: z.enum(['apikey', 'jwt', 'param', 'bearer']).optional(),
 });
 
 export async function GET(request: Request) {
@@ -19,21 +17,12 @@ export async function GET(request: Request) {
       lat: searchParams.get('lat'),
       lon: searchParams.get('lon'),
       locale: searchParams.get('locale') ?? undefined,
-      host: searchParams.get('host') ?? undefined,
-      authType: searchParams.get('authType') ?? undefined,
     });
 
     const weather = await fetchServerWeather({
       lat: query.lat,
       lon: query.lon,
       locale: query.locale ?? 'en',
-      host: query.host,
-      authType:
-        query.authType === 'jwt' || query.authType === 'bearer'
-          ? 'jwt'
-          : query.authType
-            ? 'apikey'
-            : undefined,
     });
 
     return NextResponse.json(weather, {

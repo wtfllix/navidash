@@ -9,19 +9,10 @@ export const isServerDemoMode =
 
 export const DEMO_WIDGETS: Widget[] = [
   {
-    id: 'demo-clock',
-    type: 'clock',
-    size: { w: 2, h: 1 },
+    id: 'demo-today',
+    type: 'today',
+    size: { w: 2, h: 2 },
     position: { x: 0, y: 0 },
-    config: {
-      clockStyle: 'glass',
-    },
-  },
-  {
-    id: 'demo-weather',
-    type: 'weather',
-    size: { w: 2, h: 1 },
-    position: { x: 2, y: 0 },
     config: {
       city: 'Hangzhou',
       lat: 30.2741,
@@ -29,37 +20,10 @@ export const DEMO_WIDGETS: Widget[] = [
     },
   },
   {
-    id: 'demo-date',
-    type: 'date',
-    size: { w: 1, h: 1 },
-    position: { x: 4, y: 0 },
-    config: {
-      style: 'minimal',
-      color: '#0f172a',
-    },
-  },
-  {
-    id: 'demo-mail',
-    type: 'quick-link',
-    size: { w: 1, h: 1 },
-    position: { x: 5, y: 0 },
-    config: {
-      title: 'Inbox',
-      url: 'https://mail.google.com/',
-    },
-  },
-  {
-    id: 'demo-calendar',
-    type: 'calendar',
-    size: { w: 2, h: 1 },
-    position: { x: 6, y: 0 },
-    config: {},
-  },
-  {
     id: 'demo-links',
     type: 'links',
     size: { w: 3, h: 1 },
-    position: { x: 0, y: 1 },
+    position: { x: 2, y: 0 },
     config: {
       title: 'Daily Flow',
       showLabels: true,
@@ -75,27 +39,23 @@ export const DEMO_WIDGETS: Widget[] = [
     },
   },
   {
-    id: 'demo-todo',
-    type: 'todo',
-    size: { w: 2, h: 2 },
-    position: { x: 3, y: 1 },
+    id: 'demo-inbox',
+    type: 'links',
+    size: { w: 1, h: 1 },
+    position: { x: 5, y: 0 },
     config: {
-      todos: [
-        { id: 'todo-1', text: 'Review launch checklist', completed: true },
-        { id: 'todo-2', text: 'Polish Vercel demo copy', completed: false },
-        { id: 'todo-3', text: 'Record 30s walkthrough', completed: false },
-        { id: 'todo-4', text: 'Reply to early adopters', completed: false },
-      ],
+      links: [{ id: 'inbox', title: 'Inbox', url: 'https://mail.google.com/' }],
+      showLabels: true,
+      iconSize: 'lg',
     },
   },
   {
     id: 'demo-memo',
     type: 'memo',
-    size: { w: 3, h: 2 },
-    position: { x: 5, y: 1 },
+    size: { w: 2, h: 1 },
+    position: { x: 2, y: 1 },
     config: {
-      content:
-        '## This week\n- Ship the interactive Vercel demo\n- Keep the layout clean and focused\n- Tell the story through real content\n\n> Demo visitors can explore and customize freely. A refresh resets everything back to the curated default.\n\nLinks stay practical, notes stay human, and the whole page should feel lived-in.',
+      content: 'Ship the focused homepage.\nKeep links practical and the wall personal.',
       bgColor: '#fef08a',
       textColor: '#713f12',
     },
@@ -103,15 +63,14 @@ export const DEMO_WIDGETS: Widget[] = [
   {
     id: 'demo-photo',
     type: 'photo-frame',
-    size: { w: 3, h: 2 },
-    position: { x: 0, y: 2 },
+    size: { w: 2, h: 2 },
+    position: { x: 6, y: 0 },
     config: {
       images: [
         'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80',
-        'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1200&q=80',
       ],
-      autoplay: true,
-      interval: 4500,
+      autoplay: false,
+      interval: 5000,
       shuffle: false,
     },
   },
@@ -124,7 +83,6 @@ export const DEMO_SETTINGS: Settings = {
   backgroundOpacity: 0,
   backgroundSize: 'cover',
   backgroundRepeat: 'no-repeat',
-  themeColor: '#0f766e',
   customFavicon: '/favicon.svg',
   customTitle: 'NaviDash Demo',
   language: 'en',

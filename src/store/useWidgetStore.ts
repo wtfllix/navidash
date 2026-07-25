@@ -1,10 +1,19 @@
 import { create } from 'zustand';
 import { StateStorage, createJSONStorage, persist } from 'zustand/middleware';
-import { Widget, WidgetConfigEntry, WidgetLayoutMode, WidgetLayoutsByMode } from '@/types';
 import {
+  Bookmark,
+  Widget,
+  WidgetConfigEntry,
+  WidgetLayoutMode,
+  WidgetLayoutsByMode,
+} from '@/types';
+import {
+  BookmarkSchema,
+  migrateWidgetConfigsToBookmarks,
   normalizeWidgets,
   splitWidgets,
   WidgetConfigsArraySchema,
+  WidgetLayoutsByModeSchema,
   WidgetSchema,
   WidgetStorePersistedStateSchema,
 } from '@/lib/schemas';
@@ -13,14 +22,15 @@ import {
   ensureLayoutsByMode,
   LAYOUT_MODE_COLUMNS,
   mergeWidgetsForLayoutMode,
-  normalizeLayoutsForMode,
 } from '@/lib/widgetLayouts';
+import { canPlaceWidget } from '@/lib/layoutEngine';
 import { DEMO_DATA_VERSION, DEMO_WIDGETS, isClientDemoMode } from '@/lib/demo';
 
 type WidgetUpdate = Partial<Pick<Widget, 'size' | 'position' | 'config'>>;
 
 interface WidgetState {
   widgets: Widget[];
+  bookmarks: Bookmark[];
   widgetConfigs: WidgetConfigEntry[];
   layoutsByMode: WidgetLayoutsByMode;
   activeLayoutMode: WidgetLayoutMode;
@@ -34,38 +44,31 @@ interface WidgetState {
   endMobileLayoutSession: () => void;
   undoMobileLayoutChange: () => void;
   restoreMobileLayoutBaseline: () => void;
-  addWidget: (widget: Widget) => void;
+  addWidget: (widget: Widget) => boolean;
   removeWidget: (id: string) => void;
-  updateWidget: (id: string, data: WidgetUpdate) => void;
+  updateWidget: (id: string, data: WidgetUpdate) => boolean;
   setWidgets: (widgets: Widget[]) => void;
+  replaceWidgetData: (layouts: unknown, configs: unknown, bookmarks?: unknown) => boolean;
+  addBookmark: (bookmark: Omit<Bookmark, 'id'> & { id?: string }) => string | null;
+  updateBookmark: (id: string, bookmark: Pick<Bookmark, 'title' | 'url'>) => boolean;
+  removeBookmark: (id: string) => void;
+  importBookmarks: (bookmarks: unknown) => number;
+  resetWidgets: () => void;
   saveWidgetConfigs: () => Promise<boolean>;
   fetchWidgets: () => Promise<void>;
-  dataVersion?: number;
-  batchUpdatePositions: (updates: Array<{ id: string; position: { x: number; y: number } }>) => void;
+  revision?: number;
+  batchUpdatePositions: (
+    updates: Array<{ id: string; position: { x: number; y: number } }>
+  ) => boolean;
   addWidgetWithLayout: (
     newWidget: Widget,
     positionUpdates: Array<{ id: string; position: { x: number; y: number } }>
-  ) => void;
+  ) => boolean;
 }
 
 const initialWidgets: Widget[] = isClientDemoMode
   ? DEMO_WIDGETS
-  : [
-      {
-        id: '1',
-        type: 'clock',
-        size: { w: 2, h: 1 },
-        position: { x: 0, y: 0 },
-        config: {},
-      },
-      {
-        id: '2',
-        type: 'weather',
-        size: { w: 2, h: 1 },
-        position: { x: 2, y: 0 },
-        config: {},
-      },
-    ];
+  : [];
 
 const persistKey = 'widget-storage';
 
@@ -77,6 +80,13 @@ const memoryOnlyStorage: StateStorage = {
 
 function validateWidgets(widgets: unknown, fallback: Widget[] = initialWidgets): Widget[] {
   return normalizeWidgets(widgets, fallback);
+}
+
+function createBookmarkId() {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+    return crypto.randomUUID();
+  }
+  return `bookmark-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
 function parseServerVersion(value: unknown): number | undefined {
@@ -121,6 +131,22 @@ function updateWidgetConfigEntry(
 
 function layoutContainsWidget(layoutsByMode: WidgetLayoutsByMode, id: string) {
   return Object.values(layoutsByMode).some((layouts) => layouts.some((widget) => widget.id === id));
+}
+
+function canUseWidgetPlacement(widgets: Widget[], widget: Widget, cols: number) {
+  return canPlaceWidget(
+    widgets,
+    widget.position.x,
+    widget.position.y,
+    widget.size.w,
+    widget.size.h,
+    cols,
+    widget.id
+  );
+}
+
+function areWidgetPlacementsValid(widgets: Widget[], cols: number) {
+  return widgets.every((widget) => canUseWidgetPlacement(widgets, widget, cols));
 }
 
 function cloneLayouts(layouts: WidgetLayoutsByMode['mobile']) {
@@ -187,7 +213,11 @@ function getInitialLayoutsByMode() {
 }
 
 function getInitialWidgetConfigs(): WidgetConfigEntry[] {
-  return splitWidgets(initialWidgets).configs;
+  return migrateWidgetConfigsToBookmarks(splitWidgets(initialWidgets).configs).configs;
+}
+
+function getInitialBookmarks(): Bookmark[] {
+  return migrateWidgetConfigsToBookmarks(splitWidgets(initialWidgets).configs).bookmarks;
 }
 
 function hydrateWidgets(
@@ -199,62 +229,97 @@ function hydrateWidgets(
   return mergeWidgetsForLayoutMode(layoutMode, layoutsByMode, widgetConfigs, fallback);
 }
 
-let saveTimeout: NodeJS.Timeout | null = null;
+type PendingSnapshot = {
+  layoutsByMode: WidgetLayoutsByMode;
+  configs: WidgetConfigEntry[];
+  bookmarks: Bookmark[];
+};
 
-const saveLayoutsToServer = (layoutsByMode: WidgetLayoutsByMode) => {
-  if (saveTimeout) {
-    clearTimeout(saveTimeout);
+let pendingSnapshot: PendingSnapshot | null = null;
+let snapshotSaveTimeout: NodeJS.Timeout | null = null;
+let snapshotSaveInFlight: Promise<boolean> | null = null;
+
+function queueSnapshotSave(
+  layoutsByMode: WidgetLayoutsByMode,
+  configs: WidgetConfigEntry[],
+  bookmarks: Bookmark[]
+) {
+  pendingSnapshot = { layoutsByMode, configs, bookmarks };
+  if (snapshotSaveTimeout) clearTimeout(snapshotSaveTimeout);
+  snapshotSaveTimeout = setTimeout(() => {
+    snapshotSaveTimeout = null;
+    void flushSnapshotSave();
+  }, 500);
+}
+
+async function flushSnapshotSave(): Promise<boolean> {
+  if (snapshotSaveTimeout) {
+    clearTimeout(snapshotSaveTimeout);
+    snapshotSaveTimeout = null;
   }
 
-  saveTimeout = setTimeout(async () => {
+  if (snapshotSaveInFlight) {
+    await snapshotSaveInFlight;
+  }
+
+  const snapshot = pendingSnapshot;
+  if (!snapshot) return true;
+  pendingSnapshot = null;
+
+  const save = (async () => {
     try {
-      const res = await fetch('/api/widget-layouts', {
-        method: 'POST',
+      const expectedRevision = useWidgetStore.getState().revision ?? 0;
+      const response = await fetch('/api/widget-snapshot', {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(layoutsByMode),
+        body: JSON.stringify({
+          schemaVersion: 2,
+          expectedRevision,
+          layoutsByMode: snapshot.layoutsByMode,
+          configs: snapshot.configs,
+          bookmarks: snapshot.bookmarks,
+        }),
       });
 
-      if (!res.ok) {
-        throw new Error(`Failed to save widget layouts: ${res.status}`);
+      if (!response.ok) {
+        if (response.status === 409) {
+          console.error('Widget snapshot revision conflict; local changes were not overwritten.');
+          return false;
+        }
+        throw new Error(`Failed to save widget snapshot: ${response.status}`);
       }
 
-      const data = await res.json();
-      const version = parseServerVersion(data?.version);
-
-      if (version !== undefined) {
-        useWidgetStore.setState({ dataVersion: version });
+      const data = await response.json();
+      const revision = parseServerVersion(data?.revision);
+      if (revision !== undefined) {
+        useWidgetStore.setState({ revision });
       }
+      return true;
     } catch (error) {
-      console.error('Failed to save widget layouts:', error);
-    } finally {
-      saveTimeout = null;
+      console.error('Failed to save widget snapshot:', error);
+      return false;
     }
-  }, 1000);
-};
+  })();
 
-const saveConfigsToServer = async (configs: WidgetConfigEntry[]) => {
-  const res = await fetch('/api/widget-configs', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(configs),
-  });
+  snapshotSaveInFlight = save;
+  const saved = await save;
+  snapshotSaveInFlight = null;
 
-  if (!res.ok) {
-    throw new Error(`Failed to save widget configs: ${res.status}`);
+  if (pendingSnapshot && !snapshotSaveTimeout) {
+    snapshotSaveTimeout = setTimeout(() => {
+      snapshotSaveTimeout = null;
+      void flushSnapshotSave();
+    }, 0);
   }
 
-  const data = await res.json();
-  const version = parseServerVersion(data?.version);
-
-  if (version !== undefined) {
-    useWidgetStore.setState({ dataVersion: version });
-  }
-};
+  return saved;
+}
 
 export const useWidgetStore = create<WidgetState>()(
   persist(
     (set, get) => ({
       widgets: initialWidgets,
+      bookmarks: getInitialBookmarks(),
       widgetConfigs: getInitialWidgetConfigs(),
       layoutsByMode: getInitialLayoutsByMode(),
       activeLayoutMode: DEFAULT_LAYOUT_MODE,
@@ -306,7 +371,7 @@ export const useWidgetStore = create<WidgetState>()(
           };
 
           if (!isClientDemoMode) {
-            saveLayoutsToServer(layoutsByMode);
+            queueSnapshotSave(layoutsByMode, state.widgetConfigs, state.bookmarks);
           }
 
           return {
@@ -332,7 +397,7 @@ export const useWidgetStore = create<WidgetState>()(
           };
 
           if (!isClientDemoMode) {
-            saveLayoutsToServer(layoutsByMode);
+            queueSnapshotSave(layoutsByMode, state.widgetConfigs, state.bookmarks);
           }
 
           return {
@@ -346,18 +411,20 @@ export const useWidgetStore = create<WidgetState>()(
       fetchWidgets: async () => {
         if (isClientDemoMode) {
           const demoLayoutsByMode = ensureLayoutsByMode(splitWidgets(DEMO_WIDGETS).layouts, DEMO_WIDGETS);
-          const demoWidgetConfigs = splitWidgets(DEMO_WIDGETS).configs;
+          const demoData = migrateWidgetConfigsToBookmarks(splitWidgets(DEMO_WIDGETS).configs);
+          const demoWidgetConfigs = demoData.configs;
 
           set((state) => ({
             layoutsByMode: demoLayoutsByMode,
             widgetConfigs: demoWidgetConfigs,
+            bookmarks: demoData.bookmarks,
             widgets: hydrateWidgets(
               state.activeLayoutMode,
               demoLayoutsByMode,
               demoWidgetConfigs,
               DEMO_WIDGETS
             ),
-            dataVersion: DEMO_DATA_VERSION,
+            revision: DEMO_DATA_VERSION,
             canRestoreMobileLayout:
               !!state.mobileLayoutSessionBaseline &&
               !areLayoutsEqual(demoLayoutsByMode.mobile, state.mobileLayoutSessionBaseline),
@@ -366,36 +433,28 @@ export const useWidgetStore = create<WidgetState>()(
         }
 
         try {
-          const [layoutsRes, configsRes] = await Promise.all([
-            fetch(`/api/widget-layouts?t=${Date.now()}`, {
-              cache: 'no-store',
-            }),
-            fetch(`/api/widget-configs?t=${Date.now()}`, {
-              cache: 'no-store',
-            }),
-          ]);
-
-          if (!layoutsRes.ok) {
-            throw new Error(`Failed to fetch widget layouts: ${layoutsRes.status}`);
+          const response = await fetch(`/api/widget-snapshot?t=${Date.now()}`, {
+            cache: 'no-store',
+          });
+          if (!response.ok) {
+            throw new Error(`Failed to fetch widget snapshot: ${response.status}`);
           }
 
-          if (!configsRes.ok) {
-            throw new Error(`Failed to fetch widget configs: ${configsRes.status}`);
-          }
-
-          const serverVersion = parseServerVersion(layoutsRes.headers.get('X-Data-Version')) ?? 0;
-          const currentVersion = get().dataVersion ?? 0;
+          const snapshot = await response.json();
+          const serverVersion = parseServerVersion(snapshot.revision) ?? 0;
+          const currentVersion = get().revision ?? 0;
 
           if (serverVersion !== currentVersion) {
-            const [layoutsData, configsData] = await Promise.all([layoutsRes.json(), configsRes.json()]);
-            const layoutsByMode = ensureLayoutsByMode(layoutsData, initialWidgets);
-            const widgetConfigs = WidgetConfigsArraySchema.parse(configsData);
+            const layoutsByMode = ensureLayoutsByMode(snapshot.layoutsByMode, initialWidgets);
+            const widgetConfigs = WidgetConfigsArraySchema.parse(snapshot.configs);
+            const bookmarks = BookmarkSchema.array().parse(snapshot.bookmarks);
 
             set((state) => ({
               layoutsByMode,
               widgetConfigs,
+              bookmarks,
               widgets: hydrateWidgets(state.activeLayoutMode, layoutsByMode, widgetConfigs),
-              dataVersion: serverVersion,
+              revision: serverVersion,
               canRestoreMobileLayout:
                 !!state.mobileLayoutSessionBaseline &&
                 !areLayoutsEqual(layoutsByMode.mobile, state.mobileLayoutSessionBaseline),
@@ -410,34 +469,32 @@ export const useWidgetStore = create<WidgetState>()(
           return true;
         }
 
-        try {
-          await saveConfigsToServer(get().widgetConfigs);
-          return true;
-        } catch (error) {
-          console.error('Failed to save widget configs:', error);
-          return false;
-        }
+        const state = get();
+        queueSnapshotSave(state.layoutsByMode, state.widgetConfigs, state.bookmarks);
+        return flushSnapshotSave();
       },
-      addWidget: (widget) =>
+      addWidget: (widget) => {
+        let accepted = false;
         set((state) => {
+          const layoutMode = state.activeLayoutMode;
+          if (!canUseWidgetPlacement(state.widgets, widget, LAYOUT_MODE_COLUMNS[layoutMode])) {
+            return state;
+          }
+
           const mergedWidgets = validateWidgets([...state.widgets, widget]);
           const widgetConfigs = splitWidgets(mergedWidgets).configs;
-          const layoutMode = state.activeLayoutMode;
           const previousMobileLayouts = cloneLayouts(state.layoutsByMode.mobile);
           const layoutsByMode = {
             ...state.layoutsByMode,
-            [layoutMode]: normalizeLayoutsForMode(
-              [
-                ...state.layoutsByMode[layoutMode],
-                {
-                  id: widget.id,
-                  type: widget.type,
-                  size: widget.size,
-                  position: widget.position,
-                },
-              ],
-              LAYOUT_MODE_COLUMNS[layoutMode]
-            ),
+            [layoutMode]: [
+              ...state.layoutsByMode[layoutMode],
+              {
+                id: widget.id,
+                type: widget.type,
+                size: widget.size,
+                position: widget.position,
+              },
+            ],
           };
           const mobileSessionState =
             layoutMode === 'mobile'
@@ -450,17 +507,19 @@ export const useWidgetStore = create<WidgetState>()(
                 };
 
           if (!isClientDemoMode) {
-            saveLayoutsToServer(layoutsByMode);
-            void saveConfigsToServer(widgetConfigs);
+            queueSnapshotSave(layoutsByMode, widgetConfigs, state.bookmarks);
           }
 
+          accepted = true;
           return {
             layoutsByMode,
             widgetConfigs,
             widgets: hydrateWidgets(state.activeLayoutMode, layoutsByMode, widgetConfigs),
             ...mobileSessionState,
           };
-        }),
+        });
+        return accepted;
+      },
       removeWidget: (id) =>
         set((state) => {
           const layoutMode = state.activeLayoutMode;
@@ -483,8 +542,7 @@ export const useWidgetStore = create<WidgetState>()(
                 };
 
           if (!isClientDemoMode) {
-            saveLayoutsToServer(layoutsByMode);
-            void saveConfigsToServer(widgetConfigs);
+            queueSnapshotSave(layoutsByMode, widgetConfigs, state.bookmarks);
           }
 
           return {
@@ -494,10 +552,27 @@ export const useWidgetStore = create<WidgetState>()(
             ...mobileSessionState,
           };
         }),
-      updateWidget: (id, data) =>
+      updateWidget: (id, data) => {
+        let accepted = false;
         set((state): Partial<WidgetState> => {
           const layoutMode = state.activeLayoutMode;
           const currentWidget = state.widgets.find((item) => item.id === id);
+          if (!currentWidget) {
+            return state;
+          }
+
+          const candidateWidget = mergeWidgetUpdate(currentWidget, data);
+          if (
+            (data.position || data.size) &&
+            !canUseWidgetPlacement(
+              state.widgets,
+              candidateWidget,
+              LAYOUT_MODE_COLUMNS[layoutMode]
+            )
+          ) {
+            return state;
+          }
+
           const previousMobileLayouts = cloneLayouts(state.layoutsByMode.mobile);
           const nextLayouts = state.layoutsByMode[layoutMode].map((widget) => {
             if (widget.id !== id) {
@@ -510,13 +585,10 @@ export const useWidgetStore = create<WidgetState>()(
               position: data.position ?? widget.position,
             };
           });
-          const layoutsByMode = ensureLayoutsByMode(
-            {
-              ...state.layoutsByMode,
-              [layoutMode]: nextLayouts,
-            },
-            state.widgets
-          );
+          const layoutsByMode = {
+            ...state.layoutsByMode,
+            [layoutMode]: nextLayouts,
+          };
           const widgetConfigs = updateWidgetConfigEntry(state.widgetConfigs, currentWidget, data.config);
           const mobileSessionState =
             layoutMode === 'mobile' && (data.position || data.size)
@@ -531,40 +603,203 @@ export const useWidgetStore = create<WidgetState>()(
                 };
 
           if (!isClientDemoMode && (data.position || data.size)) {
-            saveLayoutsToServer(layoutsByMode);
+            queueSnapshotSave(layoutsByMode, widgetConfigs, state.bookmarks);
           }
 
+          accepted = true;
           return {
             layoutsByMode,
             widgetConfigs,
             widgets: hydrateWidgets(layoutMode, layoutsByMode, widgetConfigs),
             ...mobileSessionState,
           };
-        }),
+        });
+        return accepted;
+      },
       setWidgets: (widgets) => {
         const parsedWidgets = validateWidgets(widgets, []);
         const layoutsByMode = ensureLayoutsByMode(parsedWidgets, parsedWidgets);
-        const widgetConfigs = splitWidgets(parsedWidgets).configs;
+        const migrated = migrateWidgetConfigsToBookmarks(splitWidgets(parsedWidgets).configs);
+        const widgetConfigs = migrated.configs;
+        const bookmarks = migrated.bookmarks;
 
         if (!isClientDemoMode) {
-          saveLayoutsToServer(layoutsByMode);
-          void saveConfigsToServer(widgetConfigs);
+          queueSnapshotSave(layoutsByMode, widgetConfigs, bookmarks);
         }
 
         set((state) => ({
           layoutsByMode,
           widgetConfigs,
+          bookmarks,
           widgets: hydrateWidgets(state.activeLayoutMode, layoutsByMode, widgetConfigs, []),
           canRestoreMobileLayout:
             !!state.mobileLayoutSessionBaseline &&
             !areLayoutsEqual(layoutsByMode.mobile, state.mobileLayoutSessionBaseline),
+          }));
+      },
+      replaceWidgetData: (layouts, configs, bookmarks = []) => {
+        const parsedLayouts = WidgetLayoutsByModeSchema.safeParse(layouts);
+        const parsedConfigs = WidgetConfigsArraySchema.safeParse(configs);
+        const parsedBookmarks = BookmarkSchema.array().safeParse(bookmarks);
+
+        if (!parsedLayouts.success || !parsedConfigs.success || !parsedBookmarks.success) {
+          return false;
+        }
+
+        const layoutsByMode = ensureLayoutsByMode(parsedLayouts.data, initialWidgets);
+        const migrated = migrateWidgetConfigsToBookmarks(
+          parsedConfigs.data as WidgetConfigEntry[],
+          parsedBookmarks.data as Bookmark[]
+        );
+        const widgetConfigs = migrated.configs;
+
+        if (!isClientDemoMode) {
+          queueSnapshotSave(layoutsByMode, widgetConfigs, migrated.bookmarks);
+        }
+
+        set((state) => ({
+          layoutsByMode,
+          widgetConfigs,
+          bookmarks: migrated.bookmarks,
+          widgets: hydrateWidgets(state.activeLayoutMode, layoutsByMode, widgetConfigs, []),
+          mobileLayoutUndoStack: [],
+          mobileLayoutSessionBaseline: null,
+          isMobileLayoutSessionActive: false,
+          canUndoMobileLayout: false,
+          canRestoreMobileLayout: false,
+        }));
+
+        return true;
+      },
+      resetWidgets: () => {
+        const layoutsByMode = getInitialLayoutsByMode();
+        const widgetConfigs = getInitialWidgetConfigs();
+        const bookmarks = getInitialBookmarks();
+
+        if (!isClientDemoMode) {
+          queueSnapshotSave(layoutsByMode, widgetConfigs, bookmarks);
+        }
+
+        set((state) => ({
+          layoutsByMode,
+          widgetConfigs,
+          bookmarks,
+          widgets: hydrateWidgets(state.activeLayoutMode, layoutsByMode, widgetConfigs),
+          mobileLayoutUndoStack: [],
+          mobileLayoutSessionBaseline: null,
+          isMobileLayoutSessionActive: false,
+          canUndoMobileLayout: false,
+          canRestoreMobileLayout: false,
         }));
       },
-      batchUpdatePositions: (updates) =>
+      addBookmark: (bookmark) => {
+        const parsed = BookmarkSchema.safeParse({
+          ...bookmark,
+          id: bookmark.id ?? createBookmarkId(),
+        });
+        if (!parsed.success) return null;
+
+        const current = get();
+        const duplicate = current.bookmarks.find(
+          (item) => item.url === parsed.data.url
+        );
+        if (duplicate) return duplicate.id;
+
+        const bookmarks = [...current.bookmarks, parsed.data as Bookmark];
+        set({ bookmarks });
+        if (!isClientDemoMode) {
+          queueSnapshotSave(current.layoutsByMode, current.widgetConfigs, bookmarks);
+        }
+        return parsed.data.id;
+      },
+      updateBookmark: (id, bookmark) => {
+        const current = get();
+        const existing = current.bookmarks.find((item) => item.id === id);
+        if (!existing) return false;
+        const parsed = BookmarkSchema.safeParse({ ...existing, ...bookmark });
+        if (!parsed.success) return false;
+
+        const bookmarks = current.bookmarks.map((item) =>
+          item.id === id ? (parsed.data as Bookmark) : item
+        );
+        set({ bookmarks });
+        if (!isClientDemoMode) {
+          queueSnapshotSave(current.layoutsByMode, current.widgetConfigs, bookmarks);
+        }
+        return true;
+      },
+      removeBookmark: (id) => {
+        set((state) => {
+          const bookmarks = state.bookmarks.filter((bookmark) => bookmark.id !== id);
+          const widgetConfigs = state.widgetConfigs.map((entry) =>
+            entry.type === 'links'
+              ? {
+                  ...entry,
+                  config: {
+                    ...entry.config,
+                    bookmarkIds: (entry.config.bookmarkIds ?? []).filter(
+                      (bookmarkId) => bookmarkId !== id
+                    ),
+                  },
+                }
+              : entry
+          ) as WidgetConfigEntry[];
+
+          if (!isClientDemoMode) {
+            queueSnapshotSave(state.layoutsByMode, widgetConfigs, bookmarks);
+          }
+
+          return {
+            bookmarks,
+            widgetConfigs,
+            widgets: hydrateWidgets(
+              state.activeLayoutMode,
+              state.layoutsByMode,
+              widgetConfigs
+            ),
+          };
+        });
+      },
+      importBookmarks: (value) => {
+        const parsed = BookmarkSchema.array().safeParse(value);
+        if (!parsed.success) return 0;
+
+        const current = get();
+        const byUrl = new Map(current.bookmarks.map((bookmark) => [bookmark.url, bookmark]));
+        const usedIds = new Set(current.bookmarks.map((bookmark) => bookmark.id));
+        let added = 0;
+        for (const bookmark of parsed.data as Bookmark[]) {
+          if (!byUrl.has(bookmark.url)) {
+            const nextBookmark = usedIds.has(bookmark.id)
+              ? { ...bookmark, id: createBookmarkId() }
+              : bookmark;
+            usedIds.add(nextBookmark.id);
+            byUrl.set(nextBookmark.url, nextBookmark);
+            added += 1;
+          }
+        }
+        const bookmarks = Array.from(byUrl.values());
+        set({ bookmarks });
+        if (!isClientDemoMode) {
+          queueSnapshotSave(current.layoutsByMode, current.widgetConfigs, bookmarks);
+        }
+        return added;
+      },
+      batchUpdatePositions: (updates) => {
+        let accepted = false;
         set((state) => {
           const positionMap = new Map(updates.map((update) => [update.id, update.position]));
           const layoutMode = state.activeLayoutMode;
           const previousMobileLayouts = cloneLayouts(state.layoutsByMode.mobile);
+          const nextWidgets = state.widgets.map((widget) => {
+            const position = positionMap.get(widget.id);
+            return position ? { ...widget, position } : widget;
+          });
+
+          if (!areWidgetPlacementsValid(nextWidgets, LAYOUT_MODE_COLUMNS[layoutMode])) {
+            return state;
+          }
+
           const layoutsByMode = {
             ...state.layoutsByMode,
             [layoutMode]: state.layoutsByMode[layoutMode].map((widget) => {
@@ -583,20 +818,36 @@ export const useWidgetStore = create<WidgetState>()(
                 };
 
           if (!isClientDemoMode) {
-            saveLayoutsToServer(layoutsByMode);
+            queueSnapshotSave(layoutsByMode, state.widgetConfigs, state.bookmarks);
           }
 
+          accepted = true;
           return {
             layoutsByMode,
             widgets: hydrateWidgets(layoutMode, layoutsByMode, state.widgetConfigs),
             ...mobileSessionState,
           };
-        }),
-      addWidgetWithLayout: (newWidget, positionUpdates) =>
+        });
+        return accepted;
+      },
+      addWidgetWithLayout: (newWidget, positionUpdates) => {
+        let accepted = false;
         set((state) => {
           const layoutMode = state.activeLayoutMode;
+          const positionMap = new Map(
+            positionUpdates.map((update) => [update.id, update.position])
+          );
+          const nextWidgets = state.widgets.map((widget) => {
+            const position = positionMap.get(widget.id);
+            return position ? { ...widget, position } : widget;
+          });
+          nextWidgets.push(newWidget);
+
+          if (!areWidgetPlacementsValid(nextWidgets, LAYOUT_MODE_COLUMNS[layoutMode])) {
+            return state;
+          }
+
           const previousMobileLayouts = cloneLayouts(state.layoutsByMode.mobile);
-          const positionMap = new Map(positionUpdates.map((update) => [update.id, update.position]));
           const nextActiveLayouts = state.layoutsByMode[layoutMode].map((widget) => {
             const position = positionMap.get(widget.id);
             return position ? { ...widget, position } : widget;
@@ -612,7 +863,7 @@ export const useWidgetStore = create<WidgetState>()(
           const widgetConfigs = splitWidgets(mergedWidgets).configs;
           const layoutsByMode = {
             ...state.layoutsByMode,
-            [layoutMode]: normalizeLayoutsForMode(nextActiveLayouts, LAYOUT_MODE_COLUMNS[layoutMode]),
+            [layoutMode]: nextActiveLayouts,
           };
           const mobileSessionState =
             layoutMode === 'mobile'
@@ -625,26 +876,28 @@ export const useWidgetStore = create<WidgetState>()(
                 };
 
           if (!isClientDemoMode) {
-            saveLayoutsToServer(layoutsByMode);
-            void saveConfigsToServer(widgetConfigs);
+            queueSnapshotSave(layoutsByMode, widgetConfigs, state.bookmarks);
           }
 
+          accepted = true;
           return {
             layoutsByMode,
             widgetConfigs,
             widgets: hydrateWidgets(layoutMode, layoutsByMode, widgetConfigs),
             ...mobileSessionState,
           };
-        }),
+        });
+        return accepted;
+      },
     }),
     {
       name: persistKey,
       storage: createJSONStorage(() => (isClientDemoMode ? memoryOnlyStorage : localStorage)),
       partialize: (state) => ({
-        widgets: state.widgets,
         widgetConfigs: state.widgetConfigs,
         layoutsByMode: state.layoutsByMode,
-        dataVersion: state.dataVersion,
+        bookmarks: state.bookmarks,
+        revision: state.revision,
       }),
       merge: (persistedState, currentState) => {
         const parsed = WidgetStorePersistedStateSchema.safeParse(persistedState);
@@ -655,16 +908,23 @@ export const useWidgetStore = create<WidgetState>()(
 
         const fallbackWidgets = validateWidgets(parsed.data.widgets, currentState.widgets);
         const fallbackConfigs = splitWidgets(fallbackWidgets).configs;
-        const widgetConfigs = parsed.data.widgetConfigs ?? fallbackConfigs;
+        const migrated = migrateWidgetConfigsToBookmarks(
+          parsed.data.widgetConfigs ?? fallbackConfigs,
+          parsed.data.bookmarks ?? []
+        );
+        const widgetConfigs = migrated.configs;
         const layoutsByMode = ensureLayoutsByMode(
           parsed.data.layoutsByMode ?? fallbackWidgets,
           fallbackWidgets
         );
+        const { dataVersion: legacyDataVersion, ...persistedData } = parsed.data;
 
         return {
           ...currentState,
-          ...parsed.data,
+          ...persistedData,
+          revision: persistedData.revision ?? legacyDataVersion,
           widgetConfigs,
+          bookmarks: migrated.bookmarks,
           layoutsByMode,
           widgets: hydrateWidgets(
             currentState.activeLayoutMode,

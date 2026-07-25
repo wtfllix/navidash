@@ -56,7 +56,7 @@ function StoreDragOverlay({ dragData }: { dragData: DragData }) {
 
   return (
     <div
-      className="relative overflow-hidden rounded-[24px] border border-white/70 bg-white/55 shadow-[0_22px_50px_rgba(15,23,42,0.16)] backdrop-blur-2xl"
+      className="relative overflow-hidden rounded-[var(--radius-widget)] bg-white/60 shadow-[0_18px_42px_rgba(15,23,42,0.15),inset_0_1px_0_rgba(255,255,255,0.78)] backdrop-blur-2xl"
       style={{ width: `${width}px`, height: `${height}px` }}
     >
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.8),transparent_55%)]" />
@@ -70,7 +70,7 @@ function StoreDragOverlay({ dragData }: { dragData: DragData }) {
           </div>
         </div>
         {meta && (
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[24px] bg-white/32 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)] ring-1 ring-white/45">
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[var(--radius-widget)] bg-white/36 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]">
             <meta.Icon size={32} className={meta.iconClassName} />
           </div>
         )}

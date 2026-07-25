@@ -14,7 +14,6 @@ export interface LauncherOpenedLinkHistoryItem {
   title: string;
   url: string;
   hostname: string;
-  sourceType: LauncherLinkItem['sourceType'];
 }
 
 function safeRead<T>(key: string): T[] {
@@ -74,11 +73,19 @@ export function pushLauncherOpenedLink(link: LauncherLinkItem): LauncherOpenedLi
       title: link.title,
       url: link.url,
       hostname: link.hostname,
-      sourceType: link.sourceType,
     },
     ...readLauncherOpenedLinks().filter((item) => item.url !== link.url),
   ].slice(0, MAX_HISTORY_ITEMS);
 
   safeWrite(OPENED_LINKS_KEY, nextItems);
   return nextItems;
+}
+
+export function clearLauncherHistory() {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  window.localStorage.removeItem(SEARCH_HISTORY_KEY);
+  window.localStorage.removeItem(OPENED_LINKS_KEY);
 }

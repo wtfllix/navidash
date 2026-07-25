@@ -1,12 +1,7 @@
-jest.mock('../components/widgets/ClockWidget', () => () => null);
 jest.mock('../components/widgets/LinksWidget', () => () => null);
-jest.mock('../components/widgets/WeatherWidget', () => () => null);
-jest.mock('../components/widgets/DateWidget', () => () => null);
-jest.mock('../components/widgets/QuickLinkWidget', () => () => null);
-jest.mock('../components/widgets/TodoWidget', () => () => null);
 jest.mock('../components/widgets/MemoWidget', () => () => null);
-jest.mock('../components/widgets/CalendarWidget', () => () => null);
 jest.mock('../components/widgets/PhotoWidget', () => () => null);
+jest.mock('../components/widgets/TodayWidget', () => () => null);
 
 import { widgetComponentRegistry, widgetMeta } from '@/components/widgets/registry';
 import { WidgetSchema } from '@/lib/schemas';
@@ -34,14 +29,19 @@ describe('widget registry integration', () => {
 
   it('keeps widget picker metadata aligned with registered renderers', () => {
     const pickerTypes = new Set(widgetMeta.map((meta) => meta.type));
-    const rendererTypes = Object.keys(widgetComponentRegistry);
 
     for (const type of Array.from(pickerTypes) as WidgetType[]) {
       expect(widgetComponentRegistry[type]).toBeDefined();
     }
+  });
 
-    for (const type of rendererTypes) {
-      expect(pickerTypes.has(type as Widget['type'])).toBe(true);
-    }
+  it('keeps the picker and renderer registry limited to current widget types', () => {
+    const pickerTypes = new Set(widgetMeta.map((meta) => meta.type));
+    const registeredTypes = Object.keys(widgetComponentRegistry);
+
+    expect([...pickerTypes].sort()).toEqual(
+      ['links', 'memo', 'photo-frame', 'today'].sort()
+    );
+    expect(registeredTypes.sort()).toEqual([...pickerTypes].sort());
   });
 });

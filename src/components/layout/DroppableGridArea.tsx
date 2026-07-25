@@ -5,8 +5,7 @@ import { useDroppable, useDndContext } from '@dnd-kit/core';
 import { useWidgetStore } from '@/store/useWidgetStore';
 import { useSidebarStore } from '@/store/useSidebarStore';
 import { v4 as uuidv4 } from 'uuid';
-import { canPlaceWidget } from '@/lib/layoutEngine';
-import { buildPlacementResult, WidgetCreatedDetail, WidgetDropDetail, WidgetDropPreviewDetail } from '@/lib/widgetPlacement';
+import { buildPlacementResult, WidgetCreatedDetail, WidgetDropDetail } from '@/lib/widgetPlacement';
 import { useTranslations } from 'next-intl';
 import { widgetMeta, widgetTypesRequiringSetup } from '@/components/widgets/registry';
 
@@ -16,6 +15,9 @@ interface DroppableGridAreaProps {
   cols: number;
   rowHeight: number;
   margin: [number, number];
+  onPreviewChange: (
+    updates: Array<{ id: string; position: { x: number; y: number } }>
+  ) => void;
   children: React.ReactNode;
 }
 
@@ -28,8 +30,7 @@ interface DropIndicatorState {
   w: number;
   h: number;
   visible: boolean;
-  isValid: boolean; // true: 可以直接放置, false: 需要推动其他组件
-  willPushWidgets: string[]; // 将被推动的组件ID列表
+  isValid: boolean;
 }
 
 /**
@@ -38,8 +39,8 @@ interface DropIndicatorState {
  * 
  * 功能特性：
  * 1. 实时显示放置指示器，根据组件实际尺寸动态调整
- * 2. 智能布局：放置时自动推动现有组件腾出空间
- * 3. 视觉反馈：蓝色=直接放置，橙色=需要推动组件
+ * 2. 受控碰撞：预览最多四个保持原列向下移动的组件
+ * 3. 视觉反馈：蓝色=可以放置，红色=越界或影响范围过大
  * 4. 动画支持：组件位置变化时有平滑过渡
  */
 export default function DroppableGridArea({
@@ -48,6 +49,7 @@ export default function DroppableGridArea({
   cols,
   rowHeight,
   margin,
+  onPreviewChange,
   children,
 }: DroppableGridAreaProps) {
   const { widgets, addWidgetWithLayout } = useWidgetStore();
@@ -57,10 +59,6 @@ export default function DroppableGridArea({
   const dropIndicatorRef = useRef<HTMLDivElement>(null);
   const dropIndicatorRefLatest = useRef(dropIndicator);
   const widgetsRef = useRef(widgets);
-
-  const dispatchPreview = useCallback((detail: WidgetDropPreviewDetail) => {
-    window.dispatchEvent(new CustomEvent<WidgetDropPreviewDetail>('widget-drop-preview', { detail }));
-  }, []);
 
   // 同步 widgets 到 ref，避免在事件监听中形成闭包
   useEffect(() => {
@@ -137,6 +135,7 @@ export default function DroppableGridArea({
   useEffect(() => {
     if (!containerRef.current || !active) {
       setDropIndicator(null);
+      onPreviewChange([]);
       return;
     }
 
@@ -150,14 +149,14 @@ export default function DroppableGridArea({
         e.clientY <= rect.bottom;
       if (!isInsideCanvas) {
         setDropIndicator(null);
-        dispatchPreview({ active: false, updates: [] });
+        onPreviewChange([]);
         return;
       }
 
       // 从 active 数据获取 widget 尺寸
       let widgetWidth = 2;
       let widgetHeight = 1;
-      let activeWidgetType: string = 'clock';
+      let activeWidgetType: string = 'links';
 
       if (active?.data.current) {
         const data = active.data.current as any;
@@ -178,15 +177,6 @@ export default function DroppableGridArea({
         'center'
       );
       if (position) {
-        // 检查是否可以直接放置
-        const canPlace = canPlaceWidget(
-          widgetsRef.current,
-          position.x,
-          position.y,
-          widgetWidth,
-          widgetHeight
-        );
-
         const previewPlacement = buildPlacementResult({
           widgets: widgetsRef.current,
           widgetType: activeWidgetType as any,
@@ -195,20 +185,14 @@ export default function DroppableGridArea({
           cols,
           preferredPosition: { x: position.x, y: position.y },
         });
-        const willPushWidgets = canPlace ? [] : previewPlacement.movedWidgetIds;
-        dispatchPreview({
-          active: true,
-          updates: previewPlacement.positionUpdates,
-        });
-
+        onPreviewChange(previewPlacement.isValid ? previewPlacement.positionUpdates : []);
         setDropIndicator({
           x: position.x,
           y: position.y,
           w: widgetWidth,
           h: widgetHeight,
           visible: true,
-          isValid: canPlace,
-          willPushWidgets,
+          isValid: previewPlacement.isValid,
         });
       }
     };
@@ -216,9 +200,9 @@ export default function DroppableGridArea({
     window.addEventListener('pointermove', handlePointerMove);
     return () => {
       window.removeEventListener('pointermove', handlePointerMove);
-      dispatchPreview({ active: false, updates: [] });
+      onPreviewChange([]);
     };
-  }, [active, calculateGridPosition, containerRef, cols, dispatchPreview]);
+  }, [active, calculateGridPosition, containerRef, cols, onPreviewChange]);
 
   // 处理放置事件
   useEffect(() => {
@@ -268,8 +252,15 @@ export default function DroppableGridArea({
         maxScanRows: shouldUsePreferredPosition ? 20 : 0,
       });
 
-      // 原子操作：添加新组件并更新现有组件位置
-      addWidgetWithLayout(placement.newWidget, placement.positionUpdates);
+      if (
+        !placement.isValid ||
+        !addWidgetWithLayout(placement.newWidget, placement.positionUpdates)
+      ) {
+        setDropIndicator(null);
+        onPreviewChange([]);
+        return;
+      }
+
       window.dispatchEvent(
         new CustomEvent<WidgetCreatedDetail>('widget-created', {
           detail: {
@@ -288,20 +279,28 @@ export default function DroppableGridArea({
       });
 
       setDropIndicator(null);
-      dispatchPreview({ active: false, updates: [] });
+      onPreviewChange([]);
     };
 
     window.addEventListener('widget-drop', handleDrop as EventListener);
     return () => window.removeEventListener('widget-drop', handleDrop as EventListener);
-  }, [width, cols, addWidgetWithLayout, calculateGridPosition, containerRef, closeSidebar, dispatchPreview]);
+  }, [
+    width,
+    cols,
+    addWidgetWithLayout,
+    calculateGridPosition,
+    containerRef,
+    closeSidebar,
+    onPreviewChange,
+  ]);
 
   // 清除指示器当拖拽结束
   useEffect(() => {
     if (!isDragging) {
       setDropIndicator(null);
-      dispatchPreview({ active: false, updates: [] });
+      onPreviewChange([]);
     }
-  }, [isDragging, dispatchPreview]);
+  }, [isDragging, onPreviewChange]);
 
   return (
     <div className="relative w-full h-full">
@@ -335,7 +334,7 @@ export default function DroppableGridArea({
               relative h-full w-full overflow-hidden rounded-[22px] border shadow-[0_18px_45px_rgba(15,23,42,0.14)] ring-4 backdrop-blur-sm
               ${dropIndicator.isValid
                 ? 'border-blue-300/80 bg-white/82 ring-blue-100/80'
-                : 'border-orange-300/90 bg-white/84 ring-orange-100/90'
+                : 'border-red-300/90 bg-white/84 ring-red-100/90'
               }
             `}
           >
@@ -344,7 +343,7 @@ export default function DroppableGridArea({
                 absolute inset-0
                 ${dropIndicator.isValid
                   ? 'bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.16),transparent_45%)]'
-                  : 'bg-[radial-gradient(circle_at_top_left,rgba(249,115,22,0.18),transparent_48%)]'
+                  : 'bg-[radial-gradient(circle_at_top_left,rgba(239,68,68,0.18),transparent_48%)]'
                 }
               `}
             />
@@ -388,15 +387,6 @@ export default function DroppableGridArea({
               </div>
             </div>
           </div>
-
-          {/* 推动提示 */}
-          {!dropIndicator.isValid && dropIndicator.willPushWidgets.length > 0 && (
-            <div className="absolute bottom-3 right-3">
-              <span className="rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-medium text-orange-700 shadow-sm ring-1 ring-orange-100">
-                {t('push_widgets_hint', { count: dropIndicator.willPushWidgets.length })}
-              </span>
-            </div>
-          )}
         </div>
       )}
 

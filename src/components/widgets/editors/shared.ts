@@ -1,7 +1,6 @@
 'use client';
 
-import { WidgetConfig, WidgetSize, WidgetType } from '@/types';
-import { v4 as uuidv4 } from 'uuid';
+import { WidgetSize, WidgetType } from '@/types';
 
 export const PRESET_CITIES = [
   { name: 'Beijing', lat: 39.9042, lon: 116.4074 },
@@ -67,15 +66,6 @@ export const PRESET_CITIES = [
   { name: 'Melbourne', lat: -37.8136, lon: 144.9631 },
 ] as const;
 
-export const COLOR_OPTIONS = [
-  { color: '#ef4444', label: 'Red' },
-  { color: '#3b82f6', label: 'Blue' },
-  { color: '#22c55e', label: 'Green' },
-  { color: '#f97316', label: 'Orange' },
-  { color: '#a855f7', label: 'Purple' },
-  { color: '#1f2937', label: 'Black' },
-] as const;
-
 export const SIZE_PRESETS = {
   s11: { w: 1, h: 1, labelKey: 'size_preset_1x1' },
   s21: { w: 2, h: 1, labelKey: 'size_preset_2x1' },
@@ -89,17 +79,10 @@ export const SIZE_PRESETS = {
 type SizePresetKey = keyof typeof SIZE_PRESETS;
 
 export const WIDGET_SIZE_PRESET_MAP: Record<WidgetType, SizePresetKey[]> = {
-  clock: ['s11', 's21'],
-  weather: ['s11', 's21', 's22'],
-  date: ['s11', 's21'],
-  'quick-link': ['s11'],
-  links: ['s21', 's22', 's31'],
-  todo: ['s22', 's23'],
-  memo: ['s22', 's23'],
-  calendar: ['s21', 's22'],
+  today: ['s11', 's21', 's22'],
+  links: ['s11', 's21', 's22', 's31'],
+  memo: ['s21', 's22', 's23'],
   'photo-frame': ['s12', 's22', 's32'],
-  rss: ['s31', 's32'],
-  monitor: ['s31', 's32'],
 };
 
 export function getAllowedSizePresets(widgetType: WidgetType) {
@@ -121,21 +104,6 @@ export function getDefaultAllowedSize(widgetType: WidgetType): WidgetSize {
   return { w: preset.w, h: preset.h };
 }
 
-export function normalizeWeatherConfig(config: WidgetConfig): WidgetConfig {
-  if (!config.city) return config;
-  const matchedCity = PRESET_CITIES.find(
-    (city) => city.name.toLowerCase() === config.city?.toLowerCase()
-  );
-  if (!matchedCity) return config;
-
-  return {
-    ...config,
-    city: matchedCity.name,
-    lat: matchedCity.lat,
-    lon: matchedCity.lon,
-  };
-}
-
 export function getLinkDomain(url: string) {
   try {
     return new URL(url.startsWith('http') ? url : `https://${url}`).hostname.replace(/^www\./, '');
@@ -144,10 +112,10 @@ export function getLinkDomain(url: string) {
   }
 }
 
-export function getFaviconUrl(url: string) {
+export function getFaviconUrl(url: string, size = 32) {
   try {
     const domain = new URL(url.startsWith('http') ? url : `https://${url}`).hostname;
-    return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+    return `https://www.google.com/s2/favicons?domain=${domain}&sz=${size}`;
   } catch {
     return null;
   }
@@ -163,19 +131,4 @@ export function parseOptionalNumber(value: string) {
   if (!trimmed) return undefined;
   const parsed = Number(trimmed);
   return Number.isFinite(parsed) ? parsed : undefined;
-}
-
-export function createLinkItem(input: string) {
-  const line = input.trim();
-  if (!line) return null;
-
-  const pipeIdx = line.indexOf('|');
-  if (pipeIdx > -1) {
-    const title = line.slice(0, pipeIdx).trim();
-    const url = line.slice(pipeIdx + 1).trim();
-    if (!url) return null;
-    return { id: uuidv4(), title: title || getLinkDomain(url), url };
-  }
-
-  return { id: uuidv4(), title: getLinkDomain(line), url: line };
 }

@@ -9,14 +9,14 @@
 [中文](./README.md) | **English**
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Version](https://img.shields.io/badge/version-0.6.0-green.svg)
+![Version](https://img.shields.io/badge/version-0.7.3-green.svg)
 ![Next.js](https://img.shields.io/badge/Next.js-14-black.svg)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue.svg)
 ![Docker](https://img.shields.io/badge/Docker-ready-2496ed.svg)
 
 [Live Demo](https://navidash.vercel.app/en) · [Deployment Guide](./docs/DEPLOY.md) · [User Guide](./docs/USER_GUIDE_EN.md) · [中文](./README.md)
 
-NaviDash is a personal browser start page. It puts a few everyday things in one place: links you open often, quick search, temporary notes, and small bits of status from local development or self-hosted services.
+NaviDash is an attention-first, personalized browser start page. It helps you get to the next thing quickly while keeping common links, quick search, temporary notes, and a small amount of daily information in a homepage that feels like your own.
 
 It is not trying to become a full monitoring platform, RSS reader, or project management tool. There are already good tools for those jobs. NaviDash is meant to stay closer to a lightweight entry page.
 
@@ -46,15 +46,16 @@ NaviDash keeps some layout freedom and personal style, but the core stays around
 
 - Freely arranged widget canvas with drag, reflow, and size adjustment
 - Separate desktop and mobile layouts with shared widget data
-- Built-in `Quick Link`, `Links`, `Memo`, `Todo`, and other high-frequency widgets
-- Canvas-level quick open and search for saved links and recent activity
+- The widget shelf focuses on `Links`, `Today`, `Memo`, and `Poster`
+- Dock bookmark library with canvas-level quick open across every saved link and recent activity
 - JSON import/export for backup and migration
 
 ### Theme: Personal Homepage
 
 - Pegboard-inspired background
 - Custom wallpaper, blur, and overlay tuning
-- Built-in `Clock`, `Weather`, `Date`, `Calendar`, and `Photo Frame`
+- `Today` combines time, English date labels, and weather; `Poster` provides frameless decoration
+- Retired widget entries are filtered from legacy layouts and backups while other valid widgets are preserved
 - Works well as a browser start page, personal homepage, or home-device dashboard
 
 ### Dev Pack: Developers and Self-Hosting
@@ -68,26 +69,14 @@ These are technical extensions I would like to explore next. They are meant to b
 
 ## Recent Updates
 
-Current version: `0.6.0`
+Current version: `0.7.3`
 
-- Separate desktop and mobile layouts now share the same widget data
-- Mobile layout editing supports undo and restore-to-session-start
-- A canvas-level quick open and search panel makes saved links faster to access
-- Demo mode is now part of the mainline build and can be enabled with environment flags
-- `Todo` and `Memo` now show bottom scroll hints for long content
+- The interface now centers on the quick launcher, bottom Dock, and stable free canvas
+- The global bookmark library supports HTML and Markdown batch imports, while Links pins a small set
+- Today, Links, Memo, and Poster form the current private digital-wall core
+- Widget data now uses one revisioned atomic snapshot, with optional single-user access protection
 
 See [changelog.md](./changelog.md) for the full change history.
-
-## Roadmap
-
-This is the current direction, without fixed dates. Since this is a personal project, priorities may change based on real usage and feedback.
-
-| Stage | Direction |
-| --- | --- |
-| Current focus | Links, search, notes, mobile layout, template experience |
-| Next | Dev Pack: IP, service status, port shortcuts, lightweight Docker service visibility |
-| Later | RSS recent updates, read-only iCal calendar, GitHub repository status |
-| Not planned | Full monitoring and alerting platform, full RSS reader, two-way calendar sync, project management system |
 
 ## Quick Start
 
@@ -120,7 +109,7 @@ export NAVIDASH_DATA_DIR=/your/data/path
 cp .env.example .env
 ```
 
-4. Add weather configuration if you want the Weather widget
+4. Add weather service configuration if you want weather in Today
 
 The current weather integration uses QWeather (HeWeather). Recommended `apikey` mode:
 
@@ -178,11 +167,12 @@ The most important environment variables in `.env.example` are:
 
 - `NEXT_PUBLIC_DEMO_MODE`: enables read-only demo mode when set to `true`
 - `DEMO_MODE`: enables demo data and read-only write protection on the server
+- `NAVIDASH_ACCESS_PASSWORD`: optional single-user password; leave empty to disable protection
 - `QWEATHER_API_KEY`: QWeather (HeWeather) API key or JWT
 - `QWEATHER_API_HOST`: optional custom QWeather-compatible host
 - `QWEATHER_AUTH_TYPE`: `apikey` or `jwt`
 
-Weather requests go through the server-side `/api/weather` proxy and currently target QWeather (HeWeather) by default. In most cases, weather-related credentials should live in environment variables rather than widget config.
+Weather requests go through the server-side `/api/weather` proxy and currently target QWeather (HeWeather) by default. API keys, hosts, and authentication modes are read only from server-side environment variables; widget config stores only a city or coordinates.
 
 ## Persistence
 
@@ -191,10 +181,11 @@ Runtime data is stored under `/app/data` and should be mounted to a host directo
 The main persisted files are:
 
 - `settings.json`
-- `widget-layouts.json`
-- `widget-configs.json`
+- `widget-snapshot.json`
 
-These files use a versioned JSON envelope so future migrations remain explicit, while legacy raw JSON is still readable for backward compatibility.
+Widget layouts and configurations are saved together in one revisioned atomic snapshot. Legacy
+`widgets.json`, `widget-layouts.json`, and `widget-configs.json` remain readable as migration
+sources.
 
 ## Demo Mode
 

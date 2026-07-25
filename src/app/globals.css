@@ -2,11 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: 'Eagle Horizon';
+  src: url('/fonts/eagle-horizon-personal-use.regular.ttf') format('truetype');
+  font-display: swap;
+  font-style: normal;
+  font-weight: 400;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
     --primary-color: 59 130 246; /* Default Blue-500 in RGB */
+    --radius-widget: 1.125rem;
+    --radius-dialog: 1.5rem;
+    --radius-control: 0.75rem;
   }
 
   html {
@@ -27,12 +38,78 @@
   .layout .react-grid-placeholder {
     background: rgba(var(--primary-color), 0.3) !important;
     opacity: 1 !important;
-    border-radius: 0.75rem !important; /* rounded-xl */
+    border-radius: var(--radius-widget) !important;
     z-index: 1 !important;
+  }
+
+  .widget-surface {
+    overflow: hidden;
+    border-radius: var(--radius-widget);
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow:
+      0 8px 24px rgba(15, 23, 42, 0.07),
+      0 2px 6px rgba(15, 23, 42, 0.04),
+      inset 0 1px 0 rgba(255, 255, 255, 0.82);
+  }
+
+  .widget-surface:not(.widget-surface-editing):hover {
+    box-shadow:
+      0 12px 30px rgba(15, 23, 42, 0.09),
+      0 3px 8px rgba(15, 23, 42, 0.04),
+      inset 0 1px 0 rgba(255, 255, 255, 0.88);
+  }
+
+  .widget-surface-editing {
+    border: 1px dashed rgba(var(--primary-color), 0.55);
+    background: rgba(248, 250, 252, 0.76);
+    box-shadow:
+      0 0 0 4px rgba(var(--primary-color), 0.08),
+      0 10px 28px rgba(15, 23, 42, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  }
+
+  .poster-surface {
+    overflow: hidden;
+    border-radius: var(--radius-widget);
+    background: transparent;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.11);
+  }
+
+  .poster-surface:not(.widget-surface-editing):hover {
+    box-shadow: 0 14px 30px rgba(15, 23, 42, 0.14);
   }
 }
 
 @layer utilities {
+  @keyframes launcher-fly-in {
+    0% {
+      opacity: 0;
+      transform: translate3d(0, 5rem, 0) scale(0.9);
+    }
+
+    68% {
+      opacity: 1;
+      transform: translate3d(0, -0.35rem, 0) scale(1.01);
+    }
+
+    100% {
+      opacity: 1;
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+  }
+
+  .launcher-fly-in {
+    animation: launcher-fly-in 360ms cubic-bezier(0.2, 0.82, 0.2, 1) both;
+    transform-origin: bottom center;
+    will-change: transform, opacity;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .launcher-fly-in {
+      animation-duration: 1ms;
+    }
+  }
+
   .font-sf {
     font-family:
       'SF Pro Display',
@@ -74,89 +151,9 @@
     text-transform: uppercase;
   }
 
-  @keyframes weather-float {
-    0%,
-    100% {
-      transform: translate3d(0, 0, 0) scale(1);
-    }
-    50% {
-      transform: translate3d(0, 6px, 0) scale(1.03);
-    }
-  }
-
-  @keyframes weather-drift {
-    0%,
-    100% {
-      transform: translate3d(0, 0, 0);
-      opacity: 0.14;
-    }
-    50% {
-      transform: translate3d(10px, -4px, 0);
-      opacity: 0.22;
-    }
-  }
-
-  @keyframes weather-rain {
-    0% {
-      transform: translate3d(-10px, -16px, 0);
-      opacity: 0;
-    }
-    25% {
-      opacity: 0.16;
-    }
-    100% {
-      transform: translate3d(12px, 18px, 0);
-      opacity: 0;
-    }
-  }
-
-  @keyframes weather-glow {
-    0%,
-    100% {
-      transform: scale(0.98);
-      opacity: 0.18;
-    }
-    50% {
-      transform: scale(1.05);
-      opacity: 0.28;
-    }
-  }
-
-  @keyframes weather-twinkle {
-    0%,
-    100% {
-      opacity: 0.12;
-      transform: translate3d(0, 0, 0);
-    }
-    50% {
-      opacity: 0.2;
-      transform: translate3d(-4px, 3px, 0);
-    }
-  }
-
-  .weather-ambient-float {
-    animation: weather-float 11s ease-in-out infinite;
-  }
-
-  .weather-ambient-drift {
-    animation: weather-drift 14s ease-in-out infinite;
-  }
-
-  .weather-ambient-rain {
-    animation: weather-rain 2.8s linear infinite;
-  }
-
-  .weather-ambient-glow {
-    animation: weather-glow 8s ease-in-out infinite;
-  }
-
-  .weather-ambient-twinkle {
-    animation: weather-twinkle 7s ease-in-out infinite;
-  }
-
   .hover-scrollbar {
     scrollbar-width: none;
-  }
+}
 
   .hover-scrollbar::-webkit-scrollbar {
     width: 0;
@@ -236,15 +233,5 @@
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .weather-ambient-float,
-  .weather-ambient-drift,
-  .weather-ambient-rain,
-  .weather-ambient-glow,
-  .weather-ambient-twinkle {
-    animation: none !important;
   }
 }

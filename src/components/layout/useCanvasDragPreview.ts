@@ -61,21 +61,6 @@ function arePositionsEqual(
   return a?.x === b?.x && a?.y === b?.y;
 }
 
-function arePositionUpdatesEqual(a: PositionUpdate[], b: PositionUpdate[]) {
-  if (a.length !== b.length) {
-    return false;
-  }
-
-  return a.every((update, index) => {
-    const other = b[index];
-    return (
-      update.id === other?.id &&
-      update.position.x === other.position.x &&
-      update.position.y === other.position.y
-    );
-  });
-}
-
 export function useCanvasDragPreview({
   widgets,
   isEditing,
@@ -93,12 +78,11 @@ export function useCanvasDragPreview({
   const [dragPointerOffset, setDragPointerOffset] = useState<{ x: number; y: number } | null>(
     null
   );
+  const [isDragPreviewValid, setIsDragPreviewValid] = useState(true);
   const [editPreviewUpdates, setEditPreviewUpdates] = useState<PositionUpdate[]>([]);
-
   const dragPreviewRef = useRef<{ x: number; y: number } | null>(null);
   const widgetsRef = useRef(widgets);
   const dragPointerOffsetRef = useRef<{ x: number; y: number } | null>(null);
-  const editPreviewUpdatesRef = useRef<PositionUpdate[]>([]);
   const pointerFrameRef = useRef<number | null>(null);
   const pendingPointerRef = useRef<{ x: number; y: number } | null>(null);
   const lastMoveResultRef = useRef<{
@@ -132,9 +116,9 @@ export function useCanvasDragPreview({
     setDraggingWidgetId(null);
     setDragPreviewPosition(null);
     setDragPointerOffset(null);
-    dragPointerOffsetRef.current = null;
+    setIsDragPreviewValid(true);
     setEditPreviewUpdates([]);
-    editPreviewUpdatesRef.current = [];
+    dragPointerOffsetRef.current = null;
     dragPreviewRef.current = null;
     pendingPointerRef.current = null;
     lastMoveResultRef.current = null;
@@ -212,31 +196,27 @@ export function useCanvasDragPreview({
           result: previewLayout,
         };
 
-        const movingPreview =
-          previewLayout.widgets.find((item) => item.id === drag.widgetId)?.position ?? {
-            x: nextX,
-            y: nextY,
-          };
+        const movingPreview = previewLayout.position;
+        setIsDragPreviewValid(previewLayout.isValid);
         setDragPreviewPosition((current) =>
           arePositionsEqual(current, movingPreview) ? current : movingPreview
         );
         dragPreviewRef.current = movingPreview;
+        setEditPreviewUpdates(
+          previewLayout.isValid
+            ? previewLayout.widgets
+                .filter((item) => item.id !== drag.widgetId)
+                .flatMap((item) => {
+                  const original = widgetsRef.current.find((widget) => widget.id === item.id);
+                  return original &&
+                    (original.position.x !== item.position.x ||
+                      original.position.y !== item.position.y)
+                    ? [{ id: item.id, position: item.position }]
+                    : [];
+                })
+            : []
+        );
 
-        const previewUpdates = previewLayout.widgets
-          .filter((item) => item.id !== drag.widgetId)
-          .map((item) => {
-            const original = widgetsRef.current.find((w) => w.id === item.id);
-            return original &&
-              (original.position.x !== item.position.x || original.position.y !== item.position.y)
-              ? { id: item.id, position: item.position }
-              : null;
-          })
-          .filter((item): item is PositionUpdate => !!item);
-
-        if (!arePositionUpdatesEqual(editPreviewUpdatesRef.current, previewUpdates)) {
-          editPreviewUpdatesRef.current = previewUpdates;
-          setEditPreviewUpdates(previewUpdates);
-        }
       };
 
       const onPointerMove = (moveEvent: PointerEvent) => {
@@ -299,7 +279,7 @@ export function useCanvasDragPreview({
             preferredPosition: preview,
           });
 
-        if (moveResult.movedWidgetIds.length > 0) {
+        if (moveResult.isValid && moveResult.movedWidgetIds.length > 0) {
           batchUpdatePositions(
             moveResult.widgets.map((item) => ({
               id: item.id,
@@ -332,7 +312,6 @@ export function useCanvasDragPreview({
       setDragPointerOffset(initialOffset);
       dragPointerOffsetRef.current = initialOffset;
       setEditPreviewUpdates([]);
-      editPreviewUpdatesRef.current = [];
       dragPreviewRef.current = widget.position;
       window.addEventListener('pointermove', onPointerMove);
       window.addEventListener('pointerup', onPointerUp);
@@ -346,8 +325,8 @@ export function useCanvasDragPreview({
     draggingWidgetId,
     dragPreviewPosition,
     dragPointerOffset,
+    isDragPreviewValid,
     editPreviewUpdates,
-    setEditPreviewUpdates,
     handleDragHandlePointerDown,
   };
 }

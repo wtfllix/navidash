@@ -1,7 +1,7 @@
 'use client';
 
 import Sidebar from "@/components/layout/Sidebar";
-import Header from "@/components/layout/Header";
+import CanvasToolbar from "@/components/layout/CanvasToolbar";
 import MainCanvas from "@/components/layout/MainCanvas";
 import ToastContainer from "@/components/ui/ToastContainer";
 import DragDropProvider from "@/components/layout/DragDropProvider";
@@ -14,9 +14,8 @@ import DragDropProvider from "@/components/layout/DragDropProvider";
  * - DataSyncer: 负责数据同步（无 UI）
  * - ToastContainer: 全局消息提示容器
  * - Sidebar: 左侧导航栏
- * - Right Content Area:
- *   - Header: 顶部状态栏
- *   - MainCanvas: 主内容/小组件区域
+ * - MainCanvas: 主内容/小组件区域
+ * - CanvasToolbar: 低干扰的悬浮管理入口
  */
 export default function Home() {
   return (
@@ -24,9 +23,9 @@ export default function Home() {
       <ToastContainer />
       <DragDropProvider>
         <Sidebar />
-        <div className="flex-1 flex flex-col h-full overflow-hidden">
-          <Header />
+        <div className="relative flex-1 flex flex-col h-full overflow-hidden">
           <MainCanvas />
+          <CanvasToolbar />
         </div>
       </DragDropProvider>
     </div>

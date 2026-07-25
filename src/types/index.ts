@@ -2,17 +2,10 @@
 // ─── Widget 类型 ──────────────────────────────────────────────────────────────
 
 export type WidgetType =
-  | 'weather'
-  | 'clock'
-  | 'rss'
-  | 'monitor'
-  | 'quick-link'
+  | 'today'
   | 'links'
-  | 'calendar'
   | 'memo'
-  | 'todo'
-  | 'photo-frame'
-  | 'date';
+  | 'photo-frame';
 
 export interface WidgetSize {
   w: number;
@@ -28,27 +21,10 @@ export type WidgetLayoutMode = 'desktop' | 'mobile';
 
 // ─── per-Widget config 接口 ───────────────────────────────────────────────────
 
-export interface ClockWidgetConfig {
-  clockStyle?: 'glass' | 'minimal' | 'bento' | 'digital' | 'analog' | 'flip' | 'apple';
-}
-
-export interface WeatherWidgetConfig {
+export interface TodayWidgetConfig {
   city?: string;
   lat?: number;
   lon?: number;
-  weatherSub?: string;
-  weatherCustomHost?: string;
-  weatherAuthType?: 'apikey' | 'jwt';
-}
-
-export interface DateWidgetConfig {
-  style?: 'classic' | 'minimal' | 'glass' | 'bauhaus';
-  color?: string;
-}
-
-export interface QuickLinkWidgetConfig {
-  title?: string;
-  url?: string;
 }
 
 export interface PhotoWidgetConfig {
@@ -59,14 +35,19 @@ export interface PhotoWidgetConfig {
   shuffle?: boolean;
 }
 
-export interface LinkItem {
+export interface Bookmark {
   id: string;
   title: string;
   url: string;
+  folder?: string;
 }
+
+export type LinkItem = Bookmark;
 
 export interface LinksWidgetConfig {
   title?: string;
+  bookmarkIds?: string[];
+  /** 旧快照与备份迁移入口，规范化后不再写入。 */
   links?: LinkItem[];
   showLabels?: boolean;
   iconSize?: 'sm' | 'md' | 'lg';
@@ -78,30 +59,14 @@ export interface MemoWidgetConfig {
   textColor?: string;
 }
 
-export interface TodoItem {
-  id: string;
-  text: string;
-  completed: boolean;
-}
-
-export interface TodoWidgetConfig {
-  todos?: TodoItem[];
-}
-
-export type EmptyWidgetConfig = Record<string, never>;
-
 /**
  * WidgetConfig
  * 用于编辑表单和通用更新场景的宽松配置类型。
  */
 export type WidgetConfig =
-  Partial<ClockWidgetConfig> &
-  Partial<WeatherWidgetConfig> &
-  Partial<DateWidgetConfig> &
-  Partial<QuickLinkWidgetConfig> &
+  Partial<TodayWidgetConfig> &
   Partial<PhotoWidgetConfig> &
   Partial<MemoWidgetConfig> &
-  Partial<TodoWidgetConfig> &
   Partial<LinksWidgetConfig>;
 
 /**
@@ -109,17 +74,10 @@ export type WidgetConfig =
  * 每种 widget type 对应其唯一 config 结构。
  */
 export interface WidgetConfigMap {
-  weather: WeatherWidgetConfig;
-  clock: ClockWidgetConfig;
-  rss: EmptyWidgetConfig;
-  monitor: EmptyWidgetConfig;
-  'quick-link': QuickLinkWidgetConfig;
+  today: TodayWidgetConfig;
   links: LinksWidgetConfig;
-  calendar: EmptyWidgetConfig;
   memo: MemoWidgetConfig;
-  todo: TodoWidgetConfig;
   'photo-frame': PhotoWidgetConfig;
-  date: DateWidgetConfig;
 }
 
 export type WidgetConfigByType<T extends WidgetType> = WidgetConfigMap[T];
@@ -154,6 +112,14 @@ export type WidgetConfigEntry = {
   };
 }[WidgetType];
 
+export interface WidgetSnapshot {
+  schemaVersion: 2;
+  revision: number;
+  layoutsByMode: WidgetLayoutsByMode;
+  configs: WidgetConfigEntry[];
+  bookmarks: Bookmark[];
+}
+
 // ─── Settings 接口 ────────────────────────────────────────────────────────────
 
 export interface Settings {
@@ -162,7 +128,6 @@ export interface Settings {
   backgroundOpacity: number;
   backgroundSize: string;
   backgroundRepeat: string;
-  themeColor: string;
   customFavicon: string;
   customTitle: string;
   language: string;
@@ -174,7 +139,6 @@ export const DEFAULT_SETTINGS: Settings = {
   backgroundOpacity: 0,
   backgroundSize: '24px 24px',
   backgroundRepeat: 'repeat',
-  themeColor: '#3b82f6',
   customFavicon: '/favicon.svg',
   customTitle: 'Navidash',
   language: 'en',

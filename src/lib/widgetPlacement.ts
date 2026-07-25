@@ -1,5 +1,10 @@
 import { Widget, WidgetConfigByType, WidgetType, WidgetOfType } from '@/types';
-import { calculateLayoutWithNewWidget, canPlaceWidget } from '@/lib/layoutEngine';
+import {
+  canPlaceWidget,
+  findConflictingWidgetIds,
+  isWidgetLayoutValid,
+  resolveControlledCollision,
+} from '@/lib/layoutEngine';
 
 export interface WidgetDropDetail {
   widgetType: string;
@@ -7,11 +12,6 @@ export interface WidgetDropDetail {
   gridPosition?: { x: number; y: number };
   dropClient?: { x: number; y: number } | null;
   droppedOnGrid: boolean;
-}
-
-export interface WidgetDropPreviewDetail {
-  active: boolean;
-  updates: Array<{ id: string; position: { x: number; y: number } }>;
 }
 
 export interface WidgetCreatedDetail {
@@ -32,8 +32,9 @@ export interface PlacementRequest<T extends WidgetType = WidgetType> {
 
 export interface PlacementResult<T extends WidgetType = WidgetType> {
   newWidget: WidgetOfType<T>;
+  isValid: boolean;
   positionUpdates: Array<{ id: string; position: { x: number; y: number } }>;
-  movedWidgetIds: string[];
+  collisionMode: 'none' | 'push';
 }
 
 export interface MoveRequest {
@@ -45,21 +46,10 @@ export interface MoveRequest {
 
 export interface MoveResult {
   widgets: Widget[];
+  isValid: boolean;
+  position: { x: number; y: number };
   movedWidgetIds: string[];
-}
-
-function uniqueIds(ids: string[]) {
-  return Array.from(new Set(ids));
-}
-
-function clampPreferredPosition(
-  preferred: { x: number; y: number },
-  size: { w: number; h: number },
-  cols: number
-): { x: number; y: number } {
-  const clampedX = Math.max(0, Math.min(preferred.x, cols - size.w));
-  const clampedY = Math.max(0, preferred.y);
-  return { x: clampedX, y: clampedY };
+  collisionMode: 'none' | 'swap' | 'push';
 }
 
 function findFirstAvailablePosition(
@@ -70,7 +60,7 @@ function findFirstAvailablePosition(
 ): { x: number; y: number } {
   for (let y = 0; y < maxScanRows; y++) {
     for (let x = 0; x <= cols - size.w; x++) {
-      if (canPlaceWidget(widgets, x, y, size.w, size.h)) {
+      if (canPlaceWidget(widgets, x, y, size.w, size.h, cols)) {
         return { x, y };
       }
     }
@@ -99,7 +89,7 @@ export function buildPlacementResult<T extends WidgetType>(
   } = request;
 
   const basePosition = preferredPosition
-    ? clampPreferredPosition(preferredPosition, defaultSize, cols)
+    ? preferredPosition
     : findFirstAvailablePosition(widgets, defaultSize, cols, maxScanRows);
 
   const newWidget = {
@@ -110,26 +100,33 @@ export function buildPlacementResult<T extends WidgetType>(
     config: (config ?? {}) as WidgetConfigByType<T>,
   } as WidgetOfType<T>;
 
-  const layoutResult = calculateLayoutWithNewWidget(widgets, newWidget, cols);
+  const isValid = canPlaceWidget(
+    widgets,
+    basePosition.x,
+    basePosition.y,
+    defaultSize.w,
+    defaultSize.h,
+    cols
+  );
 
-  const positionUpdates = layoutResult.widgets
-    .filter((widget) => widget.id !== newWidget.id)
-    .map((widget) => ({
-      id: widget.id,
-      position: widget.position,
-    }))
-    .filter((update) => {
-      const original = widgets.find((widget) => widget.id === update.id);
-      return (
-        !!original &&
-        (original.position.x !== update.position.x || original.position.y !== update.position.y)
-      );
-    });
+  if (isValid) {
+    return {
+      newWidget,
+      isValid: true,
+      positionUpdates: [],
+      collisionMode: 'none',
+    };
+  }
+
+  const collisionResult = resolveControlledCollision(widgets, newWidget, cols);
 
   return {
     newWidget,
-    positionUpdates,
-    movedWidgetIds: uniqueIds(layoutResult.movedWidgetIds),
+    isValid: collisionResult.isValid,
+    positionUpdates: collisionResult.widgets
+      .filter((widget) => collisionResult.movedWidgetIds.includes(widget.id))
+      .map((widget) => ({ id: widget.id, position: widget.position })),
+    collisionMode: collisionResult.isValid ? 'push' : 'none',
   };
 }
 
@@ -138,39 +135,97 @@ export function buildMoveResult(request: MoveRequest): MoveResult {
   const movingWidget = widgets.find((widget) => widget.id === widgetId);
 
   if (!movingWidget) {
-    return { widgets, movedWidgetIds: [] };
+    return {
+      widgets,
+      isValid: false,
+      position: preferredPosition,
+      movedWidgetIds: [],
+      collisionMode: 'none',
+    };
   }
 
   const otherWidgets = widgets.filter((widget) => widget.id !== widgetId);
-  const placement = buildPlacementResult({
-    widgets: otherWidgets,
-    widgetType: movingWidget.type,
-    widgetId: movingWidget.id,
-    defaultSize: movingWidget.size,
-    cols,
-    preferredPosition,
-    config: movingWidget.config,
-  });
+  const targetWidget = { ...movingWidget, position: preferredPosition } as Widget;
+  const canMoveDirectly = canPlaceWidget(
+    otherWidgets,
+    preferredPosition.x,
+    preferredPosition.y,
+    movingWidget.size.w,
+    movingWidget.size.h,
+    cols
+  );
 
-  const updatedOthers = otherWidgets.map((widget) => {
-    const update = placement.positionUpdates.find((item) => item.id === widget.id);
-    return update ? { ...widget, position: update.position } : widget;
-  });
+  if (canMoveDirectly) {
+    const hasMoved =
+      preferredPosition.x !== movingWidget.position.x ||
+      preferredPosition.y !== movingWidget.position.y;
 
-  const movedWidgetIds = [...placement.movedWidgetIds];
-  if (
-    placement.newWidget.position.x !== movingWidget.position.x ||
-    placement.newWidget.position.y !== movingWidget.position.y
-  ) {
-    movedWidgetIds.push(movingWidget.id);
+    return {
+      widgets: widgets.map((widget) => (widget.id === widgetId ? targetWidget : widget)),
+      isValid: true,
+      position: preferredPosition,
+      movedWidgetIds: hasMoved ? [movingWidget.id] : [],
+      collisionMode: 'none',
+    };
   }
 
-  const movedMap = new Map<string, Widget>(
-    [...updatedOthers, placement.newWidget].map((widget) => [widget.id, widget])
+  const conflictingIds = findConflictingWidgetIds(otherWidgets, {
+    x: preferredPosition.x,
+    y: preferredPosition.y,
+    w: movingWidget.size.w,
+    h: movingWidget.size.h,
+  });
+  const swapTarget =
+    conflictingIds.length === 1
+      ? otherWidgets.find((widget) => widget.id === conflictingIds[0])
+      : undefined;
+
+  if (
+    swapTarget &&
+    swapTarget.size.w === movingWidget.size.w &&
+    swapTarget.size.h === movingWidget.size.h &&
+    swapTarget.position.x === preferredPosition.x &&
+    swapTarget.position.y === preferredPosition.y
+  ) {
+    const swappedWidgets = widgets.map((widget) => {
+      if (widget.id === movingWidget.id) return targetWidget;
+      if (widget.id === swapTarget.id) {
+        return { ...widget, position: movingWidget.position } as Widget;
+      }
+      return widget;
+    });
+
+    if (isWidgetLayoutValid(swappedWidgets, cols)) {
+      return {
+        widgets: swappedWidgets,
+        isValid: true,
+        position: preferredPosition,
+        movedWidgetIds: [movingWidget.id, swapTarget.id],
+        collisionMode: 'swap',
+      };
+    }
+  }
+
+  const collisionResult = resolveControlledCollision(otherWidgets, targetWidget, cols);
+  if (!collisionResult.isValid) {
+    return {
+      widgets,
+      isValid: false,
+      position: preferredPosition,
+      movedWidgetIds: [],
+      collisionMode: 'none',
+    };
+  }
+
+  const movedMap = new Map(
+    [...collisionResult.widgets, targetWidget].map((widget) => [widget.id, widget])
   );
 
   return {
     widgets: widgets.map((widget) => movedMap.get(widget.id) ?? widget),
-    movedWidgetIds: uniqueIds(movedWidgetIds),
+    isValid: true,
+    position: preferredPosition,
+    movedWidgetIds: [movingWidget.id, ...collisionResult.movedWidgetIds],
+    collisionMode: 'push',
   };
 }

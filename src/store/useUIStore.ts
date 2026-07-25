@@ -13,10 +13,13 @@ interface UIState {
   setCurrentCanvasCols: (cols: number) => void;
   editingLayoutMode: WidgetLayoutMode;
   setEditingLayoutMode: (mode: WidgetLayoutMode) => void;
-  isWidgetPickerOpen: boolean; // 小组件选择器模态框状态
-  openWidgetPicker: () => void;
-  closeWidgetPicker: () => void;
-  toggleWidgetPicker: () => void;
+  isLauncherOpen: boolean;
+  openLauncher: () => void;
+  closeLauncher: () => void;
+  isBookmarksOpen: boolean;
+  openBookmarks: () => void;
+  closeBookmarks: () => void;
+  toggleBookmarks: () => void;
   isSettingsOpen: boolean; // 全局设置模态框状态
   openSettings: () => void;
   closeSettings: () => void;
@@ -29,18 +32,29 @@ interface UIState {
  */
 export const useUIStore = create<UIState>((set) => ({
   isEditing: false,
-  toggleEditing: () => set((state) => ({ isEditing: !state.isEditing })),
+  toggleEditing: () =>
+    set((state) => ({
+      isEditing: !state.isEditing,
+      isBookmarksOpen: false,
+    })),
   setEditing: (isEditing) => set({ isEditing }),
   currentCanvasCols: 8,
   setCurrentCanvasCols: (currentCanvasCols) => set({ currentCanvasCols }),
   editingLayoutMode: 'desktop',
   setEditingLayoutMode: (editingLayoutMode) => set({ editingLayoutMode }),
-  isWidgetPickerOpen: false,
-  openWidgetPicker: () => set({ isWidgetPickerOpen: true }),
-  closeWidgetPicker: () => set({ isWidgetPickerOpen: false }),
-  toggleWidgetPicker: () => set((state) => ({ isWidgetPickerOpen: !state.isWidgetPickerOpen })),
+  isLauncherOpen: false,
+  openLauncher: () => set({ isLauncherOpen: true, isBookmarksOpen: false }),
+  closeLauncher: () => set({ isLauncherOpen: false }),
+  isBookmarksOpen: false,
+  openBookmarks: () => set({ isBookmarksOpen: true, isLauncherOpen: false }),
+  closeBookmarks: () => set({ isBookmarksOpen: false }),
+  toggleBookmarks: () =>
+    set((state) => ({
+      isBookmarksOpen: !state.isBookmarksOpen,
+      isLauncherOpen: false,
+    })),
   isSettingsOpen: false,
-  openSettings: () => set({ isSettingsOpen: true }),
+  openSettings: () => set({ isSettingsOpen: true, isBookmarksOpen: false }),
   closeSettings: () => set({ isSettingsOpen: false }),
   toggleSettings: () => set((state) => ({ isSettingsOpen: !state.isSettingsOpen })),
 }));
