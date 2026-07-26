@@ -19,6 +19,17 @@ When you open a browser, you usually need only a few things: visit a familiar si
 something, glance at the time and weather, or keep a temporary note. NaviDash brings them together
 in a quiet, flexible homepage that belongs to you.
 
+## Preview
+
+<p align="center">
+  <a href="https://ibb.co/22gKLBP">
+    <img width="49%" src="https://i.ibb.co/h5D8nvH/6e48bc7e-9b0b-4d62-8cbe-f52a3adbd3f5.png" alt="NaviDash interface preview 1" />
+  </a>
+  <a href="https://ibb.co/nqHhnKBZ">
+    <img width="49%" src="https://i.ibb.co/mrLQXP01/8a62daca-53a8-473b-a7a7-9fc1020f9435.png" alt="NaviDash interface preview 2" />
+  </a>
+</p>
+
 ## What changes for you
 
 - **One less step**: type a letter and quickly reach the sites you open most.

@@ -18,6 +18,17 @@
 每天打开浏览器时，你真正需要的通常只有几件事：进入最常用的网站、搜索一个内容、看一眼
 时间和天气，或者临时记下一段信息。NaviDash 把它们放在一张安静、自由、属于你的首页上。
 
+## 界面预览
+
+<p align="center">
+  <a href="https://ibb.co/22gKLBP">
+    <img width="49%" src="https://i.ibb.co/h5D8nvH/6e48bc7e-9b0b-4d62-8cbe-f52a3adbd3f5.png" alt="NaviDash 界面预览 1" />
+  </a>
+  <a href="https://ibb.co/nqHhnKBZ">
+    <img width="49%" src="https://i.ibb.co/mrLQXP01/8a62daca-53a8-473b-a7a7-9fc1020f9435.png" alt="NaviDash 界面预览 2" />
+  </a>
+</p>
+
 ## 它能带来什么
 
 - **少找一步**：输入一个字母，就能快速命中经常打开的网站。
