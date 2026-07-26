@@ -28,11 +28,24 @@
   <a href="https://t.me/+5iPcqd4_AvE0ZGY0">Telegram Group</a>
 </p>
 
-![NaviDash self-hosted personal homepage preview](./public/navidash-demo-cover.png)
+<p align="center">
+  <img width="820" alt="NaviDash self-hosted personal homepage cover" src="./public/navidash-demo-cover.png" />
+</p>
 
 When you open a browser, you usually need only a few things: visit a familiar site, search for
 something, glance at the time and weather, or keep a temporary note. NaviDash brings them together
 in a quiet, flexible homepage that belongs to you.
+
+## Interface preview
+
+<p align="center">
+  <a href="https://ibb.co/22gKLBP">
+    <img width="49%" src="https://i.ibb.co/h5D8nvH/6e48bc7e-9b0b-4d62-8cbe-f52a3adbd3f5.png" alt="NaviDash desktop interface 1" />
+  </a>
+  <a href="https://ibb.co/nqHhnKBZ">
+    <img width="49%" src="https://i.ibb.co/mrLQXP01/8a62daca-53a8-473b-a7a7-9fc1020f9435.png" alt="NaviDash desktop interface 2" />
+  </a>
+</p>
 
 ## Why NaviDash
 
