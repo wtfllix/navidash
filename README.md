@@ -1,52 +1,59 @@
 <p align="center">
-  <img width="144" height="144" alt="NaviDash logo" src="https://github.com/user-attachments/assets/19ebe243-3f0c-4c48-b512-c9a98f23a0c3" />
+  <img width="128" height="128" alt="NaviDash Logo" src="https://github.com/user-attachments/assets/19ebe243-3f0c-4c48-b512-c9a98f23a0c3" />
 </p>
 
-# NaviDash
-
-> 把每天打开的首页，布置成自己的样子。
-
-**中文** | [English](./README_EN.md)
-
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Version](https://img.shields.io/badge/version-0.7.3-green.svg)
-![Docker](https://img.shields.io/badge/Docker-ready-2496ed.svg)
-
-[在线体验](https://navidash.vercel.app/zh) · [开始部署](./docs/DEPLOY.md) ·
-[使用指南](./docs/USER_GUIDE.md) · [Telegram 群组](https://t.me/+5iPcqd4_AvE0ZGY0)
-
-每天打开浏览器时，你真正需要的通常只有几件事：进入最常用的网站、搜索一个内容、看一眼
-时间和天气，或者临时记下一段信息。NaviDash 把它们放在一张安静、自由、属于你的首页上。
-
-## 界面预览
+<h1 align="center">NaviDash</h1>
 
 <p align="center">
-  <a href="https://ibb.co/22gKLBP">
-    <img width="49%" src="https://i.ibb.co/h5D8nvH/6e48bc7e-9b0b-4d62-8cbe-f52a3adbd3f5.png" alt="NaviDash 界面预览 1" />
-  </a>
-  <a href="https://ibb.co/nqHhnKBZ">
-    <img width="49%" src="https://i.ibb.co/mrLQXP01/8a62daca-53a8-473b-a7a7-9fc1020f9435.png" alt="NaviDash 界面预览 2" />
-  </a>
+  <strong>把每天打开的首页，布置成自己的样子。</strong>
 </p>
 
-## 它能带来什么
+<p align="center">
+  <strong>中文</strong> · <a href="./README_EN.md">English</a>
+</p>
+
+<p align="center">
+  <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue.svg" />
+  <img alt="Version: 0.7.3" src="https://img.shields.io/badge/version-0.7.3-green.svg" />
+  <img alt="Docker Ready" src="https://img.shields.io/badge/Docker-ready-2496ed.svg" />
+</p>
+
+<p align="center">
+  <a href="https://navidash.vercel.app/zh"><strong>在线体验</strong></a>
+  ·
+  <a href="./docs/DEPLOY.md">开始部署</a>
+  ·
+  <a href="./docs/USER_GUIDE.md">使用指南</a>
+  ·
+  <a href="https://t.me/+5iPcqd4_AvE0ZGY0">Telegram 群组</a>
+</p>
+
+![NaviDash 自托管个性化首页预览](./public/navidash-demo-cover.png)
+
+每天打开浏览器时，你真正需要的通常只有几件事：进入最常用的网站、搜索一个内容、
+看一眼时间和天气，或者临时记下一段信息。NaviDash 把它们放在一张安静、自由、
+属于你的首页上。
+
+## 为什么选择 NaviDash
 
 - **少找一步**：输入一个字母，就能快速命中经常打开的网站。
-- **越用越顺手**：主页会在当前浏览器中记住你的使用习惯，把更可能需要的入口排在前面。
-- **信息刚刚好**：时间、天气和临时内容随手可见，但不会把首页变成拥挤的信息面板。
+- **越用越顺手**：主页会在当前浏览器中记住使用习惯，把更可能需要的入口排在前面。
+- **信息刚刚好**：时间、天气和临时内容随手可见，又不会让首页变成拥挤的信息面板。
 - **布置自己的空间**：像整理一面墙一样摆放入口、便签和海报，桌面与手机各有自己的布局。
-- **数据留在手中**：可以部署在自己的电脑、NAS 或服务器上，也可以随时备份和迁移。
+- **数据留在手中**：部署在自己的电脑、NAS 或服务器上，也可以随时备份和迁移。
 
 ## 一面墙，四种内容
 
-| | |
+| 内容 | 用途 |
 | --- | --- |
-| **常用入口** | 把每天都会打开的网站固定在熟悉的位置 |
-| **今日信息** | 安静地展示时间、日期和天气 |
-| **随手贴** | 临时保存文本、链接或稍后要用的信息 |
-| **海报** | 用喜欢的图片建立属于自己的主页氛围 |
+| 🧭 **常用入口** | 把每天都会打开的网站固定在熟悉的位置 |
+| ☀️ **今日信息** | 安静地展示时间、日期和天气 |
+| 📝 **随手贴** | 临时保存文本、链接或稍后要用的信息 |
+| 🖼️ **海报** | 用喜欢的图片建立属于自己的主页氛围 |
 
 ## 快速开始
+
+### Docker Compose
 
 ```bash
 git clone https://github.com/wtfllix/navidash.git
@@ -61,26 +68,27 @@ docker compose up -d
 天气、访问保护、局域网、HTTPS、升级和备份说明见
 [部署指南](./docs/DEPLOY.md)。
 
-## 本地开发
+### 本地开发
 
 ```bash
 npm install
 npm run dev
 ```
 
-## 了解更多
+## 项目文档
 
-- [部署指南](./docs/DEPLOY.md)
-- [使用指南](./docs/USER_GUIDE.md)
-- [更新记录](./changelog.md)
-- [English README](./README_EN.md)
+| 文档 | 内容 |
+| --- | --- |
+| [部署指南](./docs/DEPLOY.md) | Docker、环境配置、升级、备份和故障排查 |
+| [使用指南](./docs/USER_GUIDE.md) | 首页组件、书签和日常使用 |
+| [更新记录](./changelog.md) | 版本功能与重要变更 |
+| [English README](./README_EN.md) | English project overview |
 
-## 字体与致谢
+## 字体与许可证
 
 Today 的手写日期使用 [Kaushan Script](https://fonts.google.com/specimen/Kaushan+Script)，
-由 Impallari Type 设计，并依据 SIL Open Font License 1.1 随项目分发。许可证全文见
+由 Impallari Type 设计，并依据 SIL Open Font License 1.1 随项目分发。
+许可证全文见
 [`public/fonts/KaushanScript-LICENSE.txt`](./public/fonts/KaushanScript-LICENSE.txt)。
 
-## License
-
-MIT
+NaviDash 基于 [MIT License](https://opensource.org/license/mit) 发布。
