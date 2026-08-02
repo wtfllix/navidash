@@ -177,7 +177,7 @@ const MemoWidget = ({ widget }: { widget: WidgetOfType<'memo'> }) => {
   const t = useTranslations('Widgets');
 
   const [content, setContent] = useState(widget.config?.content || '');
-  const [isEditing, setIsEditing] = useState(!(widget.config?.content || '').trim());
+  const [isEditing, setIsEditing] = useState(false);
   const [isComposing, setIsComposing] = useState(false);
   const [saveFeedback, setSaveFeedback] = useState<SaveFeedbackState>('idle');
   const [showBottomHint, setShowBottomHint] = useState(false);
