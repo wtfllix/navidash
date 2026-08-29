@@ -106,7 +106,7 @@ npm run dev
 
 | 文档 | 内容 |
 | --- | --- |
-| [在线文档站](https://wtfllix.github.io/navidash/) | 中文优先的部署、使用、组件和排障指南 |
+| [在线文档站](https://wtfllix.github.io/navidash/) | 中文优先的部署、服务配置、Widget 使用和排障指南 |
 | [部署与使用 Wiki](./docs/WIKI.md) | 个人局域网部署、使用、备份与排障入口 |
 | [部署指南](./docs/DEPLOY.md) | Docker、局域网访问、升级、备份和故障排查 |
 | [使用指南](./docs/USER_GUIDE.md) | 首页组件、书签和日常使用 |

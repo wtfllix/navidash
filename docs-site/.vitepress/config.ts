@@ -13,8 +13,9 @@ export default defineConfig({
     siteTitle: 'NaviDash 文档',
     nav: [
       { text: '首页', link: '/' },
-      { text: '开始使用', link: '/guide/lan-deployment' },
-      { text: '组件说明', link: '/guide/widgets' },
+      { text: '部署', link: '/guide/lan-deployment' },
+      { text: '配置', link: '/guide/configuration' },
+      { text: '使用', link: '/guide/usage' },
       { text: 'GitHub', link: 'https://github.com/wtfllix/navidash' },
     ],
     sidebar: {
@@ -23,6 +24,7 @@ export default defineConfig({
           text: '快速开始',
           items: [
             { text: '局域网部署', link: '/guide/lan-deployment' },
+            { text: '服务配置', link: '/guide/configuration' },
             { text: '日常使用', link: '/guide/usage' },
             { text: 'Widget 说明', link: '/guide/widgets' },
           ],

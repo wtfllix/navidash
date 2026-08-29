@@ -1,68 +1,66 @@
----
-layout: home
+# NaviDash 使用与配置指南
 
-hero:
-  name: NaviDash
-  text: 把每天打开的首页，布置成自己的样子
-  tagline: 个人局域网优先的自托管首页，把常用入口、时间天气和轻量信息放在一面安静的墙上。
-  actions:
-    - theme: brand
-      text: 开始局域网部署
-      link: /guide/lan-deployment
-    - theme: alt
-      text: 先了解日常使用
-      link: /guide/usage
+这里主要回答三个问题：如何部署 NaviDash、如何完成服务配置，以及如何在日常使用中管理组件和数据。
 
-features:
-  - icon: 🏠
-    title: 数据留在自己的设备
-    details: 运行在家用电脑、NAS 或小型服务器上，布局和配置保存在你指定的持久化目录。
-  - icon: 🧩
-    title: 轻量 Widget
-    details: 常用入口、今日信息、便签、海报、F1 和 Komari，各自承担清晰的小任务。
-  - icon: 📱
-    title: 局域网随处访问
-    details: 电脑、手机和平板连接同一网络后，使用部署主机 IP 打开同一个首页。
-  - icon: 🛟
-    title: 可备份、可迁移
-    details: 支持应用内 JSON 备份和宿主机数据目录备份，升级前后都能保留自己的布置。
----
+::: tip 第一次使用
+按照“局域网部署 → 服务配置 → 日常使用”的顺序操作即可。天气与 Komari 是可选项，不配置也能
+正常使用 Links、Memo、Poster 和 F1 赛程。
+:::
 
-## 推荐阅读
+## 第一次使用
 
-<div class="tip custom-block">
-  <p class="custom-block-title">第一次使用 NaviDash？</p>
-  <p>先完成局域网部署，再从底部组件库添加内容。通常几分钟就可以建立一面自己的首页。</p>
-</div>
+1. 按照[局域网部署](./guide/lan-deployment)启动 Docker 容器。
+2. 在另一台设备打开 `http://部署主机IP:3000`，确认局域网访问正常。
+3. 按需完成[访问密码、天气和 Komari 配置](./guide/configuration)。
+4. 进入组件库添加 Links、Today、Memo、Poster、F1 或 Komari。
+5. 完成初始布局后，在“设置 → 数据工具”导出一次 JSON 备份。
 
-<div class="vp-doc guide-cards">
+## 按需求查找
+
+<div class="guide-cards">
   <a class="guide-card" href="./guide/lan-deployment">
-    <strong>局域网部署</strong>
-    <span>Docker Compose、主机 IP、环境变量和访问检查</span>
+    <strong>安装并启动</strong>
+    <span>Docker Compose、持久化目录、主机 IP 与防火墙</span>
+  </a>
+  <a class="guide-card" href="./guide/configuration">
+    <strong>配置服务</strong>
+    <span>访问密码、天气 API、Komari 和 Demo 模式</span>
   </a>
   <a class="guide-card" href="./guide/usage">
-    <strong>日常使用</strong>
-    <span>组件库、编辑模式、启动器和全局设置</span>
+    <strong>开始使用</strong>
+    <span>导入书签、添加组件、编辑布局和快速启动器</span>
   </a>
   <a class="guide-card" href="./guide/widgets">
-    <strong>Widget 说明</strong>
-    <span>六种组件的用途、尺寸和配置要点</span>
+    <strong>配置 Widget</strong>
+    <span>每种组件的设置入口、可选项和尺寸建议</span>
   </a>
   <a class="guide-card" href="./guide/backup">
     <strong>升级与备份</strong>
-    <span>安全升级、应用备份、目录恢复和迁移</span>
+    <span>安全升级、JSON 导出、目录备份与迁移</span>
   </a>
   <a class="guide-card" href="./guide/faq">
-    <strong>常见问题</strong>
-    <span>无法访问、修改丢失、天气和积分更新排查</span>
+    <strong>解决问题</strong>
+    <span>无法访问、修改丢失、天气和节点状态排查</span>
   </a>
 </div>
 
-## 运行方式
+## 最小配置
 
-文档站是独立的静态站点；NaviDash 主应用仍按原有方式运行。文档站的构建不会改变主应用的
-Next.js、Docker 或 Vercel 配置。
+默认配置已经可以运行。最小部署只需要：
 
-- 源码：[GitHub 仓库](https://github.com/wtfllix/navidash)
-- 应用预览：[在线体验](https://navidash.vercel.app/zh)
-- 项目内完整文档：[docs 目录](https://github.com/wtfllix/navidash/tree/master/docs)
+```bash
+git clone https://github.com/wtfllix/navidash.git
+cd navidash
+cp .env.example .env
+sudo mkdir -p /opt/navidash-data
+docker compose up -d
+```
+
+同一局域网中的设备使用 `http://部署主机IP:3000` 访问。需要天气、Komari 或访问密码时，再编辑
+`.env` 并重新执行 `docker compose up -d`。
+
+## 常用入口
+
+- [NaviDash 在线体验](https://navidash.vercel.app/zh)
+- [GitHub 源码](https://github.com/wtfllix/navidash)
+- [完整部署参考](https://github.com/wtfllix/navidash/blob/master/docs/DEPLOY.md)

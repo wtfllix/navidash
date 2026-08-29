@@ -38,7 +38,7 @@ docker compose logs --tail=100 navidash
 
 在部署主机上打开 `http://localhost:3000`。
 
-## 配置环境变量
+## 下一步配置
 
 个人局域网部署可以先保持可选项为空。常用配置如下：
 
@@ -59,6 +59,7 @@ docker compose up -d
 ```
 
 天气密钥、访问密码和 Komari 凭据只在服务端环境变量中使用，不会写入 Widget 配置或备份。
+逐项配置示例和验证步骤见[服务配置](./configuration)。
 
 ## 从其他设备访问
 
