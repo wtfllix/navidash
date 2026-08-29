@@ -5,7 +5,9 @@ export type WidgetType =
   | 'today'
   | 'links'
   | 'memo'
-  | 'photo-frame';
+  | 'photo-frame'
+  | 'f1'
+  | 'komari';
 
 export interface WidgetSize {
   w: number;
@@ -59,6 +61,17 @@ export interface MemoWidgetConfig {
   textColor?: string;
 }
 
+export interface F1WidgetConfig {
+  showPractice?: boolean;
+  showCountdown?: boolean;
+}
+
+export interface KomariWidgetConfig {
+  nodeId?: string;
+  showNetwork?: boolean;
+  refreshInterval?: 5 | 15 | 30;
+}
+
 /**
  * WidgetConfig
  * 用于编辑表单和通用更新场景的宽松配置类型。
@@ -67,7 +80,9 @@ export type WidgetConfig =
   Partial<TodayWidgetConfig> &
   Partial<PhotoWidgetConfig> &
   Partial<MemoWidgetConfig> &
-  Partial<LinksWidgetConfig>;
+  Partial<LinksWidgetConfig> &
+  Partial<F1WidgetConfig> &
+  Partial<KomariWidgetConfig>;
 
 /**
  * WidgetConfigMap
@@ -78,6 +93,8 @@ export interface WidgetConfigMap {
   links: LinksWidgetConfig;
   memo: MemoWidgetConfig;
   'photo-frame': PhotoWidgetConfig;
+  f1: F1WidgetConfig;
+  komari: KomariWidgetConfig;
 }
 
 export type WidgetConfigByType<T extends WidgetType> = WidgetConfigMap[T];
@@ -141,5 +158,5 @@ export const DEFAULT_SETTINGS: Settings = {
   backgroundRepeat: 'repeat',
   customFavicon: '/favicon.svg',
   customTitle: 'Navidash',
-  language: 'en',
+  language: 'zh',
 };

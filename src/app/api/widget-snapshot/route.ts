@@ -6,14 +6,22 @@ import {
   getWidgetSnapshot,
   saveWidgetSnapshot,
   WidgetSnapshotConflictError,
+  WidgetSnapshotReadError,
 } from '@/lib/server/storage';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  return NextResponse.json(await getWidgetSnapshot(), {
-    headers: { 'Cache-Control': 'no-store' },
-  });
+  try {
+    return NextResponse.json(await getWidgetSnapshot(), {
+      headers: { 'Cache-Control': 'no-store' },
+    });
+  } catch (error) {
+    if (error instanceof WidgetSnapshotReadError) {
+      return NextResponse.json({ error: 'snapshot_unavailable' }, { status: 503 });
+    }
+    throw error;
+  }
 }
 
 export async function PUT(request: Request) {
@@ -39,6 +47,10 @@ export async function PUT(request: Request) {
 
     if (error instanceof ZodError) {
       return NextResponse.json({ error: error.flatten() }, { status: 400 });
+    }
+
+    if (error instanceof WidgetSnapshotReadError) {
+      return NextResponse.json({ error: 'snapshot_unavailable' }, { status: 503 });
     }
 
     console.error('Failed to save widget snapshot:', error);

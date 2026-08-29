@@ -2,9 +2,60 @@ import React from 'react';
 import { WidgetOfType } from '@/types';
 import { Image as ImageIcon, AlertCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { createResizeObserver } from '@/lib/resizeObserver';
+import {
+  getPosterThumbnailUrl,
+  getPosterThumbnailWidth,
+  isExternalPosterImage,
+} from '@/lib/posterThumbnail';
 
 interface PhotoWidgetProps {
   widget: WidgetOfType<'photo-frame'>;
+}
+
+const readyPosterThumbnails = new Set<string>();
+
+function useProgressivePosterSource(source: string | null, thumbnailWidth: number | null) {
+  const thumbnailUrl = React.useMemo(() => {
+    if (!source || !thumbnailWidth || !isExternalPosterImage(source)) return null;
+    return getPosterThumbnailUrl(source, thumbnailWidth);
+  }, [source, thumbnailWidth]);
+  const [readyThumbnail, setReadyThumbnail] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (!thumbnailUrl || readyPosterThumbnails.has(thumbnailUrl)) return;
+
+    let active = true;
+    let retryTimer: number | null = null;
+    let retryCount = 0;
+
+    const preloadThumbnail = () => {
+      const image = new Image();
+      image.onload = () => {
+        readyPosterThumbnails.add(thumbnailUrl);
+        if (active) setReadyThumbnail(thumbnailUrl);
+      };
+      image.onerror = () => {
+        if (!active || retryCount >= 2) return;
+        retryCount += 1;
+        retryTimer = window.setTimeout(preloadThumbnail, retryCount * 1500);
+      };
+      image.src = thumbnailUrl;
+    };
+
+    preloadThumbnail();
+
+    return () => {
+      active = false;
+      if (retryTimer !== null) window.clearTimeout(retryTimer);
+    };
+  }, [thumbnailUrl]);
+
+  if (thumbnailUrl && (readyThumbnail === thumbnailUrl || readyPosterThumbnails.has(thumbnailUrl))) {
+    return thumbnailUrl;
+  }
+
+  return source;
 }
 
 export default function PhotoWidget({ widget }: PhotoWidgetProps) {
@@ -22,6 +73,20 @@ export default function PhotoWidget({ widget }: PhotoWidgetProps) {
   const [displayedImage, setDisplayedImage] = React.useState<string | null>(null);
   const [incomingImage, setIncomingImage] = React.useState<string | null>(null);
   const [isIncomingVisible, setIsIncomingVisible] = React.useState(false);
+  const frameRef = React.useRef<HTMLDivElement | null>(null);
+  const [thumbnailWidth, setThumbnailWidth] = React.useState<number | null>(null);
+
+  const refreshThumbnailWidth = React.useCallback(() => {
+    const frame = frameRef.current;
+    if (!frame) return;
+
+    setThumbnailWidth(
+      getPosterThumbnailWidth(
+        frame.getBoundingClientRect().width,
+        window.devicePixelRatio || 1
+      )
+    );
+  }, []);
 
   React.useEffect(() => {
     setCurrentIndex(0);
@@ -31,6 +96,21 @@ export default function PhotoWidget({ widget }: PhotoWidgetProps) {
     setIncomingImage(null);
     setIsIncomingVisible(false);
   }, [imageUrls]);
+
+  React.useEffect(() => {
+    const frame = frameRef.current;
+    if (!frame) return;
+
+    refreshThumbnailWidth();
+    const observer = createResizeObserver(refreshThumbnailWidth);
+    observer?.observe(frame);
+    window.addEventListener('resize', refreshThumbnailWidth);
+
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener('resize', refreshThumbnailWidth);
+    };
+  }, [refreshThumbnailWidth]);
 
   const availableImages = React.useMemo(
     () => imageUrls.filter((item) => !failedImages.includes(item)),
@@ -64,6 +144,11 @@ export default function PhotoWidget({ widget }: PhotoWidgetProps) {
   }, [autoplay, availableImages.length, interval, shuffle]);
 
   const currentImage = availableImages[currentIndex];
+  const displayedSource = useProgressivePosterSource(
+    displayedImage ?? currentImage ?? null,
+    thumbnailWidth
+  );
+  const incomingSource = useProgressivePosterSource(incomingImage, thumbnailWidth);
 
   React.useEffect(() => {
     if (!currentImage) {
@@ -112,13 +197,13 @@ export default function PhotoWidget({ widget }: PhotoWidgetProps) {
   }
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-gray-100">
+    <div ref={frameRef} className="relative h-full w-full overflow-hidden bg-gray-100">
       {isLoading && !displayedImage && (
         <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-gray-100 to-gray-200" />
       )}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={displayedImage ?? currentImage}
+        src={displayedSource ?? currentImage}
         alt="Widget Photo"
         className="h-full w-full object-cover"
         onLoad={() => setIsLoading(false)}
@@ -133,7 +218,7 @@ export default function PhotoWidget({ widget }: PhotoWidgetProps) {
         // Keep the current image mounted underneath so the next one can fade in smoothly.
         /* eslint-disable-next-line @next/next/no-img-element */
         <img
-          src={incomingImage}
+          src={incomingSource ?? incomingImage}
           alt="Widget Photo"
           className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-500 ${
             isIncomingVisible ? 'opacity-100' : 'opacity-0'

@@ -130,6 +130,7 @@ export default function TodayConfigEditor({
           latlong.net
         </a>
       </p>
+      <p className="text-xs leading-5 text-amber-700">{t('weather_api_config_hint')}</p>
     </div>
   );
 }

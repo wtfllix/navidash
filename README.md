@@ -14,7 +14,7 @@
 
 <p align="center">
   <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue.svg" />
-  <img alt="Version: 0.7.3" src="https://img.shields.io/badge/version-0.7.3-green.svg" />
+  <img alt="Version: 0.8.0" src="https://img.shields.io/badge/version-0.8.0-green.svg" />
   <img alt="Docker Ready" src="https://img.shields.io/badge/Docker-ready-2496ed.svg" />
 </p>
 
@@ -33,7 +33,7 @@
 </p>
 
 每天打开浏览器时，你真正需要的通常只有几件事：进入最常用的网站、搜索一个内容、
-看一眼时间和天气，或者临时记下一段信息。NaviDash 把它们放在一张安静、自由、
+看一眼时间、天气和下一场比赛，或者临时记下一段信息。NaviDash 把它们放在一张安静、自由、
 属于你的首页上。
 
 ## 实机界面
@@ -55,7 +55,7 @@
 - **布置自己的空间**：像整理一面墙一样摆放入口、便签和海报，桌面与手机各有自己的布局。
 - **数据留在手中**：部署在自己的电脑、NAS 或服务器上，也可以随时备份和迁移。
 
-## 一面墙，四种内容
+## 一面墙，五种内容
 
 | 内容 | 用途 |
 | --- | --- |
@@ -63,6 +63,7 @@
 | ☀️ **今日信息** | 安静地展示时间、日期和天气 |
 | 📝 **随手贴** | 临时保存文本、链接或稍后要用的信息 |
 | 🖼️ **海报** | 用喜欢的图片建立属于自己的主页氛围 |
+| 🏁 **F1 赛程** | 按本地时间查看下一赛段和比赛周末安排 |
 
 ## 快速开始
 

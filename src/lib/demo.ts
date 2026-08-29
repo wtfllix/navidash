@@ -223,7 +223,7 @@ export const DEMO_SETTINGS: Settings = {
   backgroundRepeat: 'repeat',
   customFavicon: '/favicon.svg',
   customTitle: 'NaviDash Demo',
-  language: 'en',
+  language: 'zh',
 };
 
 export function getDemoWeather(city = 'Hangzhou') {

@@ -51,8 +51,9 @@ NaviDash 当前主要由三部分组成：
 - `Today`：时间、日期和天气信息牌
 - `Memo`：随手粘贴信息
 - `Poster`：无边框海报装饰
+- `F1`：下一赛段与比赛周末摘要
 
-旧版 `Clock`、`Weather`、`Date`、`Quick Link`、`Todo` 和 `Calendar` 已下线。读取旧布局或备份时，系统会过滤这些组件并继续保留其中的 Today、Links、Memo 和 Poster。
+旧版 `Clock`、`Weather`、`Date`、`Quick Link`、`Todo` 和 `Calendar` 已下线。读取旧布局或备份时，系统会过滤这些组件并继续保留其中的 Today、Links、Memo、Poster 和 F1。
 
 ### 移动 widget
 
@@ -67,7 +68,7 @@ NaviDash 当前主要由三部分组成：
 不同 widget 的编辑方式不同：
 
 - `Memo` 可以直接在组件内编辑内容，并自动保存
-- `Today`、`Links` 和 `Poster` 通过设置面板修改配置
+- `Today`、`Links`、`Poster` 和 `F1` 通过设置面板修改配置
 
 ### 打开 widget 设置
 
@@ -108,6 +109,14 @@ NaviDash 当前主要由三部分组成：
 
 - 可配置一张或多张图片
 - 默认无外框且保持静止，也可主动开启轮播和设置间隔
+
+### F1
+
+- 使用仓库内置的 2026 赛季赛程，不需要填写 ICS 或连接外部账户
+- 默认隐藏练习赛，突出下一场排位、冲刺或正赛
+- 所有时间自动转换为当前设备时区
+- 可在组件设置中显示练习赛或关闭倒计时
+- 标记为“待确认”的比赛不会显示为正式确认赛程
 
 ## 全局设置
 

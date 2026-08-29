@@ -14,9 +14,10 @@ import {
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useWidgetStore } from '@/store/useWidgetStore';
-import { getFaviconUrl, getLinkDomain } from '@/components/widgets/editors/shared';
+import { getLinkDomain } from '@/components/widgets/editors/shared';
 import { createBookmarkImportData } from '@/lib/bookmarkImport';
 import { useToastStore } from '@/store/useToastStore';
+import BookmarkFavicon from './BookmarkFavicon';
 import BookmarkTextImporter from './BookmarkTextImporter';
 
 interface Draft {
@@ -242,11 +243,11 @@ export default function BookmarkLibraryPanel() {
                 key={bookmark.id}
                 className="group flex min-w-0 items-center gap-3 rounded-2xl bg-white/80 px-3 py-2.5 shadow-[0_3px_12px_rgba(15,23,42,0.05)]"
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={getFaviconUrl(bookmark.url) || ''}
-                  alt=""
+                <BookmarkFavicon
+                  url={bookmark.url}
+                  fallbackSize={20}
                   className="h-7 w-7 shrink-0 object-contain"
+                  fallbackClassName="h-7 w-7 p-1"
                 />
                 <a
                   href={bookmark.url}

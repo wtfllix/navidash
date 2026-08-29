@@ -4,7 +4,7 @@ reply me in Chinese
 
 ## Project Structure & Module Organization
 - Main code lives in `src/`.
-- App Router routes and API handlers: `src/app/` (for example `src/app/api/widgets/route.ts`).
+- App Router routes and API handlers: `src/app/` (for example `src/app/api/widget-snapshot/route.ts`).
 - UI and feature components: `src/components/` (`layout/`, `widgets/`, `settings/`, `ui/`).
 - Shared logic/utilities: `src/lib/`; state stores (Zustand): `src/store/`; shared types: `src/types/`.
 - Tests are colocated under `src/__tests__/` and use `*.test.ts` naming.
@@ -25,6 +25,9 @@ reply me in Chinese
 - Prefer path alias imports via `@/*` for `src/*`.
 
 ## Minimal Development Guidelines
+- Before changing product behavior, data contracts, security boundaries, or layout rules, read
+  `SPEC.md` and the relevant file under `docs/decisions/`. If the requested behavior conflicts
+  with the current specification, update the specification and compatibility notes first.
 - Keep changes small and local first. Prefer modifying existing modules over introducing new abstractions or rewriting files.
 - Add abstraction only after duplication or branching logic becomes clearly hard to maintain. Do not pre-abstract for possible future needs.
 - Page and route components should focus on composition and page structure. Shared business logic goes to `src/lib/`; shared state goes to `src/store/`.

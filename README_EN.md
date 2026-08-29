@@ -14,7 +14,7 @@
 
 <p align="center">
   <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue.svg" />
-  <img alt="Version: 0.7.3" src="https://img.shields.io/badge/version-0.7.3-green.svg" />
+  <img alt="Version: 0.8.0" src="https://img.shields.io/badge/version-0.8.0-green.svg" />
   <img alt="Docker Ready" src="https://img.shields.io/badge/Docker-ready-2496ed.svg" />
 </p>
 
@@ -33,7 +33,7 @@
 </p>
 
 When you open a browser, you usually need only a few things: visit a familiar site, search for
-something, glance at the time and weather, or keep a temporary note. NaviDash brings them together
+something, glance at the time, weather, or next race, or keep a temporary note. NaviDash brings them together
 in a quiet, flexible homepage that belongs to you.
 
 ## Interface preview
@@ -55,7 +55,7 @@ in a quiet, flexible homepage that belongs to you.
 - **A space of your own**: arrange links, notes, and posters like objects on a wall, separately on desktop and mobile.
 - **Your data, your home**: run NaviDash on your computer, NAS, or server, then back it up whenever you want.
 
-## One wall, four kinds of content
+## One wall, five kinds of content
 
 | Content | Purpose |
 | --- | --- |
@@ -63,6 +63,7 @@ in a quiet, flexible homepage that belongs to you.
 | ☀️ **Today at a glance** | See the time, date, and weather quietly |
 | 📝 **Sticky note** | Hold temporary text, links, or information for later |
 | 🖼️ **Poster** | Use images you love to give the homepage its own atmosphere |
+| 🏁 **F1 schedule** | See the next session and race weekend in your local time |
 
 ## Quick start
 

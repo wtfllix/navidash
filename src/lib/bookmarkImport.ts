@@ -90,6 +90,7 @@ export function createBookmarkTextImportData(
   for (const rawLine of text.split(/\r?\n/)) {
     const line = rawLine.trim();
     if (!line) continue;
+    if (/^```(?:text|txt)?\s*$/i.test(line)) continue;
     let matched = false;
     let remaining = line;
 
@@ -122,4 +123,18 @@ export function createBookmarkTextImportData(
     duplicateCount,
     invalidCount,
   };
+}
+
+export function mergeBookmarkImports(existing: Bookmark[], incoming: Bookmark[]): Bookmark[] {
+  const merged: Bookmark[] = [];
+  const seen = new Set<string>();
+
+  for (const bookmark of [...existing, ...incoming]) {
+    if (seen.has(bookmark.url)) continue;
+    seen.add(bookmark.url);
+    merged.push(bookmark);
+    if (merged.length >= MAX_BOOKMARKS) break;
+  }
+
+  return merged;
 }

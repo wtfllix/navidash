@@ -58,6 +58,8 @@ cp .env.example .env
 | `QWEATHER_API_KEY` | 空 | 和风天气 API Key 或 JWT |
 | `QWEATHER_API_HOST` | 空 | 自定义和风天气兼容 Host |
 | `QWEATHER_AUTH_TYPE` | `apikey` | `apikey` 或 `jwt` |
+| `KOMARI_BASE_URL` | 空 | 可选的固定 Komari 实例地址 |
+| `KOMARI_API_KEY` | 空 | 可选的 Komari Bearer API Key，仅用于私有或隐藏节点 |
 
 #### 可选：单用户访问保护
 
@@ -88,6 +90,20 @@ QWEATHER_AUTH_TYPE=jwt
 ```
 
 `QWEATHER_API_HOST` 可以包含或省略 `https://`。修改天气配置后需要重启容器。
+
+#### 可选：Komari 节点卡
+
+Komari Widget 只读取固定实例的公开节点与最新状态，不在浏览器、Widget 配置或备份中保存实例
+地址和凭据。配置后重启容器：
+
+```env
+KOMARI_BASE_URL=https://komari.example.com
+# 公开节点可留空；私有或隐藏节点按 Komari 的 Bearer API Key 认证配置。
+KOMARI_API_KEY=
+```
+
+每张 Komari Widget 绑定一台节点；需要同时查看多台服务器时添加多个 Widget。NaviDash 使用
+Komari RPC2 的普通 HTTP POST，不会从浏览器直连 Komari 或建立 WebSocket。
 
 ### 4. 启动
 
@@ -231,6 +247,8 @@ docker run -d \
   -e QWEATHER_API_KEY= \
   -e QWEATHER_API_HOST= \
   -e QWEATHER_AUTH_TYPE=apikey \
+  -e KOMARI_BASE_URL= \
+  -e KOMARI_API_KEY= \
   ghcr.io/wtfllix/navidash:latest
 ```
 

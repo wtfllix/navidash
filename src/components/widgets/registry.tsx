@@ -15,6 +15,8 @@ import {
   Image as ImageIcon,
   StickyNote,
   PanelTop,
+  Flag,
+  Server,
   type LucideIcon,
 } from 'lucide-react';
 import { Widget, WidgetType } from '@/types';
@@ -23,6 +25,8 @@ import LinksWidget from './LinksWidget';
 import MemoWidget from './MemoWidget';
 import PhotoWidget from './PhotoWidget';
 import TodayWidget from './TodayWidget';
+import F1Widget from './F1Widget';
+import KomariWidget from './KomariWidget';
 
 // ─── 渲染组件映射 ─────────────────────────────────────────────────────────────
 
@@ -36,6 +40,8 @@ export const widgetComponentRegistry: Partial<Record<WidgetType, WidgetRenderer>
   links: LinksWidget as WidgetRenderer,
   memo: MemoWidget as WidgetRenderer,
   'photo-frame': PhotoWidget as WidgetRenderer,
+  f1: F1Widget as WidgetRenderer,
+  komari: KomariWidget as WidgetRenderer,
 };
 
 // ─── 组件库元数据 ──────────────────────────────────────────────────────────────
@@ -84,10 +90,27 @@ export const widgetMeta: WidgetMeta[] = [
     iconClassName: 'text-pink-500',
     defaultSize: { w: 2, h: 2 },
   },
+  {
+    type: 'f1',
+    titleKey: 'f1',
+    descKey: 'f1_desc',
+    Icon: Flag,
+    iconClassName: 'text-red-600',
+    defaultSize: { w: 2, h: 2 },
+  },
+  {
+    type: 'komari',
+    titleKey: 'komari',
+    descKey: 'komari_desc',
+    Icon: Server,
+    iconClassName: 'text-emerald-600',
+    defaultSize: { w: 2, h: 2 },
+  },
 ];
 
 export const widgetTypesRequiringSetup: WidgetType[] = [
   'today',
   'photo-frame',
   'links',
+  'komari',
 ];

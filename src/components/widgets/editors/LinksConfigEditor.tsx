@@ -3,10 +3,11 @@
 import React, { useMemo, useState } from 'react';
 import { ArrowDown, ArrowUp, BookmarkPlus, ClipboardPaste, Search, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import BookmarkFavicon from '@/components/bookmarks/BookmarkFavicon';
 import BookmarkTextImporter from '@/components/bookmarks/BookmarkTextImporter';
 import { useWidgetStore } from '@/store/useWidgetStore';
 import { FormField, TextInput } from './FormControls';
-import { getFaviconUrl, getLinkDomain, trimToUndefined } from './shared';
+import { getLinkDomain, trimToUndefined } from './shared';
 import { WidgetConfigEditorProps } from './types';
 
 export default function LinksConfigEditor({
@@ -120,11 +121,11 @@ export default function LinksConfigEditor({
               key={bookmark!.id}
               className="flex items-center gap-2 rounded-xl px-2 py-2 hover:bg-slate-50"
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={getFaviconUrl(bookmark!.url) || ''}
-                alt=""
+              <BookmarkFavicon
+                url={bookmark!.url}
+                fallbackSize={16}
                 className="h-5 w-5 shrink-0 object-contain"
+                fallbackClassName="h-5 w-5 p-0.5"
               />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-slate-700">{bookmark!.title}</p>

@@ -1,6 +1,7 @@
 import {
   createBookmarkImportData,
   createBookmarkTextImportData,
+  mergeBookmarkImports,
 } from '@/lib/bookmarkImport';
 
 describe('bookmark import', () => {
@@ -84,6 +85,23 @@ describe('bookmark import', () => {
     expect(result.invalidCount).toBe(2);
   });
 
+  it('accepts AI output wrapped in a plain-text code block', () => {
+    expect(
+      createBookmarkTextImportData(
+        '```text\nGitHub | https://github.com\nYouTube | https://youtube.com\n```',
+        'ai'
+      )
+    ).toEqual({
+      bookmarks: [
+        { id: 'ai-link-0', title: 'GitHub', url: 'https://github.com/' },
+        { id: 'ai-link-1', title: 'YouTube', url: 'https://youtube.com/' },
+      ],
+      count: 2,
+      duplicateCount: 0,
+      invalidCount: 0,
+    });
+  });
+
   it('extracts multiple Markdown links from one line and caps at 200', () => {
     const links = Array.from(
       { length: 205 },
@@ -96,5 +114,20 @@ describe('bookmark import', () => {
       id: 'text-link-199',
       title: 'Link 199',
     });
+  });
+
+  it('merges multiple onboarding sources by URL and keeps the first title', () => {
+    expect(
+      mergeBookmarkImports(
+        [{ id: 'first', title: 'Docs', url: 'https://example.com/' }],
+        [
+          { id: 'duplicate', title: 'Duplicate', url: 'https://example.com/' },
+          { id: 'second', title: 'OpenAI', url: 'https://openai.com/' },
+        ]
+      )
+    ).toEqual([
+      { id: 'first', title: 'Docs', url: 'https://example.com/' },
+      { id: 'second', title: 'OpenAI', url: 'https://openai.com/' },
+    ]);
   });
 });

@@ -163,6 +163,27 @@ describe('storage versioned files', () => {
     expect(raw).toEqual(saved);
   });
 
+  it('does not treat an invalid stored snapshot as a blank snapshot', async () => {
+    jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    const { getWidgetSnapshot, saveWidgetSnapshot, WidgetSnapshotReadError } = await import(
+      '@/lib/server/storage'
+    );
+    const snapshotPath = path.join(tempDir, 'widget-snapshot.json');
+    const invalidSnapshot = '{"schemaVersion":2,"configs":[{"type":"future-widget"}]}';
+    await fs.writeFile(snapshotPath, invalidSnapshot);
+
+    await expect(getWidgetSnapshot()).rejects.toBeInstanceOf(WidgetSnapshotReadError);
+    await expect(
+      saveWidgetSnapshot(0, {
+        schemaVersion: 2,
+        layoutsByMode: { desktop: [], mobile: [] },
+        configs: [],
+        bookmarks: [],
+      })
+    ).rejects.toBeInstanceOf(WidgetSnapshotReadError);
+    await expect(fs.readFile(snapshotPath, 'utf-8')).resolves.toBe(invalidSnapshot);
+  });
+
   it('reads legacy settings files and drops removed theme and weather fields', async () => {
     const { getSettings } = await import('@/lib/server/storage');
 

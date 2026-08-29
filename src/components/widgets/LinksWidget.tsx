@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
-import { ExternalLink, Link2 } from 'lucide-react';
+import React, { useMemo } from 'react';
+import { Link2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import BookmarkFavicon from '@/components/bookmarks/BookmarkFavicon';
 import { cn } from '@/lib/utils';
 import { Bookmark, WidgetOfType } from '@/types';
 import { useWidgetStore } from '@/store/useWidgetStore';
 import { recordLauncherLinkOpen } from '@/lib/linkLauncherUsage';
-import { getFaviconUrl } from './editors/shared';
 
 const SIZE_MAP = {
   md: { box: 'h-11 w-11', img: 'h-6 w-6', label: 'text-[11px]' },
@@ -39,8 +39,6 @@ function LinkIcon({
   bookmark: Bookmark;
   sizeKey: keyof typeof SIZE_MAP;
 }) {
-  const [failed, setFailed] = useState(false);
-  const faviconUrl = getFaviconUrl(bookmark.url, sizeKey === 'hero' ? 64 : 32);
   const size = SIZE_MAP[sizeKey];
 
   return (
@@ -53,20 +51,12 @@ function LinkIcon({
           : 'rounded-[0.95rem] bg-white/[0.62] shadow-[0_3px_12px_rgba(15,23,42,0.06),inset_0_1px_0_rgba(255,255,255,0.88)] ring-1 ring-slate-900/[0.035] group-hover/link:shadow-[0_8px_20px_rgba(15,23,42,0.10)]'
       )}
     >
-      {faviconUrl && !failed ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={faviconUrl}
-          alt=""
-          className={cn(size.img, 'object-contain')}
-          onError={() => setFailed(true)}
-        />
-      ) : (
-        <ExternalLink
-          size={sizeKey === 'hero' ? 24 : 16}
-          className="text-[rgb(var(--primary-color))]"
-        />
-      )}
+      <BookmarkFavicon
+        url={bookmark.url}
+        size={sizeKey === 'hero' ? 64 : 32}
+        fallbackSize={sizeKey === 'hero' ? 24 : 16}
+        className={cn(size.img, 'object-contain')}
+      />
     </div>
   );
 }

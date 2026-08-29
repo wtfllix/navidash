@@ -6,7 +6,9 @@ import { WidgetConfigByType, WidgetSize } from '@/types';
 export type EditableWidgetType =
   | 'today'
   | 'photo-frame'
-  | 'links';
+  | 'links'
+  | 'f1'
+  | 'komari';
 
 export type ConfigUpdate<T> = T | ((prev: T) => T);
 

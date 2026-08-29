@@ -91,6 +91,32 @@ const memoWidgetConfigSchema = z
   .strict()
   .default({});
 
+const f1WidgetConfigSchema = z
+  .object({
+    showPractice: z.boolean().optional(),
+    showCountdown: z.boolean().optional(),
+  })
+  .strict()
+  .transform((config) => ({
+    showPractice: config.showPractice ?? false,
+    showCountdown: config.showCountdown ?? true,
+  }))
+  .default({});
+
+const komariWidgetConfigSchema = z
+  .object({
+    nodeId: z.string().uuid().optional(),
+    showNetwork: z.boolean().optional(),
+    refreshInterval: z.union([z.literal(5), z.literal(15), z.literal(30)]).optional(),
+  })
+  .strict()
+  .transform((config) => ({
+    nodeId: config.nodeId,
+    showNetwork: config.showNetwork ?? true,
+    refreshInterval: config.refreshInterval ?? 5,
+  }))
+  .default({});
+
 const photoWidgetConfigSchema = z
   .object({
     images: z.array(z.string().min(1)).optional(),
@@ -149,6 +175,16 @@ export const WidgetSchema = z.discriminatedUnion('type', [
     type: z.literal('photo-frame'),
     config: photoWidgetConfigSchema,
   }),
+  z.object({
+    ...widgetBaseShape,
+    type: z.literal('f1'),
+    config: f1WidgetConfigSchema,
+  }),
+  z.object({
+    ...widgetBaseShape,
+    type: z.literal('komari'),
+    config: komariWidgetConfigSchema,
+  }),
 ]);
 
 const removedWidgetTypes = new Set([
@@ -193,6 +229,14 @@ export const WidgetLayoutSchema = z.discriminatedUnion('type', [
     ...widgetLayoutBaseShape,
     type: z.literal('photo-frame'),
   }),
+  z.object({
+    ...widgetLayoutBaseShape,
+    type: z.literal('f1'),
+  }),
+  z.object({
+    ...widgetLayoutBaseShape,
+    type: z.literal('komari'),
+  }),
 ]);
 
 export const WidgetLayoutsArraySchema = z.preprocess(
@@ -227,6 +271,16 @@ export const WidgetConfigEntrySchema = z.discriminatedUnion('type', [
     id: z.string().min(1),
     type: z.literal('photo-frame'),
     config: photoWidgetConfigSchema,
+  }),
+  z.object({
+    id: z.string().min(1),
+    type: z.literal('f1'),
+    config: f1WidgetConfigSchema,
+  }),
+  z.object({
+    id: z.string().min(1),
+    type: z.literal('komari'),
+    config: komariWidgetConfigSchema,
   }),
 ]);
 

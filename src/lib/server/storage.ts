@@ -1,5 +1,4 @@
 import fs from 'fs/promises';
-import fsSync from 'fs';
 import path from 'path';
 import { randomUUID } from 'crypto';
 import { z } from 'zod';
@@ -33,11 +32,9 @@ import {
   DEMO_WIDGET_SNAPSHOT,
   isServerDemoMode,
 } from '@/lib/demo';
+import { DATA_DIR } from '@/lib/server/dataDirectory';
 
 const DATA_FILE_VERSION = 1;
-const DEFAULT_DIR = '/app/data';
-const CWD_DATA = path.join(process.cwd(), 'data');
-const DATA_DIR = process.env.DATA_DIR || (fsSync.existsSync(DEFAULT_DIR) ? DEFAULT_DIR : CWD_DATA);
 const WIDGETS_FILE = path.join(DATA_DIR, 'widgets.json');
 const WIDGET_LAYOUTS_FILE = path.join(DATA_DIR, 'widget-layouts.json');
 const WIDGET_CONFIGS_FILE = path.join(DATA_DIR, 'widget-configs.json');
@@ -114,6 +111,24 @@ export class WidgetSnapshotConflictError extends Error {
   }
 }
 
+export class WidgetSnapshotReadError extends Error {
+  constructor() {
+    super('Widget snapshot could not be read safely');
+    this.name = 'WidgetSnapshotReadError';
+  }
+}
+
+async function readStoredWidgetSnapshot(): Promise<unknown | null> {
+  try {
+    const data = await fs.readFile(WIDGET_SNAPSHOT_FILE, 'utf-8');
+    return parseStoredJson(JSON.parse(data), StoredWidgetSnapshotSchema);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
+    logger.error('Failed to read or validate widget snapshot', error);
+    throw new WidgetSnapshotReadError();
+  }
+}
+
 let snapshotWriteQueue: Promise<void> = Promise.resolve();
 
 export async function getWidgetSnapshot(): Promise<WidgetSnapshot> {
@@ -122,7 +137,7 @@ export async function getWidgetSnapshot(): Promise<WidgetSnapshot> {
   }
 
   await ensureDataDir();
-  const snapshot = await readJsonFile(WIDGET_SNAPSHOT_FILE, StoredWidgetSnapshotSchema);
+  const snapshot = await readStoredWidgetSnapshot();
   if (snapshot) {
     return normalizeWidgetSnapshot(snapshot);
   }

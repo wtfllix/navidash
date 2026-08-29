@@ -6,6 +6,7 @@ describe('useUIStore launcher state', () => {
       isLauncherOpen: false,
       isSettingsOpen: false,
       isEditing: false,
+      isOnboardingOpen: false,
     });
   });
 
@@ -15,5 +16,13 @@ describe('useUIStore launcher state', () => {
 
     useUIStore.getState().closeLauncher();
     expect(useUIStore.getState().isLauncherOpen).toBe(false);
+  });
+
+  it('tracks whether onboarding should block the real launcher', () => {
+    useUIStore.getState().setOnboardingOpen(true);
+    expect(useUIStore.getState().isOnboardingOpen).toBe(true);
+
+    useUIStore.getState().setOnboardingOpen(false);
+    expect(useUIStore.getState().isOnboardingOpen).toBe(false);
   });
 });

@@ -12,6 +12,13 @@ const config: Config = {
       fontFamily: {
         sans: ['var(--font-inter)'],
         outfit: ['var(--font-outfit)'],
+        emoji: [
+          'Twemoji Country Flags',
+          'Apple Color Emoji',
+          'Segoe UI Emoji',
+          'Noto Color Emoji',
+          'sans-serif',
+        ],
         handwriting: [
           'Kaushan Script',
           'Segoe Print',

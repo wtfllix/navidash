@@ -1,4 +1,8 @@
 # 🛠️ Navidash 项目开发指令文档
+
+> 此文件保留早期项目背景，不再作为当前产品或实现规范。当前产品愿景见
+> [`PRODUCT.md`](./PRODUCT.md)，行为规范见 [`../SPEC.md`](../SPEC.md)，开发顺序见
+> [`ROADMAP.md`](./ROADMAP.md)。
 ## 1. 项目概览
 Navidash 是一个为 Docker 部署设计的个人导航仪表盘。
 
@@ -36,26 +40,11 @@ Main Canvas (主区域): * 12 列响应式网格系统。
 小组件支持预设尺寸（1x1, 2x1, 2x2, 4x2）。
 
 ### B. 数据模型 (Data Schema)
-AI 在生成代码时请参考以下 Interface：
 
-TypeScript
-// 书签项
-interface Bookmark {
-  id: string;
-  title: string;
-  url?: string;
-  icon?: string;
-  children?: Bookmark[]; // 嵌套支持
-}
-
-// 小组件项
-interface Widget {
-  id: string;
-  type: 'weather' | 'clock' | 'rss' | 'monitor';
-  size: { w: number, h: number };
-  position: { x: number, y: number };
-  config: Record<string, any>; // 存放 APIKey, 城市, 字体等
-}
+当前组件类型和配置必须以 `src/types/index.ts` 与 `src/lib/schemas.ts` 为准。组件库主推
+`today`、`links`、`memo`、`photo-frame`、`f1`。旧版 `weather`、`clock`、`date`、
+`quick-link`、`todo`、`calendar` 已移除，读取旧数据时会过滤。天气 API Key、Host 和
+认证方式属于服务端环境配置，不得写入 widget config、导入导出文件或客户端状态。
 ## 4. 目录结构约定
 Plaintext
 /src/app/          # 路由与 API

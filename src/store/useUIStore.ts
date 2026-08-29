@@ -6,6 +6,8 @@ import { WidgetLayoutMode } from '@/types';
  * 全局 UI 状态管理
  */
 interface UIState {
+  isOnboardingOpen: boolean;
+  setOnboardingOpen: (isOpen: boolean) => void;
   isEditing: boolean; // 是否处于编辑模式（控制拖拽和编辑按钮显示）
   toggleEditing: () => void;
   setEditing: (isEditing: boolean) => void;
@@ -31,6 +33,8 @@ interface UIState {
  * 集中管理应用的 UI 交互状态
  */
 export const useUIStore = create<UIState>((set) => ({
+  isOnboardingOpen: false,
+  setOnboardingOpen: (isOnboardingOpen) => set({ isOnboardingOpen }),
   isEditing: false,
   toggleEditing: () =>
     set((state) => ({

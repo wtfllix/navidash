@@ -83,6 +83,8 @@ export const WIDGET_SIZE_PRESET_MAP: Record<WidgetType, SizePresetKey[]> = {
   links: ['s11', 's21', 's22', 's31'],
   memo: ['s21', 's22', 's23'],
   'photo-frame': ['s12', 's22', 's32'],
+  f1: ['s21', 's22', 's32'],
+  komari: ['s22', 's21', 's11'],
 };
 
 export function getAllowedSizePresets(widgetType: WidgetType) {
@@ -114,8 +116,16 @@ export function getLinkDomain(url: string) {
 
 export function getFaviconUrl(url: string, size = 32) {
   try {
-    const domain = new URL(url.startsWith('http') ? url : `https://${url}`).hostname;
-    return `https://www.google.com/s2/favicons?domain=${domain}&sz=${size}`;
+    const normalizedUrl = url.startsWith('http') ? url : `https://${url}`;
+    new URL(normalizedUrl);
+    const query = new URLSearchParams({
+      client: 'SOCIAL',
+      type: 'FAVICON',
+      fallback_opts: 'TYPE,SIZE,URL',
+      url: normalizedUrl,
+      size: String(size),
+    });
+    return `https://t1.gstatic.com/faviconV2?${query.toString()}`;
   } catch {
     return null;
   }

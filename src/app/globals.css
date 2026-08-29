@@ -10,6 +10,15 @@
   font-weight: 400;
 }
 
+@font-face {
+  font-family: 'Twemoji Country Flags';
+  src: url('../../node_modules/country-flag-emoji-polyfill/dist/TwemojiCountryFlags.woff2')
+    format('woff2');
+  font-display: swap;
+  unicode-range: U+1F1E6-1F1FF, U+1F3F4, U+E0062-E0063, U+E0065, U+E0067, U+E006C,
+    U+E006E, U+E0073-E0074, U+E0077, U+E007F;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -33,6 +42,101 @@
 }
 
 @layer components {
+  .onboarding-demo-shell {
+    overflow: hidden;
+    border: 1px solid rgba(203, 213, 225, 0.82);
+    border-radius: 1.75rem;
+    background: rgba(255, 255, 255, 0.88);
+    box-shadow:
+      0 28px 70px rgba(15, 23, 42, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  }
+
+  .onboarding-demo-stage {
+    position: relative;
+    height: 23rem;
+    overflow: hidden;
+    background: rgba(248, 250, 252, 0.86);
+  }
+
+  .onboarding-demo-shell-full .onboarding-demo-stage {
+    height: auto;
+  }
+
+  .onboarding-demo-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(148, 163, 184, 0.12) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(148, 163, 184, 0.12) 1px, transparent 1px);
+    background-size: 3.5rem 3.5rem;
+    mask-image: linear-gradient(to bottom, black 75%, transparent 100%);
+  }
+
+  .onboarding-demo-dock {
+    position: absolute;
+    right: 1rem;
+    bottom: 0.75rem;
+    left: 1rem;
+    display: flex;
+    height: 4.25rem;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    border: 1px solid rgba(226, 232, 240, 0.88);
+    border-radius: 1.25rem;
+    background: rgba(255, 255, 255, 0.88);
+    padding: 0 0.9rem;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.11);
+    backdrop-filter: blur(16px);
+  }
+
+  .onboarding-drop-target {
+    position: absolute;
+    top: 4.6rem;
+    right: 6%;
+    display: flex;
+    width: min(34%, 8.25rem);
+    height: 5.4rem;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px dashed rgba(var(--primary-color), 0.55);
+    border-radius: 1rem;
+    background: rgba(var(--primary-color), 0.08);
+    color: rgba(var(--primary-color), 0.82);
+    font-size: 0.68rem;
+    font-weight: 600;
+    opacity: 0;
+    animation: onboarding-drop-target 5s ease-in-out infinite;
+  }
+
+  .onboarding-drag-widget {
+    position: absolute;
+    top: calc(100% - 4.35rem);
+    right: 1.5rem;
+    z-index: 4;
+    width: min(34%, 8.25rem);
+    height: 4.8rem;
+    border: 1px solid rgba(251, 191, 36, 0.35);
+    border-radius: 1rem;
+    background: rgb(255, 251, 235);
+    padding: 0.75rem;
+    color: rgb(146, 64, 14);
+    box-shadow: 0 8px 18px rgba(120, 53, 15, 0.12);
+    transform-origin: center;
+    animation: onboarding-widget-drag 5s cubic-bezier(0.2, 0.82, 0.2, 1) infinite;
+  }
+
+  .onboarding-demo-pointer {
+    position: absolute;
+    top: calc(100% - 3rem);
+    right: 4rem;
+    z-index: 5;
+    color: rgb(15, 23, 42);
+    filter: drop-shadow(0 2px 2px rgba(255, 255, 255, 0.9));
+    animation: onboarding-pointer-drag 5s cubic-bezier(0.2, 0.82, 0.2, 1) infinite;
+  }
+
   /* Override react-grid-layout placeholder style */
   /* Using specific selector to ensure override */
   .layout .react-grid-placeholder {
@@ -81,6 +185,99 @@
 }
 
 @layer utilities {
+  @keyframes onboarding-widget-drag {
+    0%, 10% {
+      top: calc(100% - 4.35rem);
+      right: 1.5rem;
+      transform: scale(0.88);
+      opacity: 0;
+    }
+
+    16% {
+      top: calc(100% - 4.35rem);
+      right: 1.5rem;
+      transform: scale(1);
+      opacity: 1;
+    }
+
+    28% {
+      top: calc(100% - 5.2rem);
+      right: 1.7rem;
+      transform: rotate(-2deg) scale(1.05);
+      opacity: 1;
+    }
+
+    62% {
+      top: 4.3rem;
+      right: 5.5%;
+      transform: rotate(1deg) scale(1.05);
+      opacity: 1;
+    }
+
+    72%, 88% {
+      top: 4.6rem;
+      right: 6%;
+      transform: rotate(0) scale(1);
+      opacity: 1;
+    }
+
+    94%, 100% {
+      top: 4.6rem;
+      right: 6%;
+      transform: scale(0.98);
+      opacity: 0;
+    }
+  }
+
+  @keyframes onboarding-pointer-drag {
+    0%, 14% {
+      top: calc(100% - 3rem);
+      right: 4rem;
+      opacity: 0;
+    }
+
+    20% {
+      top: calc(100% - 3rem);
+      right: 4rem;
+      opacity: 1;
+    }
+
+    62% {
+      top: 7.7rem;
+      right: 8%;
+      opacity: 1;
+    }
+
+    76% {
+      top: 8rem;
+      right: 8%;
+      opacity: 1;
+    }
+
+    88%, 100% {
+      top: 8rem;
+      right: 8%;
+      opacity: 0;
+    }
+  }
+
+  @keyframes onboarding-drop-target {
+    0%, 26% {
+      transform: scale(0.96);
+      opacity: 0;
+    }
+
+    38%, 64% {
+      transform: scale(1);
+      opacity: 1;
+    }
+
+    72%, 100% {
+      transform: scale(1);
+      opacity: 0;
+    }
+  }
+
   @keyframes launcher-fly-in {
     0% {
       opacity: 0;
@@ -107,6 +304,18 @@
   @media (prefers-reduced-motion: reduce) {
     .launcher-fly-in {
       animation-duration: 1ms;
+    }
+
+    .onboarding-drag-widget {
+      top: 4.6rem;
+      right: 6%;
+      animation: none;
+    }
+
+    .onboarding-demo-pointer,
+    .onboarding-drop-target {
+      display: none;
+      animation: none;
     }
   }
 

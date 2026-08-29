@@ -18,6 +18,7 @@ interface SettingsState extends Settings {
   setCustomFavicon: (url: string) => void;
   setCustomTitle: (title: string) => void;
   setLanguage: (lang: string) => void;
+  saveSettings: () => Promise<boolean>;
   isSavingSettings: boolean;
   hasFetchedSettings: boolean;
   resetSettings: () => void;
@@ -53,38 +54,43 @@ function parseServerVersion(value: unknown): number | undefined {
 
 let saveTimeout: NodeJS.Timeout | null = null;
 
-const saveToServer = (settings: Settings) => {
-  if (saveTimeout) {
-    clearTimeout(saveTimeout);
-  }
-
+async function persistSettings(settings: Settings): Promise<boolean> {
   useSettingsStore.setState({ isSavingSettings: true });
   const payload = SettingsSchema.parse(settings);
 
-  saveTimeout = setTimeout(async () => {
-    try {
-      const res = await fetch('/api/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
+  try {
+    const res = await fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
 
-      if (!res.ok) {
-        throw new Error(`Failed to save settings: ${res.status}`);
-      }
-
-      const data = await res.json();
-      const version = parseServerVersion(data?.version);
-
-      if (version !== undefined) {
-        useSettingsStore.setState({ dataVersion: version });
-      }
-    } catch (error) {
-      console.error('Failed to save settings:', error);
-    } finally {
-      useSettingsStore.setState({ isSavingSettings: false });
-      saveTimeout = null;
+    if (!res.ok) {
+      throw new Error(`Failed to save settings: ${res.status}`);
     }
+
+    const data = await res.json();
+    const version = parseServerVersion(data?.version);
+
+    if (version !== undefined) {
+      useSettingsStore.setState({ dataVersion: version });
+    }
+    return true;
+  } catch (error) {
+    console.error('Failed to save settings:', error);
+    return false;
+  } finally {
+    useSettingsStore.setState({ isSavingSettings: false });
+  }
+}
+
+const saveToServer = (settings: Settings) => {
+  if (saveTimeout) clearTimeout(saveTimeout);
+
+  useSettingsStore.setState({ isSavingSettings: true });
+  saveTimeout = setTimeout(() => {
+    saveTimeout = null;
+    void persistSettings(settings);
   }, 1000);
 };
 
@@ -162,6 +168,13 @@ export const useSettingsStore = create<SettingsState>()(
         setCustomFavicon: (customFavicon) => updateSettings({ customFavicon }),
         setCustomTitle: (customTitle) => updateSettings({ customTitle }),
         setLanguage: (language) => updateSettings({ language }),
+        saveSettings: async () => {
+          if (saveTimeout) {
+            clearTimeout(saveTimeout);
+            saveTimeout = null;
+          }
+          return persistSettings(extractSettings(get()));
+        },
         resetSettings: () => {
           if (isClientDemoMode) {
             set({

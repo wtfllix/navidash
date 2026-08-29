@@ -6,6 +6,7 @@ import {
   WidgetConfigEntry,
   WidgetLayoutMode,
   WidgetLayoutsByMode,
+  WidgetSnapshot,
 } from '@/types';
 import {
   BookmarkSchema,
@@ -14,6 +15,7 @@ import {
   splitWidgets,
   WidgetConfigsArraySchema,
   WidgetLayoutsByModeSchema,
+  WidgetSnapshotSchema,
   WidgetSchema,
   WidgetStorePersistedStateSchema,
 } from '@/lib/schemas';
@@ -42,6 +44,8 @@ interface WidgetState {
   mobileLayoutUndoStack: WidgetLayoutsByMode['mobile'][];
   mobileLayoutSessionBaseline: WidgetLayoutsByMode['mobile'] | null;
   isMobileLayoutSessionActive: boolean;
+  isSnapshotLoaded: boolean;
+  snapshotConflict: SnapshotConflict | null;
   canUndoMobileLayout: boolean;
   canRestoreMobileLayout: boolean;
   setActiveLayoutMode: (mode: WidgetLayoutMode) => void;
@@ -61,6 +65,7 @@ interface WidgetState {
   resetWidgets: () => void;
   saveWidgetConfigs: () => Promise<boolean>;
   fetchWidgets: () => Promise<void>;
+  resolveSnapshotConflict: (resolution: 'keep-local' | 'use-server') => Promise<boolean>;
   revision?: number;
   batchUpdatePositions: (
     updates: Array<{ id: string; position: { x: number; y: number } }>
@@ -249,6 +254,11 @@ type PendingSnapshot = {
   bookmarks: Bookmark[];
 };
 
+type SnapshotConflict = {
+  serverSnapshot: WidgetSnapshot;
+  localSnapshot: PendingSnapshot;
+};
+
 let pendingSnapshot: PendingSnapshot | null = null;
 let snapshotSaveTimeout: NodeJS.Timeout | null = null;
 let snapshotSaveInFlight: Promise<boolean> | null = null;
@@ -258,6 +268,17 @@ function queueSnapshotSave(
   configs: WidgetConfigEntry[],
   bookmarks: Bookmark[]
 ) {
+  const conflict = useWidgetStore.getState().snapshotConflict;
+  if (conflict) {
+    useWidgetStore.setState({
+      snapshotConflict: {
+        ...conflict,
+        localSnapshot: { layoutsByMode, configs, bookmarks },
+      },
+    });
+    return;
+  }
+
   pendingSnapshot = { layoutsByMode, configs, bookmarks };
   if (snapshotSaveTimeout) clearTimeout(snapshotSaveTimeout);
   snapshotSaveTimeout = setTimeout(() => {
@@ -267,6 +288,10 @@ function queueSnapshotSave(
 }
 
 async function flushSnapshotSave(): Promise<boolean> {
+  if (useWidgetStore.getState().snapshotConflict) {
+    return false;
+  }
+
   if (snapshotSaveTimeout) {
     clearTimeout(snapshotSaveTimeout);
     snapshotSaveTimeout = null;
@@ -274,6 +299,9 @@ async function flushSnapshotSave(): Promise<boolean> {
 
   if (snapshotSaveInFlight) {
     await snapshotSaveInFlight;
+    if (useWidgetStore.getState().snapshotConflict) {
+      return false;
+    }
   }
 
   const snapshot = pendingSnapshot;
@@ -297,7 +325,30 @@ async function flushSnapshotSave(): Promise<boolean> {
 
       if (!response.ok) {
         if (response.status === 409) {
-          console.error('Widget snapshot revision conflict; local changes were not overwritten.');
+          const payload = await response.json().catch(() => null);
+          const serverSnapshot = WidgetSnapshotSchema.safeParse(payload?.snapshot);
+          if (!serverSnapshot.success) {
+            throw new Error('Widget snapshot conflict response was invalid');
+          }
+
+          if (snapshotSaveTimeout) {
+            clearTimeout(snapshotSaveTimeout);
+            snapshotSaveTimeout = null;
+          }
+          pendingSnapshot = null;
+
+          const current = useWidgetStore.getState();
+          useWidgetStore.setState({
+            revision: serverSnapshot.data.revision,
+            snapshotConflict: {
+              serverSnapshot: serverSnapshot.data as WidgetSnapshot,
+              localSnapshot: {
+                layoutsByMode: current.layoutsByMode,
+                configs: current.widgetConfigs,
+                bookmarks: current.bookmarks,
+              },
+            },
+          });
           return false;
         }
         throw new Error(`Failed to save widget snapshot: ${response.status}`);
@@ -340,6 +391,8 @@ export const useWidgetStore = create<WidgetState>()(
       mobileLayoutUndoStack: [],
       mobileLayoutSessionBaseline: null,
       isMobileLayoutSessionActive: false,
+      isSnapshotLoaded: false,
+      snapshotConflict: null,
       canUndoMobileLayout: false,
       canRestoreMobileLayout: false,
       setActiveLayoutMode: (activeLayoutMode) =>
@@ -439,6 +492,7 @@ export const useWidgetStore = create<WidgetState>()(
               DEMO_WIDGETS
             ),
             revision: DEMO_DATA_VERSION,
+            isSnapshotLoaded: true,
             canRestoreMobileLayout:
               !!state.mobileLayoutSessionBaseline &&
               !areLayoutsEqual(demoLayoutsByMode.mobile, state.mobileLayoutSessionBaseline),
@@ -454,9 +508,26 @@ export const useWidgetStore = create<WidgetState>()(
             throw new Error(`Failed to fetch widget snapshot: ${response.status}`);
           }
 
-          const snapshot = await response.json();
+          const snapshot = WidgetSnapshotSchema.parse(await response.json()) as WidgetSnapshot;
           const serverVersion = parseServerVersion(snapshot.revision) ?? 0;
           const currentVersion = get().revision ?? 0;
+          const conflict = get().snapshotConflict;
+
+          if (conflict) {
+            const latestServerSnapshot =
+              serverVersion > conflict.serverSnapshot.revision
+                ? snapshot
+                : conflict.serverSnapshot;
+            set({
+              revision: latestServerSnapshot.revision,
+              isSnapshotLoaded: true,
+              snapshotConflict: {
+                ...conflict,
+                serverSnapshot: latestServerSnapshot,
+              },
+            });
+            return;
+          }
 
           if (serverVersion !== currentVersion) {
             const layoutsByMode = ensureLayoutsByMode(snapshot.layoutsByMode, initialWidgets);
@@ -469,10 +540,13 @@ export const useWidgetStore = create<WidgetState>()(
               bookmarks,
               widgets: hydrateWidgets(state.activeLayoutMode, layoutsByMode, widgetConfigs),
               revision: serverVersion,
+              isSnapshotLoaded: true,
               canRestoreMobileLayout:
                 !!state.mobileLayoutSessionBaseline &&
                 !areLayoutsEqual(layoutsByMode.mobile, state.mobileLayoutSessionBaseline),
             }));
+          } else {
+            set({ revision: serverVersion, isSnapshotLoaded: true });
           }
         } catch (error) {
           console.error('Failed to fetch widgets:', error);
@@ -485,6 +559,44 @@ export const useWidgetStore = create<WidgetState>()(
 
         const state = get();
         queueSnapshotSave(state.layoutsByMode, state.widgetConfigs, state.bookmarks);
+        return flushSnapshotSave();
+      },
+      resolveSnapshotConflict: async (resolution) => {
+        const conflict = get().snapshotConflict;
+        if (!conflict) return true;
+
+        if (resolution === 'use-server') {
+          const layoutsByMode = ensureLayoutsByMode(conflict.serverSnapshot.layoutsByMode, []);
+          const widgetConfigs = WidgetConfigsArraySchema.parse(conflict.serverSnapshot.configs);
+          const bookmarks = BookmarkSchema.array().parse(conflict.serverSnapshot.bookmarks);
+
+          pendingSnapshot = null;
+          if (snapshotSaveTimeout) {
+            clearTimeout(snapshotSaveTimeout);
+            snapshotSaveTimeout = null;
+          }
+
+          set((state) => ({
+            layoutsByMode,
+            widgetConfigs,
+            bookmarks,
+            widgets: hydrateWidgets(state.activeLayoutMode, layoutsByMode, widgetConfigs, []),
+            revision: conflict.serverSnapshot.revision,
+            snapshotConflict: null,
+            mobileLayoutUndoStack: [],
+            mobileLayoutSessionBaseline: null,
+            isMobileLayoutSessionActive: false,
+            canUndoMobileLayout: false,
+            canRestoreMobileLayout: false,
+          }));
+          return true;
+        }
+
+        set({
+          revision: conflict.serverSnapshot.revision,
+          snapshotConflict: null,
+        });
+        pendingSnapshot = conflict.localSnapshot;
         return flushSnapshotSave();
       },
       addWidget: (widget) => {

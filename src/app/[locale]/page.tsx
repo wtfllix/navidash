@@ -5,6 +5,7 @@ import CanvasToolbar from "@/components/layout/CanvasToolbar";
 import MainCanvas from "@/components/layout/MainCanvas";
 import ToastContainer from "@/components/ui/ToastContainer";
 import DragDropProvider from "@/components/layout/DragDropProvider";
+import FirstRunGuide from '@/components/onboarding/FirstRunGuide';
 
 /**
  * Home Page
@@ -21,6 +22,7 @@ export default function Home() {
   return (
     <div className="flex h-screen w-full bg-gray-50 overflow-hidden text-slate-800">
       <ToastContainer />
+      <FirstRunGuide />
       <DragDropProvider>
         <Sidebar />
         <div className="relative flex-1 flex flex-col h-full overflow-hidden">

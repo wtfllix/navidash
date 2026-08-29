@@ -7,7 +7,131 @@
 - 一项有意义的变更记录一条
 - 优先保持简洁、可检索、可追溯
 
+## 2026-08-27
+
+### docs: 汇总 Komari Widget 当日开发进度
+- 做了什么：完成 Komari RPC2 只读集成与真实公开实例联调，服务端通过 `public:getNodesInformation` 和 `common:getNodesLatestStatus` 获取节点元数据及最新状态；实现可见页面共享批量轮询、后台暂停、恢复立即刷新、超时与短缓存；完成默认浅色 `2×2` 完整卡以及 `2×1`、`1×1` 紧凑版本，修正国旗跨平台显示、资源进度条、无限流量样式、文字溢出和信息层级；天气与 Komari 的服务地址、Host 和凭据暂时继续由 env 管理，前端仍只保存城市、节点、刷新间隔等展示偏好
+- 影响范围：Komari Widget、服务端代理、安全边界、桌面与手机画布、部署配置、Snapshot 回退策略
+- 涉及模块：`src/app/api/komari/`、`src/lib/server/komari.ts`、`src/lib/komariStatus.ts`、`src/components/widgets/KomariWidget.tsx`、`src/components/widgets/editors/KomariConfigEditor.tsx`、`src/lib/server/storage.ts`、`src/lib/schemas.ts`、`messages/*.json`、`.env.example`、部署与设计文档、Komari 测试
+- 是否有兼容性影响：新增 `komari` Widget 判别类型但保持 Snapshot v2 外层结构；新版可继续读取既有 v2 数据，旧版不能直接读取包含 Komari 的快照，部署回退前需要恢复旧备份；服务端遇到不支持或无效快照时会进入只读错误状态，避免空数据覆盖
+- 后续待补充：使用自建 Komari 实例验证有限流量额度、离线节点和长期轮询；根据真实 `1×1`、`2×1` 桌面及手机截图继续微调；如未来提供网页集成入口，应只展示配置状态与引导，Base URL、Host 和密钥仍保留在服务端安全边界内
+
+### feat: 新增 Komari 紧凑尺寸
+- 做了什么：在默认 `2×2` 完整卡之外新增 `2×1` 紧凑版和 `1×1` 概览版；紧凑版保留节点身份、运行时间、三项资源百分比和可选实时速率，概览版进一步裁剪网络与容量明细，同时为三种尺寸补充渲染测试
+- 影响范围：Komari Widget 尺寸选择、桌面与手机画布的信息密度
+- 涉及模块：`src/components/widgets/KomariWidget.tsx`、`src/components/widgets/editors/shared.ts`、`src/__tests__/KomariWidget.test.tsx`、`SPEC.md`、Komari 设计文档
+- 是否有兼容性影响：无；默认仍为 `2×2`，不修改配置、状态接口或 Snapshot 数据结构
+- 后续待补充：根据真实桌面与手机画布截图微调 `1×1` 节点名称截断和编辑态控件遮挡
+
+### fix: 修复 Komari 资源进度条缺少填充色
+- 做了什么：将 CPU 与内存进度条的运行时动态颜色类改为 Tailwind 可静态识别的显式类名，恢复生产构建中的蓝色和绿色进度填充
+- 影响范围：Komari 节点卡片的 CPU、内存使用率显示
+- 涉及模块：`src/components/widgets/KomariWidget.tsx`
+- 是否有兼容性影响：无；仅修复样式生成，不修改数据与配置
+- 后续待补充：无
+
+### fix: 调整 Komari 流量进度展示
+- 做了什么：将 Komari 流量从资源区右下角移到卡片底部、更新时间上方，以全宽进度条展示累计流量与额度，并保留实时上下行速率；有限额度显示真实比例，无限额度显示柔和连续渐变；CPU、内存保持两列，硬盘独占一行；上下行速率与更新时间合并为底部一行，避免默认高度下文字溢出
+- 影响范围：Komari 节点卡片的信息层级与空间布局
+- 涉及模块：`src/components/widgets/KomariWidget.tsx`、`messages/*.json`、Komari 设计文档
+- 是否有兼容性影响：无；不修改 Widget 配置和状态接口
+- 后续待补充：根据真实有限流量节点验证进度颜色和临界值提示
+
+### fix: 修复 Windows 下 Komari 国旗显示为国家代码
+- 做了什么：为 Komari 节点国旗加入随应用打包的 Twemoji Country Flags 子集字体，使 Windows Chrome、Edge 等浏览器将区域指示符稳定显示为国旗图形
+- 影响范围：Komari 节点卡片的地区标识显示
+- 涉及模块：`src/app/globals.css`、`tailwind.config.ts`、Komari 规范与依赖配置
+- 是否有兼容性影响：无；原生支持国旗 Emoji 的平台保持可用，不支持的平台加载约 77 KB 的本地字体
+- 后续待补充：无
+
+### fix: 将 Komari 国家代码显示为 emoji 国旗
+- 做了什么：将上游 `region` 返回的两位 ISO 国家代码（如 `us`）转换为对应的 emoji 国旗，同时保持对原生旗帜字符的兼容，为跨平台图形化渲染提供统一字符
+- 影响范围：Komari 节点健康卡的标题区域
+- 涉及模块：`src/lib/server/komari.ts`、`src/components/widgets/KomariWidget.tsx`、`src/__tests__/komariServer.test.ts`、`SPEC.md`、`docs/`
+- 是否有兼容性影响：无；仅改变安全规范化后的展示值
+- 后续待补充：无
+
+## 2026-08-26
+
+### feat: 新增 Komari 单节点健康卡
+- 做了什么：新增原生只读 Komari Widget，每张卡绑定一台节点并默认使用浅色健康卡；服务端通过 RPC2 获取节点与最新状态，在可安全规范化时于节点名称前显示地区国旗，默认每 5 秒以共享批量请求刷新可见卡片、后台暂停并在恢复可见后立即更新，支持未配置、节点缺失、上游不可用等降级状态，并通过同源跳转打开完整 Komari 页面；同时阻止无效快照被当作空数据覆盖
+- 影响范围：组件库、Widget Snapshot、服务端 API、部署环境变量与快照读取安全
+- 涉及模块：`src/lib/server/komari.ts`、`src/app/api/komari/`、`src/components/widgets/KomariWidget.tsx`、`src/components/widgets/editors/KomariConfigEditor.tsx`、`src/lib/schemas.ts`、`src/lib/server/storage.ts`、`messages/*.json`、`docs/`
+- 是否有兼容性影响：新增 `komari` Widget 类型，Snapshot 外层仍为 v2；旧版不能直接读取包含该类型的快照，回退需恢复旧备份；当前版本遇到无效快照会安全拒绝读写
+- 后续待补充：使用自建 Komari 实例完成端到端联调，并根据真实卡片密度微调 Ping 与流量额度展示
+
+### fix: 统一书签缺失网站图标的默认图标
+- 做了什么：对 `123.com` 等缺失图标场景识别外部 Favicon 服务返回的固定 `16×16` 占位图片，并在客户端统一显示主题强调色的 Lucide Globe 线框图标；正常网站图标仍由浏览器直接加载，不依赖本地服务访问上游
+- 影响范围：Links Widget、书签库、Links Widget 设置
+- 涉及模块：`src/components/bookmarks/BookmarkFavicon.tsx`、`src/components/widgets/LinksWidget.tsx`、`src/components/bookmarks/BookmarkLibraryPanel.tsx`、`src/components/widgets/editors/LinksConfigEditor.tsx`
+- 是否有兼容性影响：无；不修改书签数据与 Widget 配置
+- 后续待补充：无
+
+## 2026-08-18
+
+### chore: 收口 0.8.0 核心组件扩展版
+- 做了什么：统一项目、中英文 README、产品规范与 Roadmap 的 0.8.0 版本状态，将首次部署引导、Poster 缩略图、快照冲突恢复和 F1 组件纳入同一发布节点
+- 影响范围：版本识别、发布文档、开发路线与兼容性说明
+- 涉及模块：`package.json`、`package-lock.json`、`README*.md`、`SPEC.md`、`docs/ROADMAP.md`、`changelog.md`
+- 是否有兼容性影响：低；继续读取 0.7.3 Snapshot v2、Settings v1 与 Backup v3 基线，F1 是新增 Widget 类型
+- 后续待补充：在具备容器工具的环境补充 Alpine 镜像与 `sharp` 运行验证；根据真实部署反馈进入稳定与安全基础阶段
+
+## 2026-08-15
+
+### feat: 新增内置双语 F1 赛程组件
+- 做了什么：新增只读 F1 赛程 Widget，将公开的 2026 赛季 ICS 确定性转换为包含 23 个比赛周末、115 个赛段的双语 JSON；组件按设备本地时区突出下一赛段，支持冲刺周末、进行中、待确认和赛季结束状态，并可选择显示练习赛与倒计时
+- 影响范围：组件库、Widget Schema、桌面与手机画布、备份兼容、中文与英文界面
+- 涉及模块：`resources/f1/2026.ics`、`scripts/import-f1-ics.mjs`、`src/lib/f1Season2026.generated.ts`、`src/lib/f1Schedule.ts`、`src/components/widgets/F1Widget.tsx`、`src/components/widgets/editors/F1ConfigEditor.tsx`、`messages/*.json`、`SPEC.md`、`docs/decisions/003-f1-schedule-widget.md`
+- 是否有兼容性影响：低；Snapshot 仍为 v2，0.7.3 基线数据保持可读，新版备份中的 F1 Widget 需要支持该类型的版本读取
+- 后续待补充：赛程发生改期时更新源 ICS 并运行 `npm run generate:f1`；2027 赛季发布后新增对应赛季数据
+
+### fix: 增加 Widget 快照冲突恢复
+- 做了什么：客户端遇到 revision 冲突后保留最新本地内容并暂停自动保存，以全局对话框让用户明确选择保留本地版本或使用服务器版本；页面恢复同步不再静默覆盖冲突中的本地修改，并补充多标签冲突恢复测试
+- 影响范围：Widget、书签、桌面与手机布局的自动保存和多标签页并发编辑
+- 涉及模块：`src/store/useWidgetStore.ts`、`src/components/layout/SnapshotConflictDialog.tsx`、`src/app/[locale]/layout.tsx`、`src/__tests__/widgetStoreConflict.test.ts`、`messages/*.json`、`SPEC.md`
+- 是否有兼容性影响：无；沿用现有 Snapshot v2 与 409 响应契约，不修改持久化结构
+- 后续待补充：如未来支持多人协作，再评估字段级合并和变更历史
+
+### chore: 清理仓库残留数据与预览入口
+- 做了什么：移除根目录旧格式私人书签数据、临时依赖检查脚本和未被产品引用的 Today 色板预览路由
+- 影响范围：仓库卫生与生产路由表面
+- 涉及模块：`bookmarks.json`、`check_nav.js`、`src/app/[locale]/today-colors/page.tsx`
+- 是否有兼容性影响：无；正式运行数据位于配置的数据目录，Today 每日强调色功能本身不受影响
+- 后续待补充：如旧书签内容已公开发布且被认定为敏感信息，再单独评估 Git 历史清理
+
+## 2026-08-05
+
+### fix: 完成首次部署指引发布前收尾
+- 做了什么：修复语言切换后按钮状态未显式恢复的问题，为阻断式指引补充模态语义、步骤标题焦点与 Tab 焦点边界，并覆盖完整三步、语言切换和保存失败流程测试
+- 影响范围：首次部署指引、键盘操作、语言切换与初始化失败恢复
+- 涉及模块：`src/components/onboarding/FirstRunGuide.tsx`、`src/__tests__/FirstRunGuide.test.tsx`、`SPEC.md`
+- 是否有兼容性影响：无
+- 后续待补充：持续根据真实设备反馈调整小屏布局
+
+## 2026-08-04
+
+### feat: 默认语言调整为中文
+- 做了什么：将缺失设置文件、恢复默认和演示模式使用的默认语言统一调整为中文，首次引导仍允许用户切换并保存英文
+- 影响范围：全新部署、恢复默认、演示模式与首次引导语言
+- 涉及模块：`src/types/index.ts`、`src/lib/demo.ts`、`SPEC.md`
+- 是否有兼容性影响：无；已有用户已保存的语言配置和 0.7.3 历史夹具保持不变
+- 后续待补充：无
+
+### feat: 新增首次部署三步使用指引
+- 做了什么：服务端确认快照从未初始化时展示三步欢迎指引；右上角可切换并持久化默认中英文，切换后保留当前步骤与待导入书签；第一步按语言提供大模型推荐清单 Prompt、批量粘贴和浏览器书签 HTML 上传，第二步以连续动画先演示普通匹配，再通过单字符、多候选和访问次数解释本地使用习惯排序，第三步以单屏全宽画布动画演示组件拖拽，完成后一次性保存书签并进入真实组件库
+- 影响范围：首次部署体验、书签导入、自由画布核心交互教学、Widget 快照首次加载状态
+- 涉及模块：`src/components/onboarding/`、`src/lib/bookmarkImport.ts`、`src/app/globals.css`、`src/store/useWidgetStore.ts`、`src/lib/onboarding.ts`、`messages/*.json`、`SPEC.md`
+- 是否有兼容性影响：无；已有快照、已有组件或已有书签的部署不会显示引导
+- 后续待补充：根据真实部署反馈评估是否继续引导键盘快速启动器
+
 ## 2026-08-03
+
+### docs: 整理 Vault 与启动器命令实施讨论稿
+- 做了什么：记录单用户 Vault 的产品边界、斜杠命令交互、每日解锁策略、客户端加密、独立密文存储、访问保护前置整改、私有网络部署限制与测试范围
+- 影响范围：后续 Vault 安全设计、快速启动器扩展和开发顺序评审
+- 涉及模块：`docs/VAULT_IMPLEMENTATION_PLAN.md`
+- 是否有兼容性影响：无；当前仅新增讨论稿，尚未修改产品行为、数据结构或部署配置
+- 后续待补充：方案确认后先更新 `SPEC.md` 和对应 Decision，再按阶段实施
 
 ### fix: 主页打开时备忘录不再抢占焦点
 - 做了什么：空备忘录首次渲染时保持输入区可见但不再自动聚焦，只有用户实际点击备忘录后才进入编辑并聚焦输入框
@@ -17,6 +141,13 @@
 - 后续待补充：无
 
 ## 2026-07-27
+
+### fix: 高分辨率海报改用渐进式缩略图
+- 做了什么：Poster 保持外部原图立即可见，同时在服务端以 Mitchell 重采样生成接近设备物理尺寸的 WebP 缩略图，完成后无闪烁替换并缓存；新地址保存期间支持有限重试；代理仅处理当前快照引用的公开 HTTP(S) 图片，并限制内网地址、跳转、端口、体积、像素和超时
+- 影响范围：高分辨率海报在桌面与手机画布中的静态显示、首次加载、轮播过渡、服务端数据目录
+- 涉及模块：`src/components/widgets/PhotoWidget.tsx`、`src/app/api/poster-thumbnail/`、`src/lib/posterThumbnail.ts`、`src/lib/server/posterThumbnail.ts`、`src/__tests__/posterThumbnail.test.ts`、`SPEC.md`
+- 是否有兼容性影响：无；不新增配置字段，原始图片地址与现有 Poster 数据保持不变；不符合代理安全限制的图片继续直接显示原图
+- 后续待补充：根据真实图片和缓存占用反馈校准尺寸档位、WebP 质量与七天服务端缓存周期
 
 ### docs: 优化公开 README 视觉层级
 - 做了什么：统一中英文 README 的首屏 Hero、徽章与主要入口，引入仓库内项目封面并保留实际界面截图，重新整理功能介绍、快速开始和文档导航
@@ -30,7 +161,7 @@
 ### test: 冻结 0.7.3 持久化兼容基线
 - 做了什么：新增脱敏的 Snapshot v2、Settings v1 与 Backup v3 固定夹具及兼容测试，覆盖双端 Placement、书签引用、四个核心 Widget、外观设置和启动器学习数据；明确 0.7.3 起承诺连续向前迁移
 - 影响范围：后续 Schema 演进、升级验证、备份恢复与部署说明
-- 涉及模块：`src/__tests__/fixtures/v0.7.3/`、`src/__tests__/compatibilityBaseline.test.ts`、`docs/DEPLOY.md`
+- 涉及模块：`src/__tests__/fixtures/v0.7.3/`、`src/__tests__/compatibilityBaseline.test.ts`、`SPEC.md`、`docs/ROADMAP.md`、`docs/DEPLOY.md`
 - 是否有兼容性影响：无；本次只冻结当前数据契约，0.7.3 以前的数据仍按现有逻辑尽力读取
 - 后续待补充：首次修改任一持久化格式时建立显式的连续迁移函数
 
@@ -56,11 +187,18 @@
 - 后续待补充：无
 
 ### docs: 重写公开 README 与部署指南
-- 做了什么：从用户收益出发重写 README，突出更快打开常用网站、越用越顺手、信息克制、自由布置和数据自持，并只保留最短启动命令；把配置与运维细节统一移入部署指南，补充 Compose、局域网、HTTPS、升级、备份恢复和故障排查
+- 做了什么：从用户收益出发重写 README，突出更快打开常用网站、越用越顺手、信息克制、自由布置和数据自持，并只保留最短启动命令；补充 Yellowtail 字体来源及开源许可证说明；把配置与运维细节统一移入部署指南，补充 Compose、局域网、HTTPS、升级、备份恢复和故障排查
 - 影响范围：首次了解项目、Docker 自托管、升级维护与部署排障
 - 涉及模块：`README.md`、`README_EN.md`、`docs/DEPLOY.md`
 - 是否有兼容性影响：无；仅更新公开说明，命令与当前 Compose、环境变量及持久化实现保持一致
 - 后续待补充：获得稳定的产品截图后，可在 README 首屏增加一张实际界面预览
+
+### docs: 收口 0.6.0 至 0.7.3 基础重构阶段
+- 做了什么：以首次 clone 的 0.6.0 为基线，简要整理产品定位、启动器与书签、核心组件、自由画布、原子快照和访问保护等阶段成果，并校准 README 与 Roadmap 的当前状态
+- 影响范围：版本认知、阶段记录、下一阶段组件开发入口
+- 涉及模块：`docs/STAGE_SUMMARY_0.7.3.md`、`docs/ROADMAP.md`、`README*.md`
+- 是否有兼容性影响：无；仅整理已经完成的实现与开发顺序
+- 后续待补充：日程摘要方向完成产品梳理后，再建立下一阶段规范与必要 Decision
 
 ## 2026-07-25
 
@@ -226,6 +364,13 @@
 - 涉及模块：`src/lib/linkLauncher*`、`src/components/layout/*`、`src/components/widgets/*`、`src/components/settings/SettingsModal.tsx`
 - 是否有兼容性影响：低；旧版最近链接会迁移为初始学习记录，旧备份缺少学习数据时按空记录处理
 - 后续待补充：在单用户访问保护完成后评估可选跨设备同步
+
+### docs: 建立产品愿景与行为规范体系
+- 做了什么：新增 Product、Spec、Roadmap 和自由画布决策文档，确立注意力优先的个性化主页定位，并记录布局稳定性重构目标
+- 影响范围：产品定位、功能优先级、后续开发与兼容判断
+- 涉及模块：`SPEC.md`、`docs/PRODUCT.md`、`docs/ROADMAP.md`、`docs/decisions/`、`AGENTS.md`
+- 是否有兼容性影响：无；自由画布新规则在 v0.7.0 仅作为已批准目标记录
+- 后续待补充：v0.8.0 按规范重构自由画布坐标系与碰撞行为
 
 ## 2026-04-27
 

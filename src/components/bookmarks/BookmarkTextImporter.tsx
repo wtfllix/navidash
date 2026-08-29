@@ -10,12 +10,14 @@ interface BookmarkTextImporterProps {
   existingUrls: string[];
   actionLabel: string;
   onImport: (bookmarks: Bookmark[]) => boolean | Promise<boolean>;
+  compact?: boolean;
 }
 
 export default function BookmarkTextImporter({
   existingUrls,
   actionLabel,
   onImport,
+  compact = false,
 }: BookmarkTextImporterProps) {
   const t = useTranslations('Bookmarks');
   const [value, setValue] = useState('');
@@ -47,7 +49,7 @@ export default function BookmarkTextImporter({
         value={value}
         onChange={(event) => setValue(event.target.value)}
         placeholder={t('bulk_placeholder')}
-        rows={5}
+        rows={compact ? 4 : 5}
         className="w-full resize-y rounded-xl border border-slate-200 bg-white px-3 py-2 font-mono text-xs leading-5 text-slate-700 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100/70"
       />
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500">

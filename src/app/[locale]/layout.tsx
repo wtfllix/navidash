@@ -5,6 +5,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import ThemeManager from '@/components/settings/ThemeManager';
 import DataSyncer from '@/components/layout/DataSyncer';
+import SnapshotConflictDialog from '@/components/layout/SnapshotConflictDialog';
 
 const inter = Inter({ subsets: ["latin"], variable: '--font-inter' });
 const outfit = Outfit({ subsets: ["latin"], variable: '--font-outfit' });
@@ -31,6 +32,7 @@ export default async function LocaleLayout({
       <body className={`${inter.variable} ${outfit.variable} font-sans`}>
         <NextIntlClientProvider messages={messages}>
           <DataSyncer />
+          <SnapshotConflictDialog />
           <ThemeManager />
           {children}
         </NextIntlClientProvider>

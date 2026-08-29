@@ -125,6 +125,57 @@ describe('Zod Schemas', () => {
     }
   });
 
+  it('validates and defaults an F1 schedule widget', () => {
+    const result = WidgetSchema.safeParse({
+      id: 'f1-schedule',
+      type: 'f1',
+      size: { w: 2, h: 2 },
+      position: { x: 0, y: 0 },
+      config: {},
+    });
+
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.data.config).toEqual({ showPractice: false, showCountdown: true });
+  });
+
+  it('validates and defaults a single-node Komari widget', () => {
+    const result = WidgetSchema.safeParse({
+      id: 'komari-node',
+      type: 'komari',
+      size: { w: 2, h: 2 },
+      position: { x: 0, y: 0 },
+      config: { nodeId: '30529324-e285-4cbd-ae6a-7011f7bdcfa6' },
+    });
+
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.data.config).toEqual({
+      nodeId: '30529324-e285-4cbd-ae6a-7011f7bdcfa6',
+      showNetwork: true,
+      refreshInterval: 5,
+    });
+  });
+
+  it('rejects Komari credentials, invalid node IDs, and unsupported refresh intervals', () => {
+    for (const config of [
+      { nodeId: 'not-a-uuid' },
+      { refreshInterval: 10 },
+      { refreshInterval: 60 },
+      { apiKey: 'must-not-persist' },
+    ]) {
+      expect(
+        WidgetSchema.safeParse({
+          id: 'komari-invalid',
+          type: 'komari',
+          size: { w: 2, h: 2 },
+          position: { x: 0, y: 0 },
+          config,
+        }).success
+      ).toBe(false);
+    }
+  });
+
   it('should reject individual removed and unimplemented widget types', () => {
     for (const type of [
       'clock',

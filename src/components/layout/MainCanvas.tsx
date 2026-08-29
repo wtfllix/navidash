@@ -54,6 +54,7 @@ export default function MainCanvas() {
   const { beginMobileLayoutSession, endMobileLayoutSession } = useWidgetStore();
   const {
     isEditing,
+    isOnboardingOpen,
     isLauncherOpen,
     openLauncher,
     closeLauncher: closeLauncherPanel,
@@ -246,6 +247,7 @@ export default function MainCanvas() {
     };
 
     const isLauncherBlocked = () =>
+      isOnboardingOpen ||
       isEditing ||
       isSettingsOpen ||
       isBookmarksOpen ||
@@ -385,6 +387,7 @@ export default function MainCanvas() {
     closeLauncherPanel,
     editingWidget,
     isEditing,
+    isOnboardingOpen,
     isBookmarksOpen,
     isSettingsOpen,
     isSidebarOpen,

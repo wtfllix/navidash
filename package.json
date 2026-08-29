@@ -1,6 +1,6 @@
 {
   "name": "navidash",
-  "version": "0.7.3",
+  "version": "0.8.0",
   "private": true,
   "repository": {
     "type": "git",
@@ -11,7 +11,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "jest"
+    "test": "jest",
+    "generate:f1": "node scripts/import-f1-ics.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -19,12 +20,14 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@swc/helpers": "^0.5.21",
     "clsx": "^2.1.0",
+    "country-flag-emoji-polyfill": "^0.1.8",
     "lucide-react": "^0.370.0",
     "next": "14.2.0",
     "next-intl": "^4.8.0",
     "react": "^18",
     "react-dom": "^18",
     "react-grid-layout": "^2.2.2",
+    "sharp": "^0.33.5",
     "tailwind-merge": "^2.2.2",
     "uuid": "^13.0.0",
     "zod": "^3.23.8",

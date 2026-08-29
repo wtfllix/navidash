@@ -2,6 +2,8 @@ jest.mock('../components/widgets/LinksWidget', () => () => null);
 jest.mock('../components/widgets/MemoWidget', () => () => null);
 jest.mock('../components/widgets/PhotoWidget', () => () => null);
 jest.mock('../components/widgets/TodayWidget', () => () => null);
+jest.mock('../components/widgets/F1Widget', () => () => null);
+jest.mock('../components/widgets/KomariWidget', () => () => null);
 
 import { widgetComponentRegistry, widgetMeta } from '@/components/widgets/registry';
 import { WidgetSchema } from '@/lib/schemas';
@@ -40,7 +42,7 @@ describe('widget registry integration', () => {
     const registeredTypes = Object.keys(widgetComponentRegistry);
 
     expect([...pickerTypes].sort()).toEqual(
-      ['links', 'memo', 'photo-frame', 'today'].sort()
+      ['f1', 'komari', 'links', 'memo', 'photo-frame', 'today'].sort()
     );
     expect(registeredTypes.sort()).toEqual([...pickerTypes].sort());
   });

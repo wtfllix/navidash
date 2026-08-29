@@ -51,8 +51,9 @@ The widget store currently lets you add:
 - `Today`: a combined time, date, and weather panel
 - `Memo`: quick pasted information
 - `Poster`: frameless visual decoration
+- `F1`: the next session and race weekend at a glance
 
-Legacy `Clock`, `Weather`, `Date`, `Quick Link`, `Todo`, and `Calendar` widgets have been retired. When older layouts or backups are read, those entries are filtered while Today, Links, Memo, and Poster are preserved.
+Legacy `Clock`, `Weather`, `Date`, `Quick Link`, `Todo`, and `Calendar` widgets have been retired. When older layouts or backups are read, those entries are filtered while Today, Links, Memo, Poster, and F1 are preserved.
 
 ### Move a Widget
 
@@ -67,7 +68,7 @@ If the target area is already occupied, NaviDash automatically reflows nearby wi
 Different widgets support different editing flows:
 
 - `Memo` can be edited directly inside the widget and saves automatically
-- `Today`, `Links`, and `Poster` are configured through the settings modal
+- `Today`, `Links`, `Poster`, and `F1` are configured through the settings modal
 
 ### Open Widget Settings
 
@@ -108,6 +109,14 @@ If weather does not appear, check:
 
 - Supports one or multiple images
 - Is frameless and static by default, with optional autoplay and interval settings
+
+### F1
+
+- Uses the built-in 2026 season schedule without requiring an ICS URL or external account
+- Hides practice by default and highlights the next qualifying, sprint, or race session
+- Automatically displays every session in the current device's time zone
+- Can include practice sessions or hide the countdown through widget settings
+- Keeps tentative races visibly marked instead of presenting them as confirmed
 
 ## Global Settings
 
