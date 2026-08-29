@@ -42,15 +42,15 @@ docker compose logs --tail=100 navidash
 
 个人局域网部署可以先保持可选项为空。常用配置如下：
 
-| 变量 | 用途 |
-| --- | --- |
-| `NAVIDASH_DATA_DIR` | 自定义宿主机数据目录，默认 `/opt/navidash-data` |
-| `NAVIDASH_ACCESS_PASSWORD` | 为私人实例增加单用户访问保护 |
-| `QWEATHER_API_KEY` | Today 天气服务的 Key 或 JWT |
-| `QWEATHER_API_HOST` | 可选的和风天气兼容 Host |
-| `QWEATHER_AUTH_TYPE` | `apikey` 或 `jwt` |
-| `KOMARI_BASE_URL` | 可选的 Komari 实例地址 |
-| `KOMARI_API_KEY` | 可选的 Komari Bearer API Key |
+| 变量                         | 用途                                 |
+| -------------------------- | ---------------------------------- |
+| `NAVIDASH_DATA_DIR`        | 自定义宿主机数据目录，默认 `/opt/navidash-data` |
+| `NAVIDASH_ACCESS_PASSWORD` | 为私人实例增加单用户访问保护                     |
+| `QWEATHER_API_KEY`         | Today 天气服务的 Key 或 JWT              |
+| `QWEATHER_API_HOST`        | 可选的和风天气兼容 Host                     |
+| `QWEATHER_AUTH_TYPE`       | `apikey` 或 `jwt`                   |
+| `KOMARI_BASE_URL`          | 可选的 Komari 实例地址                    |
+| `KOMARI_API_KEY`           | 可选的 Komari Bearer API Key          |
 
 修改 `.env` 后重新创建容器：
 

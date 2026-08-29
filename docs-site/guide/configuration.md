@@ -8,6 +8,45 @@ docker compose up -d
 
 所有可选配置都可以留空。先确认首页能够正常打开，再逐项启用需要的服务。
 
+## 完整 `.env` 示例
+
+下面是一份适合个人局域网部署的完整示例。复制后，只需要填写自己实际使用的可选服务：
+
+```ini
+# 基础设置
+NEXT_PUBLIC_APP_NAME=NaviDash
+NEXT_PUBLIC_DEFAULT_LOCALE=zh-CN
+NEXT_PUBLIC_DEFAULT_BOOKMARKS=[]
+
+# Docker Compose 在宿主机上的持久化目录
+NAVIDASH_DATA_DIR=/opt/navidash-data
+
+# 正式个人实例必须关闭 Demo 模式
+DEMO_MODE=false
+NEXT_PUBLIC_DEMO_MODE=false
+
+# 可选：单用户访问密码；留空表示关闭
+NAVIDASH_ACCESS_PASSWORD=
+
+# 可选：Today 天气
+QWEATHER_API_KEY=
+QWEATHER_API_HOST=
+QWEATHER_AUTH_TYPE=apikey
+
+# 可选：Komari 节点
+KOMARI_BASE_URL=
+KOMARI_API_KEY=
+```
+
+也可以直接从仓库生成配置：
+
+```bash
+cp .env.example .env
+```
+
+仓库中的最新版本见 [`.env.example`](https://github.com/wtfllix/navidash/blob/master/.env.example)。
+不要把填写了真实密码或 API Key 的 `.env` 提交到 Git。
+
 ## 数据目录
 
 默认宿主机目录为 `/opt/navidash-data`。需要改到 NAS 数据盘或其他位置时：
