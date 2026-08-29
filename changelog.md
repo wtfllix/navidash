@@ -7,6 +7,22 @@
 - 一项有意义的变更记录一条
 - 优先保持简洁、可检索、可追溯
 
+## 2026-08-29
+
+### feat: F1 Widget 支持最新车手积分
+- 做了什么：为 F1 Widget 增加赛程与车手积分两种显示模式，通过同源服务端接口读取 Jolpica 当前赛季排名；成功数据缓存 24 小时，上游刷新失败时回退到最近一次缓存；`3×2` 采用三列纵向续排展示全部车手，`2×2` 展示前四名，`2×1` 展示前三名
+- 影响范围：F1 Widget 配置、车手积分展示、服务端外部数据访问与缓存策略
+- 涉及模块：`src/components/widgets/F1Widget.tsx`、`src/components/widgets/editors/F1ConfigEditor.tsx`、`src/app/api/f1/standings/route.ts`、`src/lib/f1Standings.ts`、`src/lib/server/f1Standings.ts`、F1 Schema、类型、双语文案、规范与测试
+- 是否有兼容性影响：无；新增可选 `view` 字段，旧配置缺失时继续规范化为赛程模式，不修改 Snapshot 外层版本
+- 后续待补充：根据真实画布截图微调积分榜在三种尺寸下的行数和信息密度，并持续观察 Jolpica 赛后更新时间
+
+### feat: F1 Widget 接入方格旗布料背景
+- 做了什么：将用户提供的黑白方格旗布料图片作为 F1 Widget 的低透明度背景，并针对方形与横向尺寸分别调整铺满和裁切方式
+- 影响范围：F1 Widget 的视觉表现与不同尺寸下的背景取景
+- 涉及模块：`src/components/widgets/F1Widget.tsx`、`public/f1-checkered-flag.jpg`
+- 是否有兼容性影响：无；不修改 Widget 配置、赛程数据或快照结构
+- 后续待补充：根据真实画布截图继续微调背景透明度与取景位置
+
 ## 2026-08-27
 
 ### docs: 汇总 Komari Widget 当日开发进度

@@ -62,6 +62,7 @@ export interface MemoWidgetConfig {
 }
 
 export interface F1WidgetConfig {
+  view?: 'schedule' | 'standings';
   showPractice?: boolean;
   showCountdown?: boolean;
 }

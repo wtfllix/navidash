@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Flag, MapPin } from 'lucide-react';
+import { Flag, MapPin, Trophy } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { WidgetOfType } from '@/types';
 import {
@@ -10,6 +10,7 @@ import {
   getF1ScheduleView,
   getLocalizedF1Text,
 } from '@/lib/f1Schedule';
+import { fetchF1Standings, F1StandingsResponse } from '@/lib/f1Standings';
 
 const sessionLabelKeys: Record<F1SessionType, string> = {
   'practice-1': 'f1_practice_1',
@@ -53,11 +54,38 @@ interface F1WidgetProps {
   previewDate?: Date;
 }
 
+function useF1Standings(enabled: boolean) {
+  const [data, setData] = React.useState<F1StandingsResponse | null>(null);
+  const [error, setError] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!enabled) return;
+
+    const controller = new AbortController();
+    setError(false);
+
+    fetchF1Standings(controller.signal)
+      .then(setData)
+      .catch((requestError: unknown) => {
+        if (requestError instanceof DOMException && requestError.name === 'AbortError') return;
+        setError(true);
+      });
+
+    return () => controller.abort();
+  }, [enabled]);
+
+  return { data, error };
+}
+
 export default function F1Widget({ widget, previewDate }: F1WidgetProps) {
   const locale = useLocale();
   const t = useTranslations('Widgets');
   const [now, setNow] = React.useState<Date | null>(previewDate ?? null);
+  const isStandings = widget.config.view === 'standings';
+  const standingsState = useF1Standings(isStandings);
   const isCompact = widget.size.h === 1;
+  const isWideStandings = isStandings && widget.size.w >= 3 && widget.size.h >= 2;
+  const isSquare = widget.size.w === widget.size.h;
   const showPractice = widget.config.showPractice ?? false;
   const showCountdown = widget.config.showCountdown ?? true;
 
@@ -79,14 +107,25 @@ export default function F1Widget({ widget, previewDate }: F1WidgetProps) {
   const location = round ? getLocalizedF1Text(round.location, locale) : '';
   const visibleSessions = view?.sessions.slice(0, 3) ?? [];
   const remainingSessions = Math.max(0, (view?.sessions.length ?? 0) - visibleSessions.length);
+  const standingsCount = isCompact ? 3 : isWideStandings ? standingsState.data?.standings.length : 4;
+  const visibleStandings = standingsState.data?.standings.slice(0, standingsCount) ?? [];
+  const standingsRowsPerColumn = Math.ceil(visibleStandings.length / 3);
+  const displayedRound = isStandings ? standingsState.data?.round : round?.round;
 
   return (
     <div
       className="relative h-full w-full overflow-hidden bg-[#f8f7f4] text-slate-900"
       data-testid="f1-widget"
     >
+      <div
+        className={`pointer-events-none absolute inset-0 bg-cover bg-center bg-no-repeat opacity-[0.05] ${
+          isSquare ? 'scale-[1.36]' : ''
+        }`}
+        style={{ backgroundImage: "url('/f1-checkered-flag.jpg')" }}
+        aria-hidden="true"
+      />
       <div className="absolute inset-y-0 left-0 w-1.5 bg-red-600" />
-      <div className="flex h-full min-w-0 flex-col px-4 py-3 pl-5">
+      <div className="relative z-[1] flex h-full min-w-0 flex-col px-4 py-3 pl-5">
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-2">
             <Flag size={15} className="shrink-0 fill-red-600 text-red-600" aria-hidden="true" />
@@ -94,14 +133,121 @@ export default function F1Widget({ widget, previewDate }: F1WidgetProps) {
               F1 · {F1_SEASON.season}
             </span>
           </div>
-          {round ? (
-            <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-              {t('f1_round', { count: round.round })}
+          {displayedRound ? (
+            <span className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+              {t('f1_round', { count: displayedRound })}
             </span>
           ) : null}
         </div>
 
-        {!view || !now ? (
+        {isStandings ? (
+          <div className="flex min-h-0 flex-1 flex-col">
+            <div className={isCompact ? 'mt-2 flex items-center gap-2' : 'mt-3 flex items-center gap-2'}>
+              <Trophy size={isCompact ? 15 : 17} className="shrink-0 text-red-600" aria-hidden="true" />
+              <h3
+                className={
+                  isCompact
+                    ? 'text-base font-semibold tracking-[-0.025em]'
+                    : 'text-xl font-semibold tracking-[-0.035em]'
+                }
+              >
+                {t('f1_driver_standings')}
+              </h3>
+              {standingsState.data?.stale ? (
+                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-semibold text-amber-700">
+                  {t('f1_standings_cached')}
+                </span>
+              ) : null}
+            </div>
+
+            {!standingsState.data && !standingsState.error ? (
+              <div className="flex flex-1 items-center text-sm text-slate-400">
+                {t('f1_standings_loading')}
+              </div>
+            ) : standingsState.error && !standingsState.data ? (
+              <div className="flex flex-1 flex-col justify-center">
+                <div className="text-sm font-semibold text-slate-700">
+                  {t('f1_standings_unavailable')}
+                </div>
+                <div className="mt-1 text-xs text-slate-500">
+                  {t('f1_standings_unavailable_hint')}
+                </div>
+              </div>
+            ) : (
+              <div
+                className={
+                  isCompact
+                    ? 'mt-2 grid grid-cols-3 gap-2 pb-1'
+                    : isWideStandings
+                      ? 'mt-2 grid min-h-0 flex-1 grid-flow-col grid-cols-3 gap-x-3'
+                      : 'mt-3 min-h-0 flex-1 pb-1'
+                }
+                style={
+                  isWideStandings
+                    ? { gridTemplateRows: `repeat(${standingsRowsPerColumn}, minmax(0, 1fr))` }
+                    : undefined
+                }
+              >
+                {visibleStandings.map((standing) => (
+                  <div
+                    key={standing.position}
+                    className={
+                      isCompact
+                        ? 'grid min-w-0 grid-cols-[auto_1fr] items-center gap-x-1 border-l-2 border-slate-200 pl-2 first:border-red-500'
+                        : isWideStandings
+                          ? 'flex min-w-0 items-center gap-1.5 text-[10px]'
+                          : 'flex items-center gap-3 py-1 text-xs'
+                    }
+                  >
+                    <span
+                      className={
+                        isCompact
+                          ? 'text-[10px] font-bold tabular-nums text-red-600'
+                          : `${isWideStandings ? 'w-4' : 'w-5'} shrink-0 text-center font-bold tabular-nums ${
+                              standing.position === 1 ? 'text-red-600' : 'text-slate-400'
+                            }`
+                      }
+                    >
+                      {standing.position}
+                    </span>
+                    <span
+                      className={
+                        isCompact
+                          ? 'min-w-0 truncate text-xs font-semibold'
+                          : 'min-w-0 flex-1'
+                      }
+                    >
+                      <span
+                        className={
+                          isCompact ? '' : 'block truncate font-semibold text-slate-800'
+                        }
+                        title={`${standing.givenName} ${standing.familyName}`}
+                      >
+                        {isCompact ? standing.code : standing.familyName}
+                      </span>
+                      {!isCompact && !isWideStandings ? (
+                        <span className="block truncate text-[10px] text-slate-400">
+                          {standing.code} · {standing.constructor}
+                        </span>
+                      ) : null}
+                    </span>
+                    <span
+                      className={
+                        isCompact
+                          ? 'col-span-2 mt-0.5 block truncate text-[10px] font-medium tabular-nums text-slate-500'
+                          : isWideStandings
+                            ? 'shrink-0 font-medium tabular-nums text-slate-500'
+                            : 'shrink-0 font-semibold tabular-nums text-slate-700'
+                      }
+                    >
+                      {t('f1_points', { count: standing.points })}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : !view || !now ? (
           <div className="flex flex-1 items-center text-sm text-slate-400">{t('f1_loading')}</div>
         ) : view.state === 'complete' || !round || !nextSession ? (
           <div className="flex flex-1 flex-col justify-center">
@@ -128,7 +274,7 @@ export default function F1Widget({ widget, previewDate }: F1WidgetProps) {
                 ) : null}
               </div>
               {!isCompact ? (
-                <div className="mt-1 flex items-center gap-1 text-[11px] text-slate-500">
+                <div className="mt-1 flex items-center gap-1 text-xs text-slate-500">
                   <MapPin size={12} aria-hidden="true" />
                   <span>{location}</span>
                   <span aria-hidden="true">·</span>
@@ -141,7 +287,7 @@ export default function F1Widget({ widget, previewDate }: F1WidgetProps) {
               className={
                 isCompact
                   ? 'mt-auto flex min-w-0 items-end justify-between gap-3'
-                  : 'mt-3 flex min-w-0 items-end justify-between gap-3 border-b border-slate-200 pb-3'
+                  : 'mt-3 flex min-w-0 items-end justify-between gap-3 pb-3'
               }
             >
               <div className="min-w-0">

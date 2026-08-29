@@ -93,11 +93,13 @@ const memoWidgetConfigSchema = z
 
 const f1WidgetConfigSchema = z
   .object({
+    view: z.enum(['schedule', 'standings']).optional(),
     showPractice: z.boolean().optional(),
     showCountdown: z.boolean().optional(),
   })
   .strict()
   .transform((config) => ({
+    view: config.view ?? 'schedule',
     showPractice: config.showPractice ?? false,
     showCountdown: config.showCountdown ?? true,
   }))

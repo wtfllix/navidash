@@ -136,7 +136,11 @@ describe('Zod Schemas', () => {
 
     expect(result.success).toBe(true);
     if (!result.success) return;
-    expect(result.data.config).toEqual({ showPractice: false, showCountdown: true });
+    expect(result.data.config).toEqual({
+      view: 'schedule',
+      showPractice: false,
+      showCountdown: true,
+    });
   });
 
   it('validates and defaults a single-node Komari widget', () => {
