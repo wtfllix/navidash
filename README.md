@@ -21,7 +21,7 @@
 <p align="center">
   <a href="https://navidash.vercel.app/zh"><strong>在线体验</strong></a>
   ·
-  <a href="./docs/DEPLOY.md">开始部署</a>
+  <a href="./docs/DEPLOY.md">局域网部署</a>
   ·
   <a href="./docs/USER_GUIDE.md">使用指南</a>
   ·
@@ -55,7 +55,7 @@
 - **布置自己的空间**：像整理一面墙一样摆放入口、便签和海报，桌面与手机各有自己的布局。
 - **数据留在手中**：部署在自己的电脑、NAS 或服务器上，也可以随时备份和迁移。
 
-## 一面墙，五种内容
+## 一面墙，六种内容
 
 | 内容 | 用途 |
 | --- | --- |
@@ -63,7 +63,8 @@
 | ☀️ **今日信息** | 安静地展示时间、日期和天气 |
 | 📝 **随手贴** | 临时保存文本、链接或稍后要用的信息 |
 | 🖼️ **海报** | 用喜欢的图片建立属于自己的主页氛围 |
-| 🏁 **F1 赛程** | 按本地时间查看下一赛段和比赛周末安排 |
+| 🏁 **F1 信息** | 按本地时间查看赛程，或切换到最新车手积分榜 |
+| 🖥️ **Komari 节点** | 在首页查看个人服务器的实时状态 |
 
 ## 快速开始
 
@@ -77,9 +78,10 @@ sudo mkdir -p /opt/navidash-data
 docker compose up -d
 ```
 
-打开 [http://localhost:3000](http://localhost:3000)，然后从底部 Dock 添加书签和内容。
+在部署主机上打开 [http://localhost:3000](http://localhost:3000)；同一局域网的手机或电脑使用
+`http://部署主机IP:3000` 访问，然后从底部 Dock 添加书签和内容。
 
-天气、访问保护、局域网、HTTPS、升级和备份说明见
+主机 IP、防火墙、天气、访问保护、升级和备份说明见
 [部署指南](./docs/DEPLOY.md)。
 
 ### 本地开发
@@ -93,7 +95,8 @@ npm run dev
 
 | 文档 | 内容 |
 | --- | --- |
-| [部署指南](./docs/DEPLOY.md) | Docker、环境配置、升级、备份和故障排查 |
+| [部署与使用 Wiki](./docs/WIKI.md) | 个人局域网部署、使用、备份与排障入口 |
+| [部署指南](./docs/DEPLOY.md) | Docker、局域网访问、升级、备份和故障排查 |
 | [使用指南](./docs/USER_GUIDE.md) | 首页组件、书签和日常使用 |
 | [更新记录](./changelog.md) | 版本功能与重要变更 |
 | [English README](./README_EN.md) | English project overview |

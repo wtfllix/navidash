@@ -21,7 +21,7 @@
 <p align="center">
   <a href="https://navidash.vercel.app/en"><strong>Try the Demo</strong></a>
   ·
-  <a href="./docs/DEPLOY.md">Deploy NaviDash</a>
+  <a href="./docs/DEPLOY.md">Deploy on your LAN</a>
   ·
   <a href="./docs/USER_GUIDE_EN.md">User Guide</a>
   ·
@@ -55,7 +55,7 @@ in a quiet, flexible homepage that belongs to you.
 - **A space of your own**: arrange links, notes, and posters like objects on a wall, separately on desktop and mobile.
 - **Your data, your home**: run NaviDash on your computer, NAS, or server, then back it up whenever you want.
 
-## One wall, five kinds of content
+## One wall, six kinds of content
 
 | Content | Purpose |
 | --- | --- |
@@ -63,7 +63,8 @@ in a quiet, flexible homepage that belongs to you.
 | ☀️ **Today at a glance** | See the time, date, and weather quietly |
 | 📝 **Sticky note** | Hold temporary text, links, or information for later |
 | 🖼️ **Poster** | Use images you love to give the homepage its own atmosphere |
-| 🏁 **F1 schedule** | See the next session and race weekend in your local time |
+| 🏁 **F1 information** | See the local-time schedule or switch to the latest driver standings |
+| 🖥️ **Komari node** | Keep an eye on the live status of your personal servers |
 
 ## Quick start
 
@@ -77,11 +78,11 @@ sudo mkdir -p /opt/navidash-data
 docker compose up -d
 ```
 
-Open [http://localhost:3000](http://localhost:3000), then add bookmarks and content from the
-bottom Dock.
+Open [http://localhost:3000](http://localhost:3000) on the host. Other devices on the same LAN can
+use `http://HOST_LAN_IP:3000`, then add bookmarks and content from the bottom Dock.
 
-See the [deployment guide](./docs/DEPLOY.md) for weather, access protection, LAN access, HTTPS,
-upgrades, and backups.
+See the [deployment guide](./docs/DEPLOY.md) for host IP discovery, firewall checks, weather,
+access protection, upgrades, and backups.
 
 ### Local development
 
@@ -94,7 +95,8 @@ npm run dev
 
 | Document | Contents |
 | --- | --- |
-| [Deployment Guide](./docs/DEPLOY.md) | Docker, configuration, upgrades, backups, and troubleshooting |
+| [Deployment and Usage Wiki](./docs/WIKI.md) | Entry point for personal LAN deployment, usage, backups, and troubleshooting |
+| [Deployment Guide](./docs/DEPLOY.md) | Docker, LAN access, upgrades, backups, and troubleshooting |
 | [User Guide](./docs/USER_GUIDE_EN.md) | Homepage widgets, bookmarks, and everyday use |
 | [Changelog](./changelog.md) | Released features and meaningful changes |
 | [Chinese README](./README.md) | 中文项目介绍 |

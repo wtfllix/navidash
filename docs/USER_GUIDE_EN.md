@@ -51,9 +51,10 @@ The widget store currently lets you add:
 - `Today`: a combined time, date, and weather panel
 - `Memo`: quick pasted information
 - `Poster`: frameless visual decoration
-- `F1`: the next session and race weekend at a glance
+- `F1`: the next session, race weekend, or driver standings
+- `Komari`: personal server node status
 
-Legacy `Clock`, `Weather`, `Date`, `Quick Link`, `Todo`, and `Calendar` widgets have been retired. When older layouts or backups are read, those entries are filtered while Today, Links, Memo, Poster, and F1 are preserved.
+Legacy `Clock`, `Weather`, `Date`, `Quick Link`, `Todo`, and `Calendar` widgets have been retired. When older layouts or backups are read, those entries are filtered while currently supported widgets are preserved.
 
 ### Move a Widget
 
@@ -68,7 +69,7 @@ If the target area is already occupied, NaviDash automatically reflows nearby wi
 Different widgets support different editing flows:
 
 - `Memo` can be edited directly inside the widget and saves automatically
-- `Today`, `Links`, `Poster`, and `F1` are configured through the settings modal
+- `Today`, `Links`, `Poster`, `F1`, and `Komari` are configured through the settings modal
 
 ### Open Widget Settings
 
@@ -116,7 +117,14 @@ If weather does not appear, check:
 - Hides practice by default and highlights the next qualifying, sprint, or race session
 - Automatically displays every session in the current device's time zone
 - Can include practice sessions or hide the countdown through widget settings
+- Can switch to driver standings, fetched server-side from Jolpica and cached for 24 hours
 - Keeps tentative races visibly marked instead of presenting them as confirmed
+
+### Komari
+
+- Each widget follows one Komari node and displays availability, resource use, network, and traffic data
+- The Komari URL and optional API key stay in the deployment host's `.env`; they are not stored in widgets or backups
+- Add multiple widgets to monitor multiple personal servers
 
 ## Global Settings
 
@@ -162,7 +170,7 @@ bookmarks without changing the canvas.
 
 ## Data Persistence
 
-NaviDash is currently designed primarily for local deployment. Runtime data is usually stored in the host-mounted data directory.
+NaviDash is designed primarily for personal LAN deployment. Runtime data is usually stored in the host-mounted data directory.
 
 This includes:
 
