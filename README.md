@@ -91,10 +91,22 @@ npm install
 npm run dev
 ```
 
+### 本地预览文档站
+
+```bash
+cd docs-site
+npm ci
+npm run dev
+```
+
+文档站会在 GitHub Pages 上由独立工作流发布；首次启用时，请在仓库 Settings → Pages 中将
+发布源设置为 **GitHub Actions**。
+
 ## 项目文档
 
 | 文档 | 内容 |
 | --- | --- |
+| [在线文档站](https://wtfllix.github.io/navidash/) | 中文优先的部署、使用、组件和排障指南 |
 | [部署与使用 Wiki](./docs/WIKI.md) | 个人局域网部署、使用、备份与排障入口 |
 | [部署指南](./docs/DEPLOY.md) | Docker、局域网访问、升级、备份和故障排查 |
 | [使用指南](./docs/USER_GUIDE.md) | 首页组件、书签和日常使用 |

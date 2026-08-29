@@ -2,6 +2,9 @@
 
 这里仅整理个人使用 NaviDash 时需要长期保留的信息。项目内部开发约定不在此展开。
 
+完整的在线文档站见 [NaviDash Documentation](https://wtfllix.github.io/navidash/)；本文件保留为仓库内的
+轻量入口，便于离线查看和提交文档修改。
+
 ## 推荐部署方式
 
 在家用电脑、NAS 或小型服务器上使用 Docker Compose 运行 NaviDash，并把 `/app/data`

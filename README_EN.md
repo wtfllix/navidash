@@ -91,10 +91,22 @@ npm install
 npm run dev
 ```
 
+### Preview the documentation site locally
+
+```bash
+cd docs-site
+npm ci
+npm run dev
+```
+
+The documentation site is published by its own GitHub Pages workflow. On first setup, set the
+repository's Settings → Pages source to **GitHub Actions**.
+
 ## Project documentation
 
 | Document | Contents |
 | --- | --- |
+| [Documentation site](https://wtfllix.github.io/navidash/) | Chinese-first deployment, usage, widget, and troubleshooting guides |
 | [Deployment and Usage Wiki](./docs/WIKI.md) | Entry point for personal LAN deployment, usage, backups, and troubleshooting |
 | [Deployment Guide](./docs/DEPLOY.md) | Docker, LAN access, upgrades, backups, and troubleshooting |
 | [User Guide](./docs/USER_GUIDE_EN.md) | Homepage widgets, bookmarks, and everyday use |

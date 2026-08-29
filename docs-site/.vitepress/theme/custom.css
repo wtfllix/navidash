@@ -1,0 +1,61 @@
+:root {
+  --vp-c-brand-1: #dc2626;
+  --vp-c-brand-2: #ef4444;
+  --vp-c-brand-3: #f87171;
+  --vp-c-brand-soft: rgb(239 68 68 / 14%);
+}
+
+.dark {
+  --vp-c-brand-1: #f87171;
+  --vp-c-brand-2: #fb7185;
+  --vp-c-brand-3: #fca5a5;
+}
+
+.VPHero .name,
+.VPFeature .title {
+  letter-spacing: -0.02em;
+}
+
+.VPHomeHero .image-bg {
+  opacity: 0.18;
+}
+
+.VPDoc h2 {
+  border-top: 1px solid var(--vp-c-divider);
+  padding-top: 24px;
+}
+
+.guide-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.guide-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 12px;
+  padding: 18px 20px;
+  color: var(--vp-c-text-1);
+  text-decoration: none;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.guide-card:hover {
+  border-color: var(--vp-c-brand-1);
+  background: var(--vp-c-brand-soft);
+}
+
+.guide-card span {
+  color: var(--vp-c-text-2);
+  font-size: 14px;
+}
+
+@media (max-width: 640px) {
+  .guide-cards {
+    grid-template-columns: 1fr;
+  }
+}
