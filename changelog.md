@@ -10,7 +10,7 @@
 ## 2026-08-29
 
 ### feat: Demo 配置展示最新 Widget
-- 做了什么：将 F1 赛程、F1 车手积分和 Komari 节点加入内置 Demo 的桌面与手机布局，并提供不依赖外部服务或凭据的内置积分榜与节点状态数据
+- 做了什么：将 F1 赛程、F1 车手积分和 Komari 节点加入内置 Demo 的桌面与手机布局，统一置于旧组件之前，并提供不依赖外部服务或凭据的内置积分榜与节点状态数据
 - 影响范围：Demo 默认画布、F1 与 Komari 演示体验、Demo 服务端数据兜底
 - 涉及模块：`src/lib/demo.ts`、`src/lib/server/f1Standings.ts`、`src/lib/server/komari.ts`、Demo 测试
 - 是否有兼容性影响：仅将 Demo 数据版本提升至 `3`；正常部署和用户持久化数据不受影响，Demo 刷新后恢复为新版预置布局

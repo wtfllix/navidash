@@ -49,6 +49,24 @@ describe('demo configuration', () => {
       expect(ids.has('demo-f1-schedule')).toBe(true);
       expect(ids.has('demo-f1-standings')).toBe(true);
       expect(ids.has('demo-komari')).toBe(true);
+      expect(layouts.slice(0, 3).map((layout) => layout.id)).toEqual([
+        'demo-f1-standings',
+        'demo-f1-schedule',
+        'demo-komari',
+      ]);
+
+      const latestIds = new Set(['demo-f1-schedule', 'demo-f1-standings', 'demo-komari']);
+      const latestBottom = Math.max(
+        ...layouts
+          .filter((layout) => latestIds.has(layout.id))
+          .map((layout) => layout.position.y + layout.size.h)
+      );
+      const legacyTop = Math.min(
+        ...layouts
+          .filter((layout) => !latestIds.has(layout.id))
+          .map((layout) => layout.position.y)
+      );
+      expect(latestBottom).toBeLessThanOrEqual(legacyTop);
     }
   });
 
