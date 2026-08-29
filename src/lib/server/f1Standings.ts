@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { getDemoF1Standings, isServerDemoMode } from '@/lib/demo';
 import { F1_SEASON } from '@/lib/f1Schedule';
 import { F1StandingsResponse, F1StandingsResponseSchema } from '@/lib/f1Standings';
 
@@ -96,6 +97,7 @@ async function requestJolpicaStandings(): Promise<F1StandingsResponse> {
 }
 
 export async function getF1DriverStandings(now = Date.now()) {
+  if (isServerDemoMode) return F1StandingsResponseSchema.parse(getDemoF1Standings());
   if (memoryCache && memoryCache.expiresAt > now) return memoryCache.data;
 
   try {

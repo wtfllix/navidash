@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { DEMO_KOMARI_NODE_ID, getDemoKomariNode, isServerDemoMode } from '@/lib/demo';
 
 const REQUEST_TIMEOUT_MS = 8_000;
 const MAX_RESPONSE_BYTES = 1_000_000;
@@ -224,6 +225,10 @@ function toNodeSummary(node: KomariNode, status: KomariNodeStatus): KomariNodeSu
 }
 
 export async function getKomariNodesResponse(): Promise<KomariNodesResponse> {
+  if (isServerDemoMode) {
+    const node = getDemoKomariNode();
+    return { state: 'ok', nodes: [{ id: node.id, name: node.name }] };
+  }
   if (!getKomariServerConfig()) return { state: 'unconfigured', nodes: [] };
 
   try {
@@ -235,6 +240,17 @@ export async function getKomariNodesResponse(): Promise<KomariNodesResponse> {
 }
 
 export async function getKomariStatuses(nodeIds: string[]): Promise<KomariStatusesResponse> {
+  if (isServerDemoMode) {
+    const uniqueIds = uniqueNodeIds(nodeIds);
+    const demoNode = getDemoKomariNode();
+    const includesDemoNode = uniqueIds.includes(DEMO_KOMARI_NODE_ID);
+    return {
+      state: 'ok',
+      sampledAt: demoNode.updatedAt,
+      nodes: includesDemoNode ? { [DEMO_KOMARI_NODE_ID]: demoNode } : {},
+      missingNodeIds: uniqueIds.filter((nodeId) => nodeId !== DEMO_KOMARI_NODE_ID),
+    };
+  }
   if (!getKomariServerConfig()) return { state: 'unconfigured', nodes: {}, missingNodeIds: [] };
   const uniqueIds = uniqueNodeIds(nodeIds);
   if (uniqueIds.length === 0) {

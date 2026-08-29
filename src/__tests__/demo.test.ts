@@ -1,5 +1,13 @@
-import { DEMO_SETTINGS, DEMO_WIDGET_SNAPSHOT } from '@/lib/demo';
-import { WidgetSnapshotSchema } from '@/lib/schemas';
+import {
+  DEMO_KOMARI_NODE_ID,
+  DEMO_SETTINGS,
+  DEMO_WIDGET_SNAPSHOT,
+  getDemoF1Standings,
+  getDemoKomariNode,
+} from '@/lib/demo';
+import { mergeWidgets, WidgetSnapshotSchema } from '@/lib/schemas';
+import { isWidgetLayoutValid } from '@/lib/layoutEngine';
+import { LAYOUT_MODE_COLUMNS } from '@/lib/widgetLayouts';
 
 describe('demo configuration', () => {
   it('uses the current versioned widget snapshot without orphaned layouts', () => {
@@ -13,6 +21,51 @@ describe('demo configuration', () => {
       expect(new Set(layouts.map((layout) => layout.id)).size).toBe(layouts.length);
       expect(layouts.every((layout) => configIds.has(layout.id))).toBe(true);
     }
+
+    for (const mode of ['desktop', 'mobile'] as const) {
+      expect(
+        isWidgetLayoutValid(
+          mergeWidgets(snapshot.layoutsByMode[mode], snapshot.configs),
+          LAYOUT_MODE_COLUMNS[mode]
+        )
+      ).toBe(true);
+    }
+  });
+
+  it('showcases the latest F1 modes and Komari widget in both layouts', () => {
+    const f1Configs = DEMO_WIDGET_SNAPSHOT.configs.filter((config) => config.type === 'f1');
+    const komariConfig = DEMO_WIDGET_SNAPSHOT.configs.find(
+      (config) => config.type === 'komari'
+    );
+
+    expect(f1Configs.map((config) => config.config.view).sort()).toEqual([
+      'schedule',
+      'standings',
+    ]);
+    expect(komariConfig?.config).toMatchObject({ nodeId: DEMO_KOMARI_NODE_ID });
+
+    for (const layouts of Object.values(DEMO_WIDGET_SNAPSHOT.layoutsByMode)) {
+      const ids = new Set(layouts.map((layout) => layout.id));
+      expect(ids.has('demo-f1-schedule')).toBe(true);
+      expect(ids.has('demo-f1-standings')).toBe(true);
+      expect(ids.has('demo-komari')).toBe(true);
+    }
+  });
+
+  it('provides deterministic demo data for F1 standings and Komari', () => {
+    const standings = getDemoF1Standings();
+    expect(standings).toMatchObject({
+      season: 2026,
+      round: 12,
+      stale: false,
+    });
+    expect(standings.standings[0]).toMatchObject({ position: 1, code: 'ANT', points: 242 });
+    expect(standings.standings).toHaveLength(23);
+    expect(getDemoKomariNode()).toMatchObject({
+      id: DEMO_KOMARI_NODE_ID,
+      name: 'Tokyo Edge',
+      online: true,
+    });
   });
 
   it('stores Links references in the bookmark library instead of legacy inline links', () => {

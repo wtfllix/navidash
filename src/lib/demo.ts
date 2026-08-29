@@ -1,7 +1,9 @@
 import { mergeWidgets } from '@/lib/schemas';
 import { Settings, Widget, WidgetSnapshot } from '@/types';
 
-export const DEMO_DATA_VERSION = 2;
+export const DEMO_DATA_VERSION = 3;
+
+export const DEMO_KOMARI_NODE_ID = '00000000-0000-4000-8000-000000000001';
 
 export const isClientDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
 
@@ -70,6 +72,33 @@ export const DEMO_WIDGET_SNAPSHOT: WidgetSnapshot = {
         content: 'Keep the homepage focused.\nMake the wall feel personal.',
         bgColor: '#fef08a',
         textColor: '#713f12',
+      },
+    },
+    {
+      id: 'demo-f1-schedule',
+      type: 'f1',
+      config: {
+        view: 'schedule',
+        showPractice: false,
+        showCountdown: true,
+      },
+    },
+    {
+      id: 'demo-f1-standings',
+      type: 'f1',
+      config: {
+        view: 'standings',
+        showPractice: false,
+        showCountdown: true,
+      },
+    },
+    {
+      id: 'demo-komari',
+      type: 'komari',
+      config: {
+        nodeId: DEMO_KOMARI_NODE_ID,
+        showNetwork: true,
+        refreshInterval: 30,
       },
     },
     {
@@ -162,6 +191,24 @@ export const DEMO_WIDGET_SNAPSHOT: WidgetSnapshot = {
         size: { w: 2, h: 2 },
         position: { x: 4, y: 3 },
       },
+      {
+        id: 'demo-f1-schedule',
+        type: 'f1',
+        size: { w: 2, h: 2 },
+        position: { x: 0, y: 3 },
+      },
+      {
+        id: 'demo-f1-standings',
+        type: 'f1',
+        size: { w: 3, h: 2 },
+        position: { x: 0, y: 5 },
+      },
+      {
+        id: 'demo-komari',
+        type: 'komari',
+        size: { w: 2, h: 2 },
+        position: { x: 4, y: 5 },
+      },
     ],
     mobile: [
       {
@@ -206,6 +253,24 @@ export const DEMO_WIDGET_SNAPSHOT: WidgetSnapshot = {
         size: { w: 2, h: 2 },
         position: { x: 0, y: 8 },
       },
+      {
+        id: 'demo-f1-schedule',
+        type: 'f1',
+        size: { w: 2, h: 2 },
+        position: { x: 0, y: 10 },
+      },
+      {
+        id: 'demo-f1-standings',
+        type: 'f1',
+        size: { w: 2, h: 2 },
+        position: { x: 0, y: 12 },
+      },
+      {
+        id: 'demo-komari',
+        type: 'komari',
+        size: { w: 2, h: 2 },
+        position: { x: 0, y: 14 },
+      },
     ],
   },
 };
@@ -237,6 +302,79 @@ export function getDemoWeather(city = 'Hangzhou') {
       windScale: '2',
       humidity: '61',
       cloud: '42',
+    },
+  };
+}
+
+export function getDemoF1Standings() {
+  const drivers = [
+    ['ANT', 'Andrea Kimi', 'Antonelli', 'Mercedes', 242, 6],
+    ['RUS', 'George', 'Russell', 'Mercedes', 183, 2],
+    ['HAM', 'Lewis', 'Hamilton', 'Ferrari', 183, 1],
+    ['NOR', 'Lando', 'Norris', 'McLaren', 159, 2],
+    ['LEC', 'Charles', 'Leclerc', 'Ferrari', 155, 1],
+    ['VER', 'Max', 'Verstappen', 'Red Bull', 112, 0],
+    ['PIA', 'Oscar', 'Piastri', 'McLaren', 104, 0],
+    ['HAD', 'Isack', 'Hadjar', 'Red Bull', 68, 0],
+    ['LAW', 'Liam', 'Lawson', 'Red Bull', 49, 0],
+    ['GAS', 'Pierre', 'Gasly', 'Alpine', 44, 0],
+    ['LIN', 'Arvid', 'Lindblad', 'Racing Bulls', 23, 0],
+    ['COL', 'Franco', 'Colapinto', 'Alpine', 19, 0],
+    ['BEA', 'Oliver', 'Bearman', 'Haas', 18, 0],
+    ['BOR', 'Gabriel', 'Bortoleto', 'Audi', 10, 0],
+    ['HUL', 'Nico', 'Hülkenberg', 'Audi', 6, 0],
+    ['SAI', 'Carlos', 'Sainz', 'Williams', 6, 0],
+    ['ALB', 'Alexander', 'Albon', 'Williams', 5, 0],
+    ['OCO', 'Esteban', 'Ocon', 'Haas', 3, 0],
+    ['ALO', 'Fernando', 'Alonso', 'Aston Martin', 3, 0],
+    ['TSU', 'Yuki', 'Tsunoda', 'Racing Bulls', 0, 0],
+    ['STR', 'Lance', 'Stroll', 'Aston Martin', 0, 0],
+    ['BOT', 'Valtteri', 'Bottas', 'Cadillac', 0, 0],
+    ['PER', 'Sergio', 'Pérez', 'Cadillac', 0, 0],
+  ] as const;
+
+  return {
+    season: 2026,
+    round: 12,
+    standings: drivers.map(([code, givenName, familyName, constructor, points, wins], index) => ({
+      position: index + 1,
+      code,
+      givenName,
+      familyName,
+      constructor,
+      points,
+      wins,
+    })),
+    updatedAt: new Date().toISOString(),
+    stale: false,
+  };
+}
+
+export function getDemoKomariNode() {
+  return {
+    id: DEMO_KOMARI_NODE_ID,
+    name: 'Tokyo Edge',
+    regionFlag: '🇯🇵',
+    online: true,
+    updatedAt: new Date().toISOString(),
+    uptimeSeconds: 37 * 86_400 + 12 * 3_600,
+    cpuPercent: 18.6,
+    memory: {
+      usedBytes: 3.4 * 1024 ** 3,
+      totalBytes: 8 * 1024 ** 3,
+      percent: 42.5,
+    },
+    disk: {
+      usedBytes: 42 * 1024 ** 3,
+      totalBytes: 160 * 1024 ** 3,
+      percent: 26.25,
+    },
+    network: {
+      rxBytesPerSecond: 4.8 * 1024 ** 2,
+      txBytesPerSecond: 1.2 * 1024 ** 2,
+      totalUpBytes: 128 * 1024 ** 3,
+      totalDownBytes: 462 * 1024 ** 3,
+      trafficLimitBytes: 1024 ** 4,
     },
   };
 }
