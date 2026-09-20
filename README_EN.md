@@ -32,6 +32,17 @@
   <img width="820" alt="NaviDash self-hosted personal homepage cover" src="./public/navidash-demo-cover.png" />
 </p>
 
+## What's new
+
+> Current version: `0.8.0` · Latest update: 2026-08-29
+
+- **Documentation site**: Added a Chinese-first VitePress site for deployment, configuration, widgets, backups, and troubleshooting.
+- **F1 widget**: Added a switch between the schedule and latest driver standings, with server-side caching and fallback data.
+- **Refreshed demo**: The default demo homepage now includes F1 schedule, driver standings, and Komari widgets.
+- **Deployment guides**: Added a complete `.env` example and clearer guidance for access protection, weather, Komari, and Demo mode.
+
+See the full [changelog](./changelog.md) for all meaningful changes.
+
 When you open a browser, you usually need only a few things: visit a familiar site, search for
 something, glance at the time, weather, or next race, or keep a temporary note. NaviDash brings them together
 in a quiet, flexible homepage that belongs to you.
